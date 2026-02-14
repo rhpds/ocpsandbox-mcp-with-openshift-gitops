@@ -1,15 +1,17 @@
-= MCP GitOps Pipeline Failure Agent
+= MCP with OpenShift - GitOps Charts (User Provisioning)
 :toc: macro
 :toclevels: 3
 :icons: font
 
-An AI-powered pipeline failure analysis agent that automatically detects, analyzes, and creates issues for failed Kubernetes/OpenShift pods using LLM tool calling via MCP (Model Context Protocol) servers.
+Helm charts and agent code for the MCP with OpenShift lab, deployed per-user via ArgoCD ApplicationSets during **user provisioning**.
+
+This repo is referenced by the `ocp4_workload_ocpsandbox_mcp_user` role in the https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift[rhpds.ocpsandbox_mcp_with_openshift] collection. ArgoCD deploys these charts into per-user namespaces.
 
 toc::[]
 
 == Overview
 
-The MCP GitOps project provides an intelligent agent that integrates with Tekton pipelines to automatically:
+The MCP GitOps project provides Helm charts for deploying per-user MCP infrastructure and an intelligent agent that integrates with Tekton pipelines to automatically:
 
 1. Receive webhook notifications when pipelines fail
 2. Retrieve pod logs from OpenShift/Kubernetes
