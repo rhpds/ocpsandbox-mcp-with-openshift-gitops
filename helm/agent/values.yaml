@@ -1,0 +1,51 @@
+---
+user: user1
+application_name: agent
+namespace: agent-user1
+
+git_url: https://gitea.apps.cluster-kd7wl.dynamic.redhatworkshops.io/user1/mcp.git
+git_revision: main
+git_subdirectory: agent
+registry: image-registry.openshift-image-registry.svc:5000
+agent_endpoint: http://agent.agent-user1.svc:8000/report-failure
+
+# Agent Configuration
+agentConfig:
+  litellm_url: "FROM SECRETS"
+  litellm_api_key: "FROM SECRETS"
+  litellm_model: "FROM SECRETS"
+  mcp_openshift_url: http://mcp-openshift-proxy.mcp-user1.svc.cluster.local:8080/sse#openshift
+  mcp_openshift_transport: sse
+  mcp_gitea_url: http://mcp-gitea-proxy.mcp-user1.svc.cluster.local:8080
+  mcp_gitea_transport: streamable-http
+  mcp_gitea_user: user1
+  mcp_gitea_repo: mcp
+  port: "8000"
+
+# Service Account configuration
+serviceAccount:
+  name: agent
+
+# Role Binding configuration
+roleBinding:
+  name: edit-agent
+  clusterRole: edit
+
+# Job configuration
+job:
+  name: trigger-agent-image-build
+  enabled: true
+
+# Pipeline configuration
+pipeline:
+  name: build-agent
+  timeout: 1h0m0s
+
+# Workspace configuration
+workspace:
+  name: workspace
+  storage: 3Gi
+
+# Container images
+images:
+  cliTool: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
