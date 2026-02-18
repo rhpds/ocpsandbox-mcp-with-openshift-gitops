@@ -1,31 +1,144 @@
-= MCP with OpenShift - GitOps Charts (User Provisioning)
+= MCP with OpenShift - GitOps Repository
 :toc: macro
 :toclevels: 3
 :icons: font
 
-Helm charts and agent code for the MCP with OpenShift lab, deployed per-user via ArgoCD ApplicationSets during **user provisioning**.
-
-This repo is referenced by the `ocp4_workload_ocpsandbox_mcp_user` role in the https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift[rhpds.ocpsandbox_mcp_with_openshift] collection. ArgoCD deploys these charts into per-user namespaces.
+Per-user Helm charts for the **MCP with OpenShift** lab, deployed via ArgoCD ApplicationSets during user provisioning.
 
 toc::[]
 
-== Overview
+== Deployment Architecture
 
-The MCP GitOps project provides Helm charts for deploying per-user MCP infrastructure and an intelligent agent that integrates with Tekton pipelines to automatically:
+This lab uses the **Infra / Tenant** pattern for OCP Sandbox deployments. Shared cluster infrastructure is provisioned once (infra), and per-user resources are deployed on demand (tenant).
 
-1. Receive webhook notifications when pipelines fail
-2. Retrieve pod logs from OpenShift/Kubernetes
-3. Analyze failures using an LLM (via LiteLLM)
-4. Create detailed issues in Gitea with error summaries and potential solutions
+[source]
+----
+                         ┌─────────────────────────────────────────────┐
+                         │          OCP Cluster (Pre-provisioned)      │
+                         │                                             │
+  ┌───────────────────┐  │  ┌──────────────────────────────────────┐   │
+  │ Cluster           │  │  │  Infra (Cluster Provisioner)         │   │
+  │ Provisioner       │──┼─▶│                                      │   │
+  │ (run once per     │  │  │  - Keycloak (RHBK + OAuth)           │   │
+  │  cluster, CI or   │  │  │                                      │   │
+  │  manual)          │  │  │                                      │   │
+  └───────────────────┘  │  │  - Gitea Operator                    │   │
+                         │  │  - OpenShift Pipelines (Tekton)       │   │
+                         │  │  - OpenShift GitOps (ArgoCD)          │   │
+                         │  │  - ToolHive Operator                  │   │
+                         │  │  - User Workload Monitoring            │   │
+                         │  │  - CloudNativePG Operator              │   │
+                         │  │  - OCP Console Embed (iframe CSP)      │   │
+                         │  └──────────────────────────────────────┘   │
+                         │                                             │
+  ┌───────────────────┐  │  ┌──────────────────────────────────────┐   │
+  │ User Provisioner  │  │  │  Tenant (Per-User Resources)         │   │
+  │ (on each order    │──┼─▶│                                      │   │
+  │  via Sandbox API) │  │  │  - ArgoCD AppProject                 │   │
+  └───────────────────┘  │  │  - LiteLLM Virtual Key               │   │
+                         │  │  - Per-user Gitea instance            │   │
+                         │  │  - MCP OpenShift Server (ToolHive)    │   │
+                         │  │  - MCP Gitea Server (ToolHive)        │   │
+                         │  │  - LibreChat (AI UI)                  │   │
+                         │  │  - Pipeline Failure Agent             │   │
+                         │  │  - Showroom (Lab Guide)               │   │
+                         │  └──────────────────────────────────────┘   │
+                         └─────────────────────────────────────────────┘
+----
 
-The agent uses the Model Context Protocol (MCP) to communicate with external tool servers, enabling dynamic tool discovery and execution.
+=== Infra (Cluster Provisioner)
 
-== Architecture
+Shared infrastructure deployed once per cluster (manually or via CI). Managed via the
+https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift[rhpds.ocpsandbox_mcp_with_openshift]
+collection's `tests/e2e/cluster-provision.yml` playbook.
+
+Key decisions:
+
+* **Keycloak (RHBK)** as OCP OAuth provider -- OCPSandbox API creates users dynamically when `keycloak: "yes"` is set on the cluster pool.
+* **Gitea Operator** installed cluster-wide -- each user gets their own Gitea instance via a `Gitea` CR.
+* **ToolHive Operator** installed cluster-wide -- MCP servers are deployed as `MCPServer` CRs per user.
+* **OCP Console Embed** patches IngressController CSP headers so the OpenShift console can be embedded in a Showroom iframe.
+
+=== Tenant (User Provisioner)
+
+Per-user resources deployed on each lab order via the OCPSandbox API using `config: namespace`.
+
+**This repository contains the Helm charts** for the tenant-level components. ArgoCD ApplicationSets
+(created by the `ocp4_workload_ocpsandbox_mcp_user` role) deploy these charts into per-user namespaces.
+
+Each user gets isolated namespaces:
+
+[cols="2,3"]
+|===
+|Namespace |Component
+
+|`mcp-openshift-{user}`
+|OpenShift MCP Server (via ToolHive MCPServer CR)
+
+|`mcp-gitea-{user}`
+|Gitea MCP Server (via ToolHive MCPServer CR)
+
+|`librechat-{user}`
+|LibreChat AI UI + Meilisearch + MongoDB
+
+|`agent-{user}`
+|Pipeline Failure Agent
+
+|`gitea-{user}`
+|Per-user Gitea instance (operator CR, not a Helm chart)
+
+|`showroom-{user}`
+|Showroom Lab Guide
+|===
+
+== How It Works
+
+[source]
+----
+User orders lab
+       │
+       ▼
+OCPSandbox API
+       │
+       ├── Creates Keycloak user (keycloak: "yes")
+       ├── Creates sandbox namespace with quota
+       │
+       ▼
+AgnosticD Workloads (config: namespace)
+       │
+       ├── 1. ArgoCD AppProject (per-user RBAC)
+       ├── 2. LiteLLM Virtual Key (LLM API access)
+       ├── 3. MCP User Role:
+       │      ├── Discover cluster ingress domain
+       │      ├── Write kubeconfig for downstream roles
+       │      ├── Deploy per-user Gitea (operator CR)
+       │      ├── Create Gitea user + migrate repos
+       │      ├── Create ArgoCD ApplicationSets ──────┐
+       │      └── Save user_info for Showroom          │
+       ├── 4. OCP Console Embed (idempotent)           │
+       └── 5. Showroom (lab guide UI)                  │
+                                                       │
+                                    ┌──────────────────┘
+                                    ▼
+                              ArgoCD syncs
+                              Helm charts from
+                              THIS REPO (tenant/)
+                                    │
+                    ┌───────────────┼───────────────┐
+                    │               │               │
+                    ▼               ▼               ▼
+             mcp-openshift    mcp-gitea      librechat + agent
+             (ToolHive)       (ToolHive)     (Helm charts)
+----
+
+== Agent Architecture
+
+The Pipeline Failure Agent connects MCP servers to an LLM for automated pipeline failure analysis:
 
 [source]
 ----
 ┌─────────────────┐     POST /report-failure     ┌─────────────────┐
-│  Tekton         │ ────────────────────────────▶│  Pipeline       │
+│  Tekton          │ ────────────────────────────▶│  Pipeline       │
 │  Pipeline       │                              │  Failure Agent  │
 └─────────────────┘                              └────────┬────────┘
                                                           │
@@ -41,113 +154,96 @@ The agent uses the Model Context Protocol (MCP) to communicate with external too
                                                    Pod Logs            Issue Creation
 ----
 
-=== Components
+The agent operates in an iterative loop:
 
-* **HTTP Server** (`main.py`) - FastAPI server with `/report-failure` endpoint accepting POST requests
-* **MCP Client** (`mcp_client.py`) - Connects to external MCP servers to discover and call tools
-** Supports SSE transport (for OpenShift MCP server)
-** Supports streamable-http transport (for Gitea MCP server)
-* **Agent Loop** - Iterative LiteLLM completion loop that:
-** Gets available tools from MCP servers at startup
-** Forwards tool calls from the model to the appropriate MCP server
-** Returns results back to the model until completion
+1. **Receive Failure Report** -- Pipeline sends pod details to `/report-failure`
+2. **Build Prompt** -- Agent creates a prompt with pod context and examples
+3. **LLM Analysis** -- Model analyzes the situation and requests tools
+4. **Tool Execution** -- Agent executes requested tools via MCP servers (`pods_log`, `create_issue`)
+5. **Iterate** -- Process continues until the model completes or max iterations reached
+6. **Return Result** -- Agent returns the final result (usually issue URL)
 
-== Project Structure
+== Repository Structure
 
 [source]
 ----
-mcp-gitops/
-├── agent/                      # Main Python agent application
-│   ├── main.py                 # FastAPI server and core agent logic
-│   ├── mcp_client.py           # MCP server client implementation
-│   ├── requirements.txt        # Python dependencies
-│   ├── Containerfile           # Container build definition
-│   ├── pytest.ini              # Pytest configuration
-│   └── tests/                  # Test suite
-│       ├── conftest.py
-│       ├── test_api.py
-│       ├── test_main.py
-│       └── test_mcp_client.py
+ocpsandbox-mcp-with-openshift-gitops/
 │
-└── tenant/                     # Per-user Helm charts (deployed via ArgoCD)
-    ├── agent/                  # AI agent Helm chart
-    ├── librechat/              # LibreChat Helm chart
-    ├── mcp-gitea/              # Gitea MCP server Helm chart
-    └── mcp-openshift/          # OpenShift MCP server Helm chart
+├── tenant/                        # Per-user Helm charts (deployed by ArgoCD)
+│   ├── agent/                     # Pipeline Failure Agent
+│   │   ├── Chart.yaml
+│   │   ├── values.yaml
+│   │   └── templates/
+│   ├── librechat/                 # LibreChat config overrides
+│   │   ├── Chart.yaml
+│   │   ├── values.yaml
+│   │   └── templates/
+│   ├── mcp-gitea/                 # Gitea MCP Server (ToolHive MCPServer CR)
+│   │   ├── Chart.yaml
+│   │   ├── values.yaml
+│   │   └── templates/
+│   └── mcp-openshift/             # OpenShift MCP Server (ToolHive MCPServer CR)
+│       ├── Chart.yaml
+│       ├── values.yaml
+│       └── templates/
+│
+├── agent/                         # Agent source code
+│   ├── main.py                    # FastAPI server + agent logic
+│   ├── mcp_client.py              # MCP server client (SSE + streamable-http)
+│   ├── requirements.txt
+│   ├── Containerfile
+│   └── tests/
+│
+└── README.adoc                    # This file
 ----
 
-== Prerequisites
+The `tenant/` directory follows the https://github.com/rhpds/ci-template-gitops[rhpds/ci-template-gitops] pattern where:
 
-* Python 3.11+
-* OpenShift/Kubernetes cluster with Tekton pipelines
-* Gitea instance for issue tracking
-* LiteLLM-compatible AI model endpoint
-* MCP servers for OpenShift and Gitea
+* `infra/` = cluster-scoped resources (not used here -- infra is handled by the cluster provisioner playbook)
+* `tenant/` = per-user (namespace-scoped) resources
 
-== Installation
+== Related Repositories
 
-=== Local Development
+[cols="2,3"]
+|===
+|Repository |Purpose
 
-[source,bash]
-----
-# Navigate to the agent directory
-cd agent
+|https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift[rhpds.ocpsandbox_mcp_with_openshift]
+|Ansible collection with `ocp4_workload_ocpsandbox_mcp_user` role + e2e tests + cluster provisioner
 
-# Install Python dependencies
-pip install -r requirements.txt
+|https://github.com/agnosticd/namespaced_workloads[agnosticd/namespaced_workloads]
+|Generic sandbox roles (`argocd_user`, `keycloak_user`, `gitea_user`)
 
-# Set required environment variables (see Configuration section)
-export LITELLM_URL="http://your-litellm-endpoint"
-export LITELLM_API_KEY="your-api-key"
-export MCP_OPENSHIFT_URL="http://mcp-openshift-server/sse"
-export MCP_GITEA_URL="http://mcp-gitea-server/mcp"
-export GITEA_OWNER="your-org"
-export GITEA_REPO="your-repo"
+|https://github.com/rhpds/rhpds.litellm_virtual_keys[rhpds.litellm_virtual_keys]
+|LiteLLM virtual key provisioning
 
-# Run the server
-python main.py
-----
+|https://github.com/rhpds/lb1726-mcp-showroom[rhpds/lb1726-mcp-showroom]
+|Showroom lab guide content
 
-=== Container Build
+|https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops[rhpds/ocpsandbox-mcp-with-openshift-gitops]
+|This repo -- GitOps charts
+|===
 
-[source,bash]
-----
-cd agent
+== MCP Servers
 
-# Build with Podman
-podman build -t pipeline-agent -f Containerfile .
+[cols="1,1,1,2"]
+|===
+|Server |Transport |Image |Purpose
 
-# Or with Docker
-docker build -t pipeline-agent -f Containerfile .
+|OpenShift
+|SSE
+|`quay.io/containers/kubernetes_mcp_server:latest`
+|K8s/OCP resource management, pod logs, exec
 
-# Run the container
-podman run -p 8000:8000 \
-  -e LITELLM_URL="http://your-litellm-endpoint" \
-  -e LITELLM_API_KEY="your-api-key" \
-  -e MCP_OPENSHIFT_URL="http://mcp-openshift-server/sse" \
-  -e MCP_GITEA_URL="http://mcp-gitea-server/mcp" \
-  -e GITEA_OWNER="your-org" \
-  -e GITEA_REPO="your-repo" \
-  pipeline-agent
-----
-
-=== Kubernetes/OpenShift Deployment
-
-Use the provided Helm charts for production deployment:
-
-[source,bash]
-----
-# Deploy the AI agent
-helm install agent tenant/agent -n your-namespace
-
-# Deploy MCP servers
-helm install mcp-openshift tenant/mcp-openshift -n your-namespace
-helm install mcp-gitea tenant/mcp-gitea -n your-namespace
-----
+|Gitea
+|streamable-http
+|`docker.gitea.com/gitea-mcp-server:latest`
+|Issue management, repository operations, PR workflows
+|===
 
 == Configuration
 
-=== Environment Variables
+=== Agent Environment Variables
 
 [cols="2,3,1"]
 |===
@@ -194,121 +290,36 @@ helm install mcp-gitea tenant/mcp-gitea -n your-namespace
 |`8000`
 |===
 
-== API Endpoints
+== Local Development
 
-=== POST /report-failure
-
-Trigger the agent to analyze a failed pod and create an issue.
-
-**Request Body:**
-[source,json]
-----
-{
-  "namespace": "pipelines",
-  "pod_name": "build-xyz-abc123",
-  "container_name": "step-buildah"  // optional
-}
-----
-
-**Response:**
-[source,json]
-----
-{
-  "status": "success",
-  "result": "Issue created: https://gitea.example.com/org/repo/issues/42"
-}
-----
-
-=== GET /health
-
-Health check endpoint for Kubernetes probes.
-
-**Response:**
-[source,json]
-----
-{
-  "status": "healthy"
-}
-----
-
-== Tekton Integration
-
-Configure your Tekton pipeline to call the agent on failure:
-
-[source,yaml]
-----
-apiVersion: tekton.dev/v1beta1
-kind: Pipeline
-spec:
-  finally:
-    - name: report-failure
-      when:
-        - input: $(tasks.status)
-          operator: in
-          values: ["Failed"]
-      taskRef:
-        name: report-failure-task
----
-apiVersion: tekton.dev/v1beta1
-kind: Task
-metadata:
-  name: report-failure-task
-spec:
-  steps:
-    - name: report
-      image: curlimages/curl
-      script: |
-        failed_pod=$(oc get pods --field-selector="status.phase=Failed" \
-          --sort-by="status.startTime" | tail -n 1 | awk '{print $1}')
-
-        curl -X POST http://agent.agent-namespace.svc:8000/report-failure \
-          -H "Content-Type: application/json" \
-          -d "{\"namespace\":\"$(context.pipelineRun.namespace)\",\"pod_name\":\"${failed_pod}\"}"
-----
-
-== MCP Tool Flow
-
-The agent operates in an iterative loop:
-
-1. **Receive Failure Report** - Pipeline sends pod details to `/report-failure`
-2. **Build Prompt** - Agent creates a prompt with pod context and examples
-3. **LLM Analysis** - Model analyzes the situation and requests tools
-4. **Tool Execution** - Agent executes requested tools via MCP servers:
-** `pods_log` - Retrieve pod logs from OpenShift
-** `create_issue` - Create issue in Gitea
-5. **Iterate** - Process continues until the model completes or max iterations reached
-6. **Return Result** - Agent returns the final result (usually issue URL)
-
-== Testing
-
-Run the test suite:
+=== Agent
 
 [source,bash]
 ----
 cd agent
-
-# Install test dependencies
 pip install -r requirements.txt
 
-# Run tests
-pytest tests/ -v
+export LITELLM_URL="http://your-litellm-endpoint"
+export LITELLM_API_KEY="your-api-key"
+export MCP_OPENSHIFT_URL="http://mcp-openshift-server/sse"
+export MCP_GITEA_URL="http://mcp-gitea-server/mcp"
 
-# Run with coverage
-pytest tests/ -v --cov=. --cov-report=term-missing
+python main.py
 ----
 
-Tests are also run during the container build process.
+=== Container Build
 
-== Dependencies
+[source,bash]
+----
+cd agent
+podman build -t pipeline-agent -f Containerfile .
+----
 
-* `fastapi>=0.104.0` - Web framework
-* `uvicorn>=0.24.0` - ASGI server
-* `litellm>=1.0.0` - LLM integration
-* `httpx>=0.25.0` - Async HTTP client
-* `pydantic>=2.0.0` - Data validation
-* `pytest>=7.4.0` - Testing framework
-* `pytest-asyncio>=0.21.0` - Async test support
+=== Testing
 
-== License
-
-See LICENSE file for details.
+[source,bash]
+----
+cd agent
+pip install -r requirements.txt
+pytest tests/ -v --cov=. --cov-report=term-missing
+----
