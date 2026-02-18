@@ -59,6 +59,12 @@ Key decisions:
 * **ToolHive Operator** installed cluster-wide -- MCP servers are deployed as `MCPServer` CRs per user.
 * **OCP Console Embed** patches IngressController CSP headers so the OpenShift console can be embedded in a Showroom iframe.
 
+=== Cluster Authentication
+
+The AgnosticD `config: namespace` framework sets `K8S_AUTH_HOST`, `K8S_AUTH_API_KEY`, and `K8S_AUTH_VERIFY_SSL` environment variables on every workload role via `apply: environment:`. This means workload roles using `kubernetes.core` modules work without a kubeconfig file -- the env vars provide cluster access directly.
+
+As a fallback (for e2e tests or environments outside the AgnosticD framework), the MCP user role also writes a kubeconfig to disk at the path specified by `KUBECONFIG` env var or `~/.kube/config`.
+
 === Tenant (User Provisioner)
 
 Per-user resources deployed on each lab order via the OCPSandbox API using `config: namespace`.
