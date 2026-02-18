@@ -69,7 +69,7 @@ mcp-gitops/
 │       ├── test_main.py
 │       └── test_mcp_client.py
 │
-└── helm/                       # Helm charts for Kubernetes deployment
+└── tenant/                     # Per-user Helm charts (deployed via ArgoCD)
     ├── agent/                  # AI agent Helm chart
     ├── librechat/              # LibreChat Helm chart
     ├── mcp-gitea/              # Gitea MCP server Helm chart
@@ -138,11 +138,11 @@ Use the provided Helm charts for production deployment:
 [source,bash]
 ----
 # Deploy the AI agent
-helm install agent helm/agent -n your-namespace
+helm install agent tenant/agent -n your-namespace
 
 # Deploy MCP servers
-helm install mcp-openshift helm/mcp-openshift -n your-namespace
-helm install mcp-gitea helm/mcp-gitea -n your-namespace
+helm install mcp-openshift tenant/mcp-openshift -n your-namespace
+helm install mcp-gitea tenant/mcp-gitea -n your-namespace
 ----
 
 == Configuration
