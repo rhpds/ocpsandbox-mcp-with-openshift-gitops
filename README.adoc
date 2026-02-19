@@ -20,11 +20,9 @@ This lab uses the **Infra / Tenant** pattern for OCP Sandbox deployments. Shared
   │ Cluster           │  │  │  Infra (Cluster Provisioner)         │   │
   │ Provisioner       │──┼─▶│                                      │   │
   │ (run once per     │  │  │  - Keycloak (RHBK + OAuth)           │   │
-  │  cluster, CI or   │  │  │                                      │   │
-  │  manual)          │  │  │                                      │   │
-  └───────────────────┘  │  │  - Gitea Operator                    │   │
-                         │  │  - OpenShift Pipelines (Tekton)       │   │
-                         │  │  - OpenShift GitOps (ArgoCD)          │   │
+  │  cluster, CI or   │  │  │  - Gitea Operator                    │   │
+  │  manual)          │  │  │  - OpenShift Pipelines (Tekton)       │   │
+  └───────────────────┘  │  │  - OpenShift GitOps (ArgoCD)          │   │
                          │  │  - ToolHive Operator                  │   │
                          │  │  - User Workload Monitoring            │   │
                          │  │  - CloudNativePG Operator              │   │
@@ -32,12 +30,21 @@ This lab uses the **Infra / Tenant** pattern for OCP Sandbox deployments. Shared
                          │  └──────────────────────────────────────┘   │
                          │                                             │
   ┌───────────────────┐  │  ┌──────────────────────────────────────┐   │
+  │ OCPSandbox API    │  │  │  Sandbox API (before workloads run)  │   │
+  │ (on each order)   │──┼─▶│                                      │   │
+  └───────────────────┘  │  │  - Creates Keycloak user              │   │
+                         │  │  - Creates per-user namespaces         │   │
+                         │  │    with quotas and limit ranges        │   │
+                         │  └──────────────────────────────────────┘   │
+                         │                                             │
+  ┌───────────────────┐  │  ┌──────────────────────────────────────┐   │
   │ User Provisioner  │  │  │  Tenant (Per-User Resources)         │   │
-  │ (on each order    │──┼─▶│                                      │   │
-  │  via Sandbox API) │  │  │  - ArgoCD AppProject                 │   │
-  └───────────────────┘  │  │  - LiteLLM Virtual Key               │   │
-                         │  │  - Per-user Gitea instance            │   │
-                         │  │  - MCP OpenShift Server (ToolHive)    │   │
+  │ (AgnosticD        │──┼─▶│                                      │   │
+  │  workloads, runs  │  │  │  - ArgoCD AppProject                 │   │
+  │  after sandbox    │  │  │  - Per-user Gitea instance (from op) │   │
+  │  API creates      │  │  │  - Gitea user + repos                │   │
+  │  namespaces)      │  │  │  - LiteLLM Virtual Key               │   │
+  └───────────────────┘  │  │  - MCP OpenShift Server (ToolHive)    │   │
                          │  │  - MCP Gitea Server (ToolHive)        │   │
                          │  │  - LibreChat (AI UI)                  │   │
                          │  │  - Pipeline Failure Agent             │   │
@@ -52,12 +59,20 @@ Shared infrastructure deployed once per cluster (manually or via CI). Managed vi
 https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift[rhpds.ocpsandbox_mcp_with_openshift]
 collection's `tests/e2e/cluster-provision.yml` playbook.
 
-Key decisions:
+The cluster provisioner installs **operators and shared prerequisites only**. It does NOT
+create any per-user resources. Per-user instances (Gitea CRs, MCP servers, etc.) are created
+by the user provisioner from these pre-installed operators.
+
+Key components:
 
 * **Keycloak (RHBK)** as OCP OAuth provider -- OCPSandbox API creates users dynamically when `keycloak: "yes"` is set on the cluster pool.
-* **Gitea Operator** installed cluster-wide -- each user gets their own Gitea instance via a `Gitea` CR.
-* **ToolHive Operator** installed cluster-wide -- MCP servers are deployed as `MCPServer` CRs per user.
-* **OCP Console Embed** patches IngressController CSP headers so the OpenShift console can be embedded in a Showroom iframe.
+* **Gitea Operator** installed cluster-wide -- user provisioner creates per-user `Gitea` CRs.
+* **ToolHive Operator** installed cluster-wide -- user provisioner deploys per-user `MCPServer` CRs.
+* **OpenShift Pipelines (Tekton)** -- shared pipeline infrastructure for agent builds.
+* **OpenShift GitOps (ArgoCD)** -- user provisioner creates per-user AppProjects and ApplicationSets.
+* **CloudNativePG Operator** -- available for per-user database instances.
+* **User Workload Monitoring** -- metrics collection for per-user workloads.
+* **OCP Console Embed** -- patches IngressController CSP headers for Showroom iframe embedding.
 
 === Cluster Authentication
 
@@ -69,31 +84,56 @@ As a fallback (for e2e tests or environments outside the AgnosticD framework), t
 
 Per-user resources deployed on each lab order via the OCPSandbox API using `config: namespace`.
 
-**This repository contains the Helm charts** for the tenant-level components. ArgoCD ApplicationSets
-(created by the `ocp4_workload_ocpsandbox_mcp_user` role) deploy these charts into per-user namespaces.
+The user provisioner is split across multiple roles, each handling a single concern:
 
-Each user gets isolated namespaces:
+[cols="2,3"]
+|===
+|Role |What it does
+
+|`argocd_user` (namespaced_workloads)
+|Creates ArgoCD AppProject scoped to the user
+
+|`gitea_instance` (namespaced_workloads)
+|Deploys per-user Gitea CR (operator creates the instance)
+
+|`gitea_user` (namespaced_workloads)
+|Creates Gitea user, migrates repos from GitHub
+
+|`litellm_virtual_keys` (rhpds collection)
+|Creates LiteMaaS virtual key for LLM API access
+
+|`mcp_user` (rhpds collection)
+|Creates Gitea API token, SCC, and ArgoCD ApplicationSets that deploy **this repo's Helm charts**
+
+|`showroom` (agnosticd collection)
+|Deploys lab guide UI
+|===
+
+**This repository contains the Helm charts** for the tenant-level components. ArgoCD ApplicationSets
+(created by the `mcp_user` role) deploy these charts into per-user namespaces.
+
+Each user gets isolated namespaces (created by OCPSandbox API):
 
 [cols="2,3"]
 |===
 |Namespace |Component
 
-|`mcp-openshift-{user}`
-|OpenShift MCP Server (via ToolHive MCPServer CR)
+|`agent-{guid}`
+|Pipeline Failure Agent (primary sandbox)
 
-|`mcp-gitea-{user}`
-|Gitea MCP Server (via ToolHive MCPServer CR)
-
-|`librechat-{user}`
+|`librechat-{guid}`
 |LibreChat AI UI + Meilisearch + MongoDB
 
-|`agent-{user}`
-|Pipeline Failure Agent
+|`mcp-openshift-{guid}`
+|OpenShift MCP Server (via ToolHive MCPServer CR)
 
-|`gitea-{user}`
-|Per-user Gitea instance (operator CR, not a Helm chart)
+|`mcp-gitea-{guid}`
+|Gitea MCP Server (via ToolHive MCPServer CR)
 
-|`showroom-{user}`
+|`gitea-{guid}`
+|Per-user Gitea instance (via Gitea operator CR)
+
+|`showroom-{guid}`
 |Showroom Lab Guide
 |===
 
@@ -101,30 +141,35 @@ Each user gets isolated namespaces:
 
 [source]
 ----
-User orders lab
+User orders lab via RHDP catalog
        │
        ▼
-OCPSandbox API
+OCPSandbox API (runs BEFORE workloads)
        │
+       ├── Selects cluster from pool (cloud_selector)
        ├── Creates Keycloak user (keycloak: "yes")
-       ├── Creates sandbox namespace with quota
+       │     → sandbox_openshift_user / sandbox_openshift_password
+       ├── Creates 6 namespaces with quotas:
+       │     agent, librechat, mcp-gitea, mcp-openshift, gitea, showroom
+       │     → Each exposed as {var}_namespace Ansible variable
        │
        ▼
-AgnosticD Workloads (config: namespace)
+AgnosticD Workloads (config: namespace, runs IN ORDER)
        │
        ├── 1. ArgoCD AppProject (per-user RBAC)
-       ├── 2. LiteLLM Virtual Key (LLM API access)
-       ├── 3. MCP User Role:
+       ├── 2. Gitea Instance (deploys Gitea CR → operator creates instance)
+       ├── 3. Gitea User (creates user + migrates repos from GitHub)
+       ├── 4. LiteLLM Virtual Key (LLM API access)
+       ├── 5. MCP User Role:
+       │      ├── Create Gitea API token
        │      ├── Discover cluster ingress domain
        │      ├── Write kubeconfig for downstream roles
-       │      ├── Deploy per-user Gitea (operator CR)
-       │      ├── Create Gitea user + migrate repos
-       │      ├── Create ArgoCD ApplicationSets ──────┐
-       │      └── Save user_info for Showroom          │
-       ├── 4. OCP Console Embed (idempotent)           │
-       └── 5. Showroom (lab guide UI)                  │
-                                                       │
-                                    ┌──────────────────┘
+       │      ├── Create SCC + ArgoCD ApplicationSets ─────┐
+       │      └── Save user_info for Showroom               │
+       ├── 6. OCP Console Embed (idempotent)                │
+       └── 7. Showroom (lab guide UI)                       │
+                                                            │
+                                    ┌───────────────────────┘
                                     ▼
                               ArgoCD syncs
                               Helm charts from
@@ -135,6 +180,17 @@ AgnosticD Workloads (config: namespace)
                     ▼               ▼               ▼
              mcp-openshift    mcp-gitea      librechat + agent
              (ToolHive)       (ToolHive)     (Helm charts)
+
+On destroy (REVERSE order):
+  7. Showroom removed
+  6. Console embed (no-op)
+  5. MCP User: deletes ApplicationSets + SCC
+  4. LiteLLM: deletes virtual key (external resource)
+  3. Gitea User: purges user via admin API
+  2. Gitea Instance: no-op (namespace deletion handles it)
+  1. ArgoCD: deletes AppProject
+  → Sandbox API deletes all namespaces (catch_all: false
+    ensures destroy job completes first)
 ----
 
 == Agent Architecture
@@ -218,7 +274,7 @@ The `tenant/` directory follows the https://github.com/rhpds/ci-template-gitops[
 |Ansible collection with `ocp4_workload_ocpsandbox_mcp_user` role + e2e tests + cluster provisioner
 
 |https://github.com/agnosticd/namespaced_workloads[agnosticd/namespaced_workloads]
-|Generic sandbox roles (`argocd_user`, `keycloak_user`, `gitea_user`)
+|Generic sandbox roles (`argocd_user`, `gitea_instance`, `gitea_user`, `keycloak_user`)
 
 |https://github.com/rhpds/rhpds.litellm_virtual_keys[rhpds.litellm_virtual_keys]
 |LiteLLM virtual key provisioning
