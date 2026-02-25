@@ -12,12 +12,16 @@ spec:
   podTemplateSpec:
     spec:
       containers:
-      - args:
+      - name: mcp
+        args:
         - --port
         - "8000"
         command:
         - ./kubernetes-mcp-server
-        name: mcp
-  resources:
-    limits: {}
-    requests: {}
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
