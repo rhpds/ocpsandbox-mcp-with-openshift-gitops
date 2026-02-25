@@ -14,6 +14,13 @@ spec:
       containers:
       - name: kubectl-runner
         image: {{ .Values.images.cliTool }}
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
         command:
         - /bin/sh
         - -c
