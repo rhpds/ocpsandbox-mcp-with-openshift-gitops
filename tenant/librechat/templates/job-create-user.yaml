@@ -77,6 +77,13 @@ spec:
               name: librechat-credentials-env
               key: DEFAULT_USER_NAME
               optional: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
         securityContext:
           runAsNonRoot: false
 {{- end }}
