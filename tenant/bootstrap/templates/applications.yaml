@@ -5,10 +5,11 @@
 {{- $litemaas := .Values.litemaas | default dict }}
 
 {{- $apps := list
-  (dict "name" "agent"         "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/agent"         "namespace" (printf "agent-%s"         $username))
-  (dict "name" "librechat"     "repoURL" "https://github.com/danny-avila/LibreChat" "revision" "v0.8.1" "chart" "helm/librechat" "namespace" (printf "librechat-%s" $username))
-  (dict "name" "mcp-gitea"     "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/mcp-gitea"   "namespace" (printf "mcp-gitea-%s"     $username))
-  (dict "name" "mcp-openshift" "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/mcp-openshift" "namespace" (printf "mcp-openshift-%s" $username))
+  (dict "name" "agent"            "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/agent"          "namespace" (printf "agent-%s"         $username))
+  (dict "name" "librechat"        "repoURL" "https://github.com/danny-avila/LibreChat" "revision" "v0.8.1" "chart" "helm/librechat" "namespace" (printf "librechat-%s" $username))
+  (dict "name" "librechat-config" "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/librechat"      "namespace" (printf "librechat-%s"     $username))
+  (dict "name" "mcp-gitea"        "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/mcp-gitea"      "namespace" (printf "mcp-gitea-%s"     $username))
+  (dict "name" "mcp-openshift"    "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/mcp-openshift"  "namespace" (printf "mcp-openshift-%s" $username))
 }}
 
 {{- range $app := $apps }}
