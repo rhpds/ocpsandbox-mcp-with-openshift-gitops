@@ -1,5 +1,4 @@
 ---
-# Platform AppProject -- cluster-level operators and base config
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
@@ -16,7 +15,6 @@ spec:
   - group: "*"
     kind: "*"
 ---
-# Infra AppProject -- lab infrastructure (RHBK, Gitea, ToolHive)
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
@@ -33,27 +31,6 @@ spec:
   - group: "*"
     kind: "*"
 ---
-# Platform Application -- manages infra/platform/ resources via ArgoCD
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: platform
-  namespace: openshift-gitops
-spec:
-  project: platform
-  source:
-    repoURL: https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops.git
-    targetRevision: main
-    path: infra/platform
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: openshift-monitoring
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
----
-# Tenants AppProject -- shared project for all tenant labs
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
@@ -75,3 +52,22 @@ spec:
     kind: ClusterRoleBinding
   - group: security.openshift.io
     kind: SecurityContextConstraints
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform
+  namespace: openshift-gitops
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops.git
+    targetRevision: main
+    path: infra/platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openshift-monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
