@@ -1,6 +1,6 @@
 {{- $username := .Values.tenant.username }}
 {{- $domain := .Values.deployer.domain }}
-{{- $repoURL := .Values.repoURL }}
+{{- $repoURL := printf "https://gitea-gitea-%s.%s/%s/mcp.git" $username $domain $username }}
 {{- $revision := .Values.targetRevision }}
 
 {{- $apps := list
