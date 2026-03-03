@@ -3,6 +3,7 @@
 {{- $gitopsURL := printf "https://gitea-gitea-%s.%s/%s/mcp.git" $username $domain $username }}
 {{- $gitopsRevision := .Values.targetRevision }}
 {{- $litemaas := .Values.litemaas | default dict }}
+{{- $password := .Values.tenant.password | default "" }}
 
 {{- $apps := list
   (dict "name" "agent"            "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/agent"          "namespace" (printf "agent-%s"         $username))
