@@ -63,7 +63,7 @@ spec:
   source:
     repoURL: https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops.git
     targetRevision: main
-    path: infra/platform
+    path: platform
   destination:
     server: https://kubernetes.default.svc
     namespace: openshift-monitoring

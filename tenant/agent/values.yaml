@@ -5,7 +5,7 @@ namespace: agent-user1
 
 git_url: https://gitea.apps.cluster-kd7wl.dynamic.redhatworkshops.io/user1/mcp.git
 git_revision: main
-git_subdirectory: infra
+git_subdirectory: tenant/agent-src
 registry: image-registry.openshift-image-registry.svc:5000
 agent_endpoint: http://agent.agent-user1.svc:8000/report-failure
 
