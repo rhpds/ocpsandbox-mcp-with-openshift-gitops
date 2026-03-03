@@ -38,6 +38,18 @@ spec:
           url: {{ $litemaas.url | default "" | quote }}
           key: {{ $litemaas.key | default "" | quote }}
           models: {{ $litemaas.models | default "" | quote }}
+        default_user:
+          setup: true
+          name: {{ $username | quote }}
+          email: "{{ $username }}@example.com"
+          password: {{ $password | quote }}
+        secrets:
+          creds_key: {{ sha256sum $username | quote }}
+          jwt_secret: {{ sha256sum (printf "%s-jwt" $username) | quote }}
+          jwt_refresh_secret: {{ sha256sum (printf "%s-refresh" $username) | quote }}
+          meili_master_key: {{ sha256sum (printf "%s-meili" $username) | trunc 16 | quote }}
+          custom_model_url: {{ $litemaas.url | default "tbd" | quote }}
+          custom_model_key: {{ $litemaas.key | default "" | quote }}
         fullnameOverride: librechat
         podSecurityContext:
           fsGroup: null
