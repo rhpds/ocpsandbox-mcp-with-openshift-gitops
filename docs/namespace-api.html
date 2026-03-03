@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Full Namespace API Pattern — Sandbox API Docs</title>
+  <style>
+  :root {
+    --red: #cc0000;
+    --red-dark: #990000;
+    --blue: #0066cc;
+    --blue-light: #e8f0fb;
+    --orange: #f57c00;
+    --orange-light: #fff3e0;
+    --green: #2e7d32;
+    --green-light: #e8f5e9;
+    --grey-light: #f5f5f5;
+    --grey-border: #ddd;
+    --code-bg: #1e1e2e;
+    --code-fg: #cdd6f4;
+    --code-kw: #cba6f7;
+    --code-str: #a6e3a1;
+    --code-comment: #6c7086;
+    --code-num: #fab387;
+    --code-key: #89b4fa;
+    --code-val: #f38ba8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.7; color: #222; background: #fff; max-width: 1100px; margin: 0 auto; padding: 2rem 2.5rem 4rem; }
+  h1 { font-size: 2rem; color: var(--red); border-bottom: 3px solid var(--red); padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
+  h2 { font-size: 1.5rem; color: var(--red); border-left: 5px solid var(--red); padding-left: 0.75rem; margin: 2.5rem 0 1rem; }
+  h3 { font-size: 1.15rem; color: #333; margin: 1.5rem 0 0.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.25rem; }
+  h4 { font-size: 1rem; color: #555; margin: 1rem 0 0.4rem; font-style: italic; }
+  p { margin: 0.6rem 0; }
+  ul, ol { margin: 0.5rem 0 0.5rem 1.5rem; }
+  li { margin: 0.25rem 0; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .subtitle { color: #666; font-size: 0.95rem; margin-bottom: 2rem; }
+  .toc { background: #fafafa; border: 1px solid var(--grey-border); border-radius: 6px; padding: 1.25rem 1.5rem; margin: 1.5rem 0 2.5rem; }
+  .toc h2 { font-size: 1rem; margin: 0 0 0.75rem; border: none; padding: 0; color: #444; text-transform: uppercase; letter-spacing: 0.05em; }
+  .toc ol { margin-left: 1.25rem; }
+  .toc li { margin: 0.2rem 0; font-size: 0.93rem; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.9rem; }
+  thead tr { background: var(--red); color: #fff; }
+  thead th { padding: 0.6rem 0.9rem; text-align: left; font-weight: 600; }
+  tbody tr:nth-child(even) { background: #fafafa; }
+  tbody tr:hover { background: #f0f0f0; }
+  td { padding: 0.55rem 0.9rem; border-bottom: 1px solid #eee; vertical-align: top; }
+  td code, th code { background: #eee; color: #c00; padding: 0.1em 0.35em; border-radius: 3px; font-size: 0.88em; }
+  pre { background: var(--code-bg); color: var(--code-fg); border-radius: 8px; padding: 1.25rem 1.4rem; overflow-x: auto; margin: 0.75rem 0 1.25rem; font-size: 0.85rem; line-height: 1.6; border: 1px solid #333; }
+  code { font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace; }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  .kw  { color: var(--code-kw); }
+  .str { color: var(--code-str); }
+  .cmt { color: var(--code-comment); font-style: italic; }
+  .num { color: var(--code-num); }
+  .key { color: var(--code-key); }
+  .val { color: #f9e2af; }
+  .callout { border-radius: 6px; padding: 0.9rem 1.2rem; margin: 1rem 0; border-left: 5px solid; font-size: 0.93rem; }
+  .callout strong { display: block; margin-bottom: 0.25rem; font-size: 1rem; }
+  .callout-blue { background: var(--blue-light); border-color: var(--blue); color: #003a80; }
+  .callout-orange { background: var(--orange-light); border-color: var(--orange); color: #7a3e00; }
+  .callout-green { background: var(--green-light); border-color: var(--green); color: #1b5e20; }
+  .callout-grey { background: var(--grey-light); border-color: #999; color: #444; }
+  .badge { display: inline-block; background: var(--red); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 0.15em 0.55em; border-radius: 3px; margin-left: 0.5rem; vertical-align: middle; text-transform: uppercase; letter-spacing: 0.05em; }
+  .badge-green { background: var(--green); }
+  .badge-blue { background: var(--blue); }
+  .svg-wrap { overflow-x: auto; margin: 1rem 0 1.5rem; }
+  svg { max-width: 100%; height: auto; display: block; }
+  hr { border: none; border-top: 1px solid #e0e0e0; margin: 2rem 0; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin: 1rem 0; }
+  .col-box { background: #fafafa; border: 1px solid var(--grey-border); border-radius: 6px; padding: 1rem 1.2rem; }
+  .col-box h4 { margin-top: 0; font-style: normal; font-weight: 700; color: var(--red); }
+  .nav-bar { background: #1a1a2e; color: #aaa; padding: 0.7rem 1.2rem; border-radius: 6px; margin-bottom: 2rem; font-size: 0.88rem; display: flex; gap: 1.5rem; flex-wrap: wrap; }
+  .nav-bar a { color: #7eb8f7; }
+  .nav-bar a:hover { color: #fff; }
+  .nav-bar .active { color: #fff; font-weight: 600; }
+  .pattern-card { border: 2px solid var(--grey-border); border-radius: 8px; padding: 1.25rem 1.5rem; margin: 1rem 0; }
+  .pattern-card.blue { border-color: #2563eb; background: #eff6ff; }
+  .pattern-card.orange { border-color: #ea580c; background: #fff7ed; }
+  .pattern-card h3 { border: none; margin-top: 0; }
+  .pattern-card.blue h3 { color: #1e3a8a; }
+  .pattern-card.orange h3 { color: #7c2d12; }
+  .section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #888; margin-bottom: 0.2rem; }
+  </style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <span style="color:#fff;font-weight:700;">Sandbox API Docs</span>
+  <a href="index.html">Overview</a>
+  <a href="scheduler-only.html">Summit 2026 / Scheduler-Only</a>
+  <span class="active">Full Namespace API</span>
+</nav>
+
+<h1>Full Namespace API Pattern</h1>
+<p class="subtitle">Complete developer reference — Sandbox API manages namespaces and OCP users per order</p>
+
+<div class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#how-it-works">How it works</a></li>
+    <li><a href="#when-to-use">When to use this pattern</a></li>
+    <li><a href="#full-common-yaml">Complete AgV common.yaml — annotated</a></li>
+    <li><a href="#variables-reference">All Sandbox API variables — full reference</a></li>
+    <li><a href="#sandbox-vs-you">What Sandbox API handles vs. what you handle</a></li>
+    <li><a href="#comparison">Comparison with Scheduler-Only — when to use which</a></li>
+    <li><a href="#quota-destroy">Quota and destroy notes</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="how-it-works">How It Works</h2>
+
+<p>
+  In the Full Namespace API pattern, Sandbox API takes on more responsibility than in the Scheduler-Only pattern. For every order, Sandbox API:
+</p>
+
+<ol>
+  <li>Selects a cluster from the pool (same as Scheduler-Only)</li>
+  <li><strong>Creates one OCP namespace per entry in your <code>sandboxes:</code> list</strong> — the namespace name is generated from the catalog name, the entry suffix, and the order GUID</li>
+  <li><strong>Creates an OCP local user account</strong> (<code>sandbox_username</code>) with a generated password (<code>sandbox_password</code>)</li>
+  <li>Grants the user edit access to the primary namespace</li>
+  <li>Applies resource quota to each namespace based on your AgV quota variables</li>
+  <li>Injects all the sandbox variables (namespace names, user credentials, cluster URLs, SA token) into the AgnosticD run</li>
+  <li>On destroy: deletes the namespaces (and all in-namespace resources) and the OCP user account</li>
+</ol>
+
+<p>
+  Your Ansible roles then deploy lab content directly into the ready-made namespaces. You do not need a <code>ocp4_workload_tenant_namespace</code> role — that work has already been done.
+</p>
+
+<div class="svg-wrap">
+<svg viewBox="0 0 860 260" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <rect width="860" height="260" fill="#fafafa" rx="8"/>
+
+  <!-- Sandbox API box -->
+  <rect x="20" y="20" width="320" height="220" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="180" y="48" text-anchor="middle" font-size="13" font-weight="700" fill="#1e3a8a">SANDBOX API</text>
+  <text x="180" y="65" text-anchor="middle" font-size="10" fill="#2563eb">Runs per ORDER — does more in this pattern</text>
+  <rect x="40" y="80" width="280" height="26" rx="4" fill="#bfdbfe"/>
+  <text x="180" y="98" text-anchor="middle" font-size="11" fill="#1e3a8a">Schedule cluster from pool</text>
+  <rect x="40" y="114" width="280" height="26" rx="4" fill="#bfdbfe"/>
+  <text x="180" y="132" text-anchor="middle" font-size="11" fill="#1e3a8a">Create namespace(s) per sandboxes: entry</text>
+  <rect x="40" y="148" width="280" height="26" rx="4" fill="#bfdbfe"/>
+  <text x="180" y="166" text-anchor="middle" font-size="11" fill="#1e3a8a">Create OCP user + grant namespace access</text>
+  <rect x="40" y="182" width="280" height="26" rx="4" fill="#bfdbfe"/>
+  <text x="180" y="200" text-anchor="middle" font-size="11" fill="#1e3a8a">Apply ResourceQuota + inject all vars</text>
+  <text x="180" y="230" text-anchor="middle" font-size="10" fill="#2563eb">On destroy: deletes namespaces + OCP user</text>
+
+  <!-- Arrow -->
+  <line x1="344" y1="130" x2="376" y2="130" stroke="#555" stroke-width="2" marker-end="url(#arr2)"/>
+  <defs>
+    <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <!-- AgnosticD roles box -->
+  <rect x="380" y="20" width="460" height="220" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="610" y="48" text-anchor="middle" font-size="13" font-weight="700" fill="#1b5e20">AGNOSTICD ROLES</text>
+  <text x="610" y="65" text-anchor="middle" font-size="10" fill="#2e7d32">Configured via AgV common.yaml</text>
+
+  <rect x="400" y="80" width="420" height="26" rx="4" fill="#a5d6a7"/>
+  <text x="610" y="98" text-anchor="middle" font-size="11" fill="#1b5e20">Namespaces already exist — no tenant_namespace role needed</text>
+  <rect x="400" y="114" width="420" height="26" rx="4" fill="#a5d6a7"/>
+  <text x="610" y="132" text-anchor="middle" font-size="11" fill="#1b5e20">OCP user already exists — use sandbox_username / sandbox_password</text>
+  <rect x="400" y="148" width="420" height="26" rx="4" fill="#a5d6a7"/>
+  <text x="610" y="166" text-anchor="middle" font-size="11" fill="#1b5e20">Your roles: deploy lab content into sandbox namespaces</text>
+  <rect x="400" y="182" width="420" height="26" rx="4" fill="#a5d6a7"/>
+  <text x="610" y="200" text-anchor="middle" font-size="11" fill="#1b5e20">Showroom (optional): use sandbox vars for tab URLs</text>
+  <text x="610" y="230" text-anchor="middle" font-size="10" fill="#2e7d32">Only destroy non-namespace resources in remove_workloads</text>
+</svg>
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="when-to-use">When to Use This Pattern</h2>
+
+<p>Choose the Full Namespace API pattern when your lab meets most of these criteria:</p>
+
+<div class="two-col">
+  <div class="col-box">
+    <h4>Good fit</h4>
+    <ul>
+      <li>Each order gets its own isolated namespace(s)</li>
+      <li>You want Sandbox API to own namespace and user lifecycle</li>
+      <li>Your lab deploys into namespaces (not cluster-wide resources)</li>
+      <li>No shared cluster services required (no dedicated Keycloak/Gitea instance)</li>
+      <li>OCP local user authentication is sufficient (no SSO required)</li>
+      <li>You prefer simpler AgV configuration with fewer roles</li>
+      <li>Single-team or single-namespace lab topology</li>
+      <li>Short or medium duration labs where cluster lifecycle is straightforward</li>
+    </ul>
+  </div>
+  <div class="col-box">
+    <h4>Poor fit — use Scheduler-Only instead</h4>
+    <ul>
+      <li>Multiple tenants sharing one cluster with complex isolation requirements</li>
+      <li>Need Keycloak/RHBK SSO (not OCP local user)</li>
+      <li>Need per-tenant Gitea org and repo mirroring</li>
+      <li>Need ArgoCD GitOps managing tenant workloads</li>
+      <li>Need LiteMaaS AI API keys per tenant</li>
+      <li>Need 5+ namespaces per tenant with custom naming</li>
+      <li>Cluster-wide resources that must be managed per-tenant</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout callout-green">
+  <strong>Simpler operation, less flexibility</strong>
+  The Full Namespace API pattern requires fewer Ansible roles and less AgV configuration. The tradeoff is that you get what Sandbox API creates — OCP local users, standard namespace names, and basic quota. You cannot customize SSO, namespace topology, or service topology at the cluster level.
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="full-common-yaml">Complete AgV common.yaml — Annotated</h2>
+
+<p>
+  The following is a complete, production-ready <code>common.yaml</code> for the Full Namespace API pattern. It shows a two-namespace setup (primary user namespace + secondary tools namespace) with Showroom. Adapt the role names and variables for your specific catalog item.
+</p>
+
+<div class="callout callout-grey">
+  <strong>Namespace naming convention</strong>
+  Namespace names are generated as <code>&lt;catalog-item-name&gt;-&lt;namespace_suffix&gt;-&lt;guid&gt;</code>. The catalog item name comes from the AgV catalog directory name. For example, if your catalog item is <code>mylab</code> and the suffix is <code>user</code>, the namespace will be <code>mylab-user-abc12</code>.
+</div>
+
+<pre><code><span class="cmt">---</span>
+<span class="cmt"># ============================================================</span>
+<span class="cmt"># AgnosticV — common.yaml</span>
+<span class="cmt"># Pattern: Full Namespace API</span>
+<span class="cmt"># The Sandbox API creates namespaces AND OpenShift users.</span>
+<span class="cmt"># Simpler for labs that deploy into sandbox-managed namespaces.</span>
+<span class="cmt"># ============================================================</span>
+
+<span class="cmt"># ── 1. SANDBOX ENTRIES ───────────────────────────────────────</span>
+<span class="cmt"># One entry per namespace you need.</span>
+<span class="cmt"># namespace_suffix determines the namespace name: &lt;catalog&gt;-&lt;suffix&gt;-&lt;guid&gt;</span>
+<span class="cmt"># Example with catalog name "mylab":</span>
+<span class="cmt">#   mylab-user-abc12   ← primary namespace (sandbox_openshift_namespace)</span>
+<span class="cmt">#   mylab-tools-abc12  ← secondary namespace</span>
+<span class="key">sandboxes</span>:
+  - <span class="key">name</span>: <span class="val">user</span>         <span class="cmt"># Primary namespace — vars prefixed with sandbox_openshift_*</span>
+    <span class="key">namespace_suffix</span>: <span class="val">user</span>
+  - <span class="key">name</span>: <span class="val">tools</span>        <span class="cmt"># Additional namespace — vars prefixed with sandbox_openshift_tools_*</span>
+    <span class="key">namespace_suffix</span>: <span class="val">tools</span>
+
+<span class="cmt"># Sandbox API automatically creates and provides:</span>
+<span class="cmt">#   sandbox_openshift_namespace        = "mylab-user-&lt;guid&gt;"</span>
+<span class="cmt">#   sandbox_openshift_api_url          = "https://api.cluster-xyz.example.com:6443"</span>
+<span class="cmt">#   sandbox_openshift_ingress_domain   = "apps.cluster-xyz.example.com"</span>
+<span class="cmt">#   sandbox_openshift_console_url      = "https://console-openshift-console..."</span>
+<span class="cmt">#   cluster_admin_agnosticd_sa_token   = "&lt;SA JWT token — never log or commit this&gt;"</span>
+<span class="cmt">#   sandbox_username                   = "user-&lt;guid&gt;"    ← OCP user created by sandbox API</span>
+<span class="cmt">#   sandbox_password                   = "&lt;password&gt;"      ← from RHDP vault</span>
+<span class="cmt">#   sandbox_openshift_tools_namespace  = "mylab-tools-&lt;guid&gt;"  ← second namespace</span>
+
+<span class="cmt"># ── 2. WORKLOAD ORDER ────────────────────────────────────────</span>
+<span class="cmt"># Sandbox API has already created the namespaces and OCP user.</span>
+<span class="cmt"># Your roles just deploy into them.</span>
+<span class="key">workloads</span>:
+  - <span class="val">my_collection.ocp4_workload_my_lab_setup</span>    <span class="cmt"># Deploy your lab resources</span>
+  - <span class="val">agnosticd.showroom.ocp4_workload_showroom</span>    <span class="cmt"># Showroom tab UI (optional)</span>
+
+<span class="cmt"># ── 3. ROLE CONFIGURATION ────────────────────────────────────</span>
+<span class="cmt"># Use the sandbox-provided variables directly.</span>
+<span class="cmt"># No need for ocp4_workload_tenant_* roles — sandbox API did that work.</span>
+<span class="key">my_lab_setup_namespace</span>: <span class="str">"{{ sandbox_openshift_namespace }}"</span>
+<span class="key">my_lab_setup_username</span>: <span class="str">"{{ sandbox_username }}"</span>
+<span class="key">my_lab_setup_password</span>: <span class="str">"{{ sandbox_password }}"</span>
+<span class="key">my_lab_setup_api_url</span>: <span class="str">"{{ sandbox_openshift_api_url }}"</span>
+<span class="key">my_lab_setup_ingress_domain</span>: <span class="str">"{{ sandbox_openshift_ingress_domain }}"</span>
+
+<span class="cmt"># Secondary namespace (if you declared it in sandboxes above)</span>
+<span class="key">my_lab_setup_tools_namespace</span>: <span class="str">"{{ sandbox_openshift_tools_namespace }}"</span>
+
+<span class="cmt"># ── 4. QUOTA ─────────────────────────────────────────────────</span>
+<span class="cmt"># Sandbox API applies quota to the namespace it creates.</span>
+<span class="cmt"># Set these vars to control resource limits for this catalog item.</span>
+<span class="key">quota_requests_cpu</span>: <span class="str">"4"</span>
+<span class="key">quota_requests_memory</span>: <span class="val">8Gi</span>
+<span class="key">quota_limits_cpu</span>: <span class="str">"8"</span>
+<span class="key">quota_limits_memory</span>: <span class="val">16Gi</span>
+<span class="key">quota_pods</span>: <span class="str">"50"</span>
+
+<span class="cmt"># ── 5. SHOWROOM ──────────────────────────────────────────────</span>
+<span class="cmt"># Use sandbox-provided vars to build the tab URLs.</span>
+<span class="key">showroom_git_repo</span>: <span class="str">"https://github.com/myorg/my-lab-showroom.git"</span>
+<span class="key">showroom_git_repo_revision</span>: <span class="val">main</span>
+<span class="key">showroom_user_data</span>:
+  <span class="key">username</span>: <span class="str">"{{ sandbox_username }}"</span>
+  <span class="key">password</span>: <span class="str">"{{ sandbox_password }}"</span>
+  <span class="key">console_url</span>: <span class="str">"{{ sandbox_openshift_console_url }}"</span>
+  <span class="key">namespace</span>: <span class="str">"{{ sandbox_openshift_namespace }}"</span>
+  <span class="key">app_url</span>: <span class="str">"https://myapp-{{ sandbox_openshift_namespace }}.{{ sandbox_openshift_ingress_domain }}"</span>
+
+<span class="cmt"># ── 6. DESTROY ORDER ─────────────────────────────────────────</span>
+<span class="cmt"># Sandbox API automatically deletes the namespaces and OCP user.</span>
+<span class="cmt"># Only destroy what you created that is NOT inside a namespace.</span>
+<span class="cmt"># (In-namespace resources are auto-deleted when the namespace is deleted.)</span>
+<span class="key">remove_workloads</span>:
+  - <span class="val">agnosticd.showroom.ocp4_workload_showroom</span>
+  - <span class="val">my_collection.ocp4_workload_my_lab_setup</span>
+<span class="cmt"># Note: sandbox API deletes the namespaces — no tenant_namespace role needed.</span>
+</code></pre>
+
+<h3>Section-by-section breakdown</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Section</th>
+      <th>Key variable(s)</th>
+      <th>What it does / Why it matters</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>1. sandboxes</strong></td>
+      <td><code>sandboxes[].name</code><br><code>sandboxes[].namespace_suffix</code></td>
+      <td>Each entry causes Sandbox API to create one namespace. The <code>name</code> field is used to derive the variable prefix for that namespace (e.g., <code>name: tools</code> → <code>sandbox_openshift_tools_namespace</code>). The first entry's namespace is always <code>sandbox_openshift_namespace</code> (no name prefix). You can have 1–5 entries depending on your lab topology.</td>
+    </tr>
+    <tr>
+      <td><strong>2. workloads</strong></td>
+      <td><code>workloads:</code></td>
+      <td>Only your lab-specific roles and Showroom. You do not need <code>ocp4_workload_tenant_namespace</code>, <code>ocp4_workload_tenant_keycloak_user</code>, or <code>ocp4_workload_tenant_gitea</code> — Sandbox API handled those concerns.</td>
+    </tr>
+    <tr>
+      <td><strong>3. Role configuration</strong></td>
+      <td><code>my_lab_setup_*</code></td>
+      <td>Map sandbox-provided variables to your role's expected variable names. Your role should define what variable names it expects — this section maps sandbox vars to those names. Keeps your role reusable across different provisioning patterns.</td>
+    </tr>
+    <tr>
+      <td><strong>4. Quota</strong></td>
+      <td><code>quota_requests_cpu</code><br><code>quota_requests_memory</code><br><code>quota_limits_cpu</code><br><code>quota_limits_memory</code><br><code>quota_pods</code></td>
+      <td>Sandbox API reads these standard quota vars and applies a <code>ResourceQuota</code> to each namespace it creates. Set these conservatively — over-allocation wastes cluster capacity and can prevent other orders from being scheduled.</td>
+    </tr>
+    <tr>
+      <td><strong>5. Showroom</strong></td>
+      <td><code>showroom_user_data</code></td>
+      <td>Pass sandbox-provided values into Showroom tab configuration. The <code>username</code>, <code>password</code>, and <code>console_url</code> are injected directly from sandbox vars — no derivation needed.</td>
+    </tr>
+    <tr>
+      <td><strong>6. remove_workloads</strong></td>
+      <td><code>remove_workloads:</code></td>
+      <td>Only list roles that created resources outside of namespaces, or that need explicit cleanup before namespace deletion. Sandbox API automatically deletes the namespaces and OCP user — you do not need to handle those. Keep this list short.</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="variables-reference">All Sandbox API Variables — Full Reference</h2>
+
+<h3>Primary namespace variables (always provided)</h3>
+<p>These variables are always injected when you have at least one sandbox entry with a <code>namespace_suffix</code>. They correspond to the first (primary) sandbox entry.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Example value</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>sandbox_openshift_namespace</code></td>
+      <td><code>mylab-user-abc12</code></td>
+      <td>The primary namespace created by Sandbox API. Format: <code>&lt;catalog-name&gt;-&lt;suffix&gt;-&lt;guid&gt;</code>. This is the namespace your main lab resources should be deployed into.</td>
+    </tr>
+    <tr>
+      <td><code>sandbox_openshift_api_url</code></td>
+      <td><code>https://api.cluster-abc12.example.com:6443</code></td>
+      <td>The OpenShift cluster API endpoint. Used by <code>k8s</code> Ansible modules and <code>oc</code> CLI. Same value for all sandbox entries in a given order (they all land on the same cluster).</td>
+    </tr>
+    <tr>
+      <td><code>sandbox_openshift_ingress_domain</code></td>
+      <td><code>apps.cluster-abc12.example.com</code></td>
+      <td>The wildcard ingress domain for the cluster. Use this to construct Route hostnames and application URLs. E.g., <code>myapp-{{ sandbox_openshift_namespace }}.{{ sandbox_openshift_ingress_domain }}</code>.</td>
+    </tr>
+    <tr>
+      <td><code>sandbox_openshift_console_url</code></td>
+      <td><code>https://console-openshift-console.apps.cluster-abc12.example.com</code></td>
+      <td>The full URL to the OpenShift web console. Pass this to Showroom <code>user_data</code> for lab attendees to access the console directly from a tab.</td>
+    </tr>
+    <tr>
+      <td><code>cluster_admin_agnosticd_sa_token</code></td>
+      <td><code>eyJhbGciOiJSUzI1NiIs...</code></td>
+      <td>A cluster-admin scoped SA token for AgnosticD. Used internally for all Kubernetes API calls. Never log this variable. Never reference it in your own role variables. Never commit it.</td>
+    </tr>
+    <tr>
+      <td><code>sandbox_username</code></td>
+      <td><code>user-abc12</code></td>
+      <td>The OCP local user account created by Sandbox API for this order. The user is granted edit access to the primary namespace. Provide this to the lab attendee as their login username.</td>
+    </tr>
+    <tr>
+      <td><code>sandbox_password</code></td>
+      <td><code>(generated, from RHDP vault)</code></td>
+      <td>The password for <code>sandbox_username</code>. Generated by RHDP's secret management system — never hardcode this. Pass it to Showroom <code>user_data</code> for display to the attendee.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Additional namespace variables (per extra sandbox entry)</h3>
+<p>
+  For every sandbox entry after the first (entries with a <code>name</code> other than the primary), Sandbox API provides a namespace variable prefixed with the entry's <code>name</code>.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>sandbox entry name</th>
+      <th>Variable provided</th>
+      <th>Example value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>tools</code></td>
+      <td><code>sandbox_openshift_tools_namespace</code></td>
+      <td><code>mylab-tools-abc12</code></td>
+    </tr>
+    <tr>
+      <td><code>db</code></td>
+      <td><code>sandbox_openshift_db_namespace</code></td>
+      <td><code>mylab-db-abc12</code></td>
+    </tr>
+    <tr>
+      <td><code>monitoring</code></td>
+      <td><code>sandbox_openshift_monitoring_namespace</code></td>
+      <td><code>mylab-monitoring-abc12</code></td>
+    </tr>
+    <tr>
+      <td><code>pipeline</code></td>
+      <td><code>sandbox_openshift_pipeline_namespace</code></td>
+      <td><code>mylab-pipeline-abc12</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-blue">
+  <strong>Variable naming pattern</strong>
+  The pattern is always: <code>sandbox_openshift_&lt;name&gt;_namespace</code> where <code>&lt;name&gt;</code> is the value of the <code>name:</code> key in your sandbox entry. The first entry's namespace uses the short form <code>sandbox_openshift_namespace</code> (no name infix).
+</div>
+
+<h3>The guid variable</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Example</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>guid</code></td>
+      <td><code>abc12</code></td>
+      <td>5-character unique identifier for this order. Injected by AgnosticD, not Sandbox API. It appears in all generated names: namespace names, username, etc. Use it when you need to derive unique names not already provided by sandbox vars.</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sandbox-vs-you">What Sandbox API Handles vs. What You Handle</h2>
+
+<div class="two-col">
+  <div class="col-box">
+    <h4>Sandbox API handles automatically</h4>
+    <ul>
+      <li>Namespace creation (one per sandbox entry)</li>
+      <li>Namespace naming (<code>&lt;catalog&gt;-&lt;suffix&gt;-&lt;guid&gt;</code>)</li>
+      <li>OCP local user creation (<code>sandbox_username</code>)</li>
+      <li>User password generation (<code>sandbox_password</code>)</li>
+      <li>Granting user edit access to the primary namespace</li>
+      <li>Applying ResourceQuota based on quota vars</li>
+      <li>Cluster-admin SA token creation and injection</li>
+      <li>Cluster URL and ingress domain injection</li>
+      <li>On destroy: namespace deletion (cascade deletes all in-namespace resources)</li>
+      <li>On destroy: OCP user account deletion</li>
+      <li>On destroy: SA token revocation</li>
+      <li>On destroy: cluster returned to pool</li>
+    </ul>
+  </div>
+  <div class="col-box">
+    <h4>You handle (via AgnosticD roles)</h4>
+    <ul>
+      <li>Deploying your lab application into the provided namespaces</li>
+      <li>Any cluster-scoped resources your lab needs (use sparingly)</li>
+      <li>Showroom tab UI configuration and deployment</li>
+      <li>Any resources that live outside the sandbox-provided namespaces</li>
+      <li>LiteMaaS virtual keys (if your lab uses AI APIs)</li>
+      <li>Any external service integrations (webhooks, external registries, etc.)</li>
+      <li>On destroy: cleaning up any resources you created outside the sandbox namespaces</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout callout-green">
+  <strong>In-namespace resources are automatically cleaned up</strong>
+  When Sandbox API deletes a namespace on destroy, all Kubernetes resources inside it (Deployments, Services, Routes, PVCs, Secrets, ConfigMaps, etc.) are deleted automatically by OpenShift. Your <code>remove_workloads</code> only needs to handle resources that exist <em>outside</em> those namespaces, or resources that require explicit API calls to external systems (like revoking an API key).
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="comparison">Comparison with Scheduler-Only — When to Use Which</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Dimension</th>
+      <th>Full Namespace API</th>
+      <th>Scheduler-Only</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Who creates namespaces?</td>
+      <td>Sandbox API (from <code>sandboxes:</code> entries)</td>
+      <td>Your role (<code>ocp4_workload_tenant_namespace</code>)</td>
+    </tr>
+    <tr>
+      <td>Who creates the OCP user?</td>
+      <td>Sandbox API automatically</td>
+      <td>Your role (Keycloak/RHBK or HTPasswd)</td>
+    </tr>
+    <tr>
+      <td>Authentication type</td>
+      <td>OCP local user (HTPasswd)</td>
+      <td>Keycloak/RHBK SSO (OIDC)</td>
+    </tr>
+    <tr>
+      <td>Namespace naming control</td>
+      <td>Limited — follows <code>&lt;catalog&gt;-&lt;suffix&gt;-&lt;guid&gt;</code> pattern</td>
+      <td>Full control — <code>&lt;username&gt;-&lt;suffix&gt;</code> from your vars</td>
+    </tr>
+    <tr>
+      <td>Max namespaces per order</td>
+      <td>Typically 1–5 (each needs a sandbox entry)</td>
+      <td>Unlimited (your role creates them all)</td>
+    </tr>
+    <tr>
+      <td>Shared services on cluster</td>
+      <td>Not required</td>
+      <td>Required (Keycloak, Gitea, ArgoCD pre-installed)</td>
+    </tr>
+    <tr>
+      <td>Cluster provisioner needed?</td>
+      <td>No — sandbox API handles cluster prep</td>
+      <td>Yes — separate one-time playbook per cluster</td>
+    </tr>
+    <tr>
+      <td>LiteMaaS support</td>
+      <td>Add manually if needed</td>
+      <td>Built into role list (<code>ocp4_workload_litellm_virtual_keys</code>)</td>
+    </tr>
+    <tr>
+      <td>ArgoCD / GitOps</td>
+      <td>Not built-in (add manually if needed)</td>
+      <td>Built-in (<code>ocp4_workload_gitops_bootstrap</code>)</td>
+    </tr>
+    <tr>
+      <td>Gitea per-tenant repo</td>
+      <td>Not built-in</td>
+      <td>Built-in (<code>ocp4_workload_tenant_gitea</code>)</td>
+    </tr>
+    <tr>
+      <td>AgV common.yaml complexity</td>
+      <td>Low — few roles, sandbox vars used directly</td>
+      <td>High — many roles, complex var dependencies</td>
+    </tr>
+    <tr>
+      <td>Destroy complexity</td>
+      <td>Low — sandbox API cleans up namespaces and user</td>
+      <td>Medium — each role must be reversed explicitly</td>
+    </tr>
+    <tr>
+      <td>Multi-tenant cluster packing</td>
+      <td>Not the primary use case</td>
+      <td>Primary use case — many tenants per cluster</td>
+    </tr>
+    <tr>
+      <td>Example catalog items</td>
+      <td>Simple operator labs, single-team workshops, API / pipeline demos</td>
+      <td>AI/MCP platform labs, Summit multi-tenant workshops</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-blue">
+  <strong>Decision rule of thumb</strong>
+  If your lab needs an OCP user to log into the console and deploy something into one or two namespaces, use Full Namespace API. If your lab needs SSO, per-tenant Gitea repos, ArgoCD, and LiteMaaS AI keys all wired together, use Scheduler-Only.
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="quota-destroy">Quota and Destroy Notes</h2>
+
+<h3>Quota configuration</h3>
+<p>
+  Sandbox API reads a standard set of quota variables and applies a <code>ResourceQuota</code> to each namespace it creates. Set these variables in your AgV <code>common.yaml</code> to control how much cluster capacity each order consumes.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Default (if unset)</th>
+      <th>Recommended range for typical labs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>quota_requests_cpu</code></td>
+      <td>2</td>
+      <td>"2" – "8" depending on workload</td>
+    </tr>
+    <tr>
+      <td><code>quota_requests_memory</code></td>
+      <td>4Gi</td>
+      <td>4Gi – 16Gi</td>
+    </tr>
+    <tr>
+      <td><code>quota_limits_cpu</code></td>
+      <td>4</td>
+      <td>Should be 2x requests</td>
+    </tr>
+    <tr>
+      <td><code>quota_limits_memory</code></td>
+      <td>8Gi</td>
+      <td>Should be 2x requests</td>
+    </tr>
+    <tr>
+      <td><code>quota_pods</code></td>
+      <td>25</td>
+      <td>"25" – "100"</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-orange">
+  <strong>Quota applies per namespace, per sandbox entry</strong>
+  If you have two sandbox entries (e.g., <code>user</code> and <code>tools</code>), the quota is applied independently to each namespace. An order with two namespace entries will consume up to 2x the declared quota from the cluster's total capacity. Size accordingly.
+</div>
+
+<h3>Destroy behavior</h3>
+<p>When an order is destroyed, the sequence is:</p>
+<ol>
+  <li><strong>AgnosticD runs <code>remove_workloads</code></strong> — your roles clean up external resources (e.g., revoke an API key, remove a webhook, delete a Showroom deployment)</li>
+  <li><strong>Sandbox API deletes all namespaces</strong> for this order — all in-namespace Kubernetes resources are cascade-deleted automatically by OpenShift</li>
+  <li><strong>Sandbox API deletes the OCP user account</strong> (<code>sandbox_username</code>)</li>
+  <li><strong>Sandbox API revokes the cluster-admin SA token</strong> used by AgnosticD</li>
+  <li><strong>Sandbox API returns the cluster to the pool</strong> (or schedules cluster retirement)</li>
+</ol>
+
+<div class="callout callout-green">
+  <strong>Keep remove_workloads short</strong>
+  Because Sandbox API handles namespace and user deletion, your <code>remove_workloads</code> list should only include roles that created resources outside the sandbox namespaces, or roles (like Showroom) that need an explicit API call to clean up. Do not replicate what Sandbox API already handles.
+</div>
+
+<div class="callout callout-orange">
+  <strong>PVC data is permanently lost on destroy</strong>
+  PersistentVolumeClaims inside sandbox namespaces are deleted with the namespace. There is no backup. If your lab requires data persistence across sessions or restarts, you must design for it explicitly (e.g., use an external object store, or document that data is ephemeral).
+</div>
+
+<h3>Important notes</h3>
+<ul>
+  <li><strong>Do not create cluster-scoped resources</strong> (ClusterRoles, ClusterRoleBindings, CRDs, etc.) unless absolutely necessary — they are not automatically cleaned up when the namespace is deleted and can accumulate across orders</li>
+  <li><strong>LimitRange</strong>: Sandbox API also applies a <code>LimitRange</code> with default container CPU/memory limits. This means containers without explicit resource requests will inherit these defaults. Design your workloads with this in mind.</li>
+  <li><strong>sandbox_password security</strong>: The sandbox password is managed by RHDP's vault system. Never log it, never store it in a ConfigMap or Secret that persists beyond the lab session, and never commit it to Git.</li>
+  <li><strong>cluster_admin_agnosticd_sa_token security</strong>: This token has full cluster-admin access. It is used exclusively by AgnosticD internally. Do not pass it to your role variables or use it in templates.</li>
+</ul>
+
+<hr>
+<p style="color:#888;font-size:0.85rem;">Red Hat Demo Platform (RHDP) &mdash; Internal developer reference &mdash; <a href="index.html">Back to overview</a> &mdash; <a href="scheduler-only.html">Scheduler-Only pattern</a> &mdash; <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops">GitHub</a></p>
+
+</body>
+</html>

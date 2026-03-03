@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scheduler-Only Pattern — Summit 2026 — Sandbox API Docs</title>
+  <style>
+  :root {
+    --red: #cc0000;
+    --red-dark: #990000;
+    --blue: #0066cc;
+    --blue-light: #e8f0fb;
+    --orange: #f57c00;
+    --orange-light: #fff3e0;
+    --green: #2e7d32;
+    --green-light: #e8f5e9;
+    --grey-light: #f5f5f5;
+    --grey-border: #ddd;
+    --code-bg: #1e1e2e;
+    --code-fg: #cdd6f4;
+    --code-kw: #cba6f7;
+    --code-str: #a6e3a1;
+    --code-comment: #6c7086;
+    --code-num: #fab387;
+    --code-key: #89b4fa;
+    --code-val: #f38ba8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.7; color: #222; background: #fff; max-width: 1100px; margin: 0 auto; padding: 2rem 2.5rem 4rem; }
+  h1 { font-size: 2rem; color: var(--red); border-bottom: 3px solid var(--red); padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
+  h2 { font-size: 1.5rem; color: var(--red); border-left: 5px solid var(--red); padding-left: 0.75rem; margin: 2.5rem 0 1rem; }
+  h3 { font-size: 1.15rem; color: #333; margin: 1.5rem 0 0.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.25rem; }
+  h4 { font-size: 1rem; color: #555; margin: 1rem 0 0.4rem; font-style: italic; }
+  p { margin: 0.6rem 0; }
+  ul, ol { margin: 0.5rem 0 0.5rem 1.5rem; }
+  li { margin: 0.25rem 0; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .subtitle { color: #666; font-size: 0.95rem; margin-bottom: 2rem; }
+  .toc { background: #fafafa; border: 1px solid var(--grey-border); border-radius: 6px; padding: 1.25rem 1.5rem; margin: 1.5rem 0 2.5rem; }
+  .toc h2 { font-size: 1rem; margin: 0 0 0.75rem; border: none; padding: 0; color: #444; text-transform: uppercase; letter-spacing: 0.05em; }
+  .toc ol { margin-left: 1.25rem; }
+  .toc li { margin: 0.2rem 0; font-size: 0.93rem; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.9rem; }
+  thead tr { background: var(--red); color: #fff; }
+  thead th { padding: 0.6rem 0.9rem; text-align: left; font-weight: 600; }
+  tbody tr:nth-child(even) { background: #fafafa; }
+  tbody tr:hover { background: #f0f0f0; }
+  td { padding: 0.55rem 0.9rem; border-bottom: 1px solid #eee; vertical-align: top; }
+  td code, th code { background: #eee; color: #c00; padding: 0.1em 0.35em; border-radius: 3px; font-size: 0.88em; }
+  pre { background: var(--code-bg); color: var(--code-fg); border-radius: 8px; padding: 1.25rem 1.4rem; overflow-x: auto; margin: 0.75rem 0 1.25rem; font-size: 0.85rem; line-height: 1.6; border: 1px solid #333; }
+  code { font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace; }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  .kw  { color: var(--code-kw); }
+  .str { color: var(--code-str); }
+  .cmt { color: var(--code-comment); font-style: italic; }
+  .num { color: var(--code-num); }
+  .key { color: var(--code-key); }
+  .val { color: #f9e2af; }
+  .callout { border-radius: 6px; padding: 0.9rem 1.2rem; margin: 1rem 0; border-left: 5px solid; font-size: 0.93rem; }
+  .callout strong { display: block; margin-bottom: 0.25rem; font-size: 1rem; }
+  .callout-blue { background: var(--blue-light); border-color: var(--blue); color: #003a80; }
+  .callout-orange { background: var(--orange-light); border-color: var(--orange); color: #7a3e00; }
+  .callout-green { background: var(--green-light); border-color: var(--green); color: #1b5e20; }
+  .callout-grey { background: var(--grey-light); border-color: #999; color: #444; }
+  .badge { display: inline-block; background: var(--red); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 0.15em 0.55em; border-radius: 3px; margin-left: 0.5rem; vertical-align: middle; text-transform: uppercase; letter-spacing: 0.05em; }
+  .badge-green { background: var(--green); }
+  .badge-blue { background: var(--blue); }
+  .svg-wrap { overflow-x: auto; margin: 1rem 0 1.5rem; }
+  svg { max-width: 100%; height: auto; display: block; }
+  hr { border: none; border-top: 1px solid #e0e0e0; margin: 2rem 0; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin: 1rem 0; }
+  .col-box { background: #fafafa; border: 1px solid var(--grey-border); border-radius: 6px; padding: 1rem 1.2rem; }
+  .col-box h4 { margin-top: 0; font-style: normal; font-weight: 700; color: var(--red); }
+  .nav-bar { background: #1a1a2e; color: #aaa; padding: 0.7rem 1.2rem; border-radius: 6px; margin-bottom: 2rem; font-size: 0.88rem; display: flex; gap: 1.5rem; flex-wrap: wrap; }
+  .nav-bar a { color: #7eb8f7; }
+  .nav-bar a:hover { color: #fff; }
+  .nav-bar .active { color: #fff; font-weight: 600; }
+  .pattern-card { border: 2px solid var(--grey-border); border-radius: 8px; padding: 1.25rem 1.5rem; margin: 1rem 0; }
+  .pattern-card.blue { border-color: #2563eb; background: #eff6ff; }
+  .pattern-card.orange { border-color: #ea580c; background: #fff7ed; }
+  .pattern-card h3 { border: none; margin-top: 0; }
+  .pattern-card.blue h3 { color: #1e3a8a; }
+  .pattern-card.orange h3 { color: #7c2d12; }
+  .section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #888; margin-bottom: 0.2rem; }
+  .section-num { display: inline-block; background: var(--red); color: #fff; border-radius: 50%; width: 1.6em; height: 1.6em; line-height: 1.6em; text-align: center; font-size: 0.85rem; font-weight: 700; margin-right: 0.5rem; }
+  </style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <span style="color:#fff;font-weight:700;">Sandbox API Docs</span>
+  <a href="index.html">Overview</a>
+  <span class="active">Summit 2026 / Scheduler-Only</span>
+  <a href="namespace-api.html">Full Namespace API</a>
+</nav>
+
+<h1>Scheduler-Only Pattern <span class="badge badge-blue">Summit 2026</span></h1>
+<p class="subtitle">Complete developer reference — AgnosticV common.yaml, role walkthrough, and destroy behavior</p>
+
+<div class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#how-it-works">How it works — three-layer architecture</a></li>
+    <li><a href="#sandbox-api-role">What Sandbox API does in this pattern</a></li>
+    <li><a href="#full-common-yaml">Complete AgV common.yaml — annotated</a></li>
+    <li><a href="#sandbox-variables">Variables you receive from Sandbox API</a></li>
+    <li><a href="#role-walkthrough">Role-by-role walkthrough</a></li>
+    <li><a href="#destroy">Destroy behavior</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="how-it-works">How It Works — Three-Layer Architecture</h2>
+
+<p>
+  The Scheduler-Only pattern uses a three-layer model. Each layer runs at a different time and has a different scope. Understanding this separation is essential to configuring AgV correctly.
+</p>
+
+<div class="svg-wrap">
+<svg viewBox="0 0 900 340" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <!-- Background -->
+  <rect width="900" height="340" fill="#fafafa" rx="8"/>
+
+  <!-- Layer 1: Cluster Provisioner -->
+  <rect x="20" y="20" width="260" height="300" rx="8" fill="#fff3e0" stroke="#f57c00" stroke-width="2"/>
+  <text x="150" y="48" text-anchor="middle" font-size="13" font-weight="700" fill="#7a3e00">LAYER 1</text>
+  <text x="150" y="66" text-anchor="middle" font-size="12" fill="#7a3e00">Cluster Provisioner</text>
+  <text x="150" y="82" text-anchor="middle" font-size="10" fill="#a05000">Runs ONCE per cluster</text>
+  <rect x="40" y="96" width="220" height="30" rx="4" fill="#ffcc80"/>
+  <text x="150" y="116" text-anchor="middle" font-size="11" fill="#4a2000">OpenShift GitOps (ArgoCD)</text>
+  <rect x="40" y="134" width="220" height="30" rx="4" fill="#ffcc80"/>
+  <text x="150" y="154" text-anchor="middle" font-size="11" fill="#4a2000">Red Hat Build of Keycloak</text>
+  <rect x="40" y="172" width="220" height="30" rx="4" fill="#ffcc80"/>
+  <text x="150" y="192" text-anchor="middle" font-size="11" fill="#4a2000">Shared Gitea Instance</text>
+  <rect x="40" y="210" width="220" height="30" rx="4" fill="#ffcc80"/>
+  <text x="150" y="230" text-anchor="middle" font-size="11" fill="#4a2000">LiteMaaS (AI Gateway)</text>
+  <text x="150" y="268" text-anchor="middle" font-size="10" fill="#a05000">Separate playbook — NOT in AgV</text>
+  <text x="150" y="284" text-anchor="middle" font-size="10" fill="#a05000">cluster-provision.yml</text>
+  <text x="150" y="300" text-anchor="middle" font-size="10" fill="#a05000">Run by RHDP ops team</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="284" y1="170" x2="316" y2="170" stroke="#555" stroke-width="2" marker-end="url(#arr)"/>
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <!-- Layer 2: Sandbox API -->
+  <rect x="320" y="20" width="240" height="300" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="440" y="48" text-anchor="middle" font-size="13" font-weight="700" fill="#1e3a8a">LAYER 2</text>
+  <text x="440" y="66" text-anchor="middle" font-size="12" fill="#1e3a8a">Sandbox API</text>
+  <text x="440" y="82" text-anchor="middle" font-size="10" fill="#2563eb">Runs per ORDER</text>
+  <rect x="340" y="96" width="200" height="30" rx="4" fill="#bfdbfe"/>
+  <text x="440" y="116" text-anchor="middle" font-size="11" fill="#1e3a8a">Schedule cluster from pool</text>
+  <rect x="340" y="134" width="200" height="30" rx="4" fill="#bfdbfe"/>
+  <text x="440" y="154" text-anchor="middle" font-size="11" fill="#1e3a8a">Create cluster-admin SA token</text>
+  <rect x="340" y="172" width="200" height="30" rx="4" fill="#bfdbfe"/>
+  <text x="440" y="192" text-anchor="middle" font-size="11" fill="#1e3a8a">Inject vars into AgnosticD</text>
+  <text x="440" y="240" text-anchor="middle" font-size="10" fill="#2563eb">Does NOT create namespaces</text>
+  <text x="440" y="256" text-anchor="middle" font-size="10" fill="#2563eb">Does NOT create OCP users</text>
+  <text x="440" y="272" text-anchor="middle" font-size="10" fill="#2563eb">Does NOT install workloads</text>
+
+  <!-- Arrow 2→3 -->
+  <line x1="564" y1="170" x2="596" y2="170" stroke="#555" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Layer 3: Tenant (AgnosticD) -->
+  <rect x="600" y="20" width="280" height="300" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="740" y="48" text-anchor="middle" font-size="13" font-weight="700" fill="#1b5e20">LAYER 3</text>
+  <text x="740" y="66" text-anchor="middle" font-size="12" fill="#1b5e20">AgnosticD / Tenant Roles</text>
+  <text x="740" y="82" text-anchor="middle" font-size="10" fill="#2e7d32">Runs per ORDER (AgV drives this)</text>
+  <rect x="620" y="96" width="240" height="24" rx="4" fill="#a5d6a7"/>
+  <text x="740" y="113" text-anchor="middle" font-size="10" fill="#1b5e20">1. ocp4_workload_tenant_keycloak_user</text>
+  <rect x="620" y="126" width="240" height="24" rx="4" fill="#a5d6a7"/>
+  <text x="740" y="143" text-anchor="middle" font-size="10" fill="#1b5e20">2. ocp4_workload_tenant_namespace</text>
+  <rect x="620" y="156" width="240" height="24" rx="4" fill="#a5d6a7"/>
+  <text x="740" y="173" text-anchor="middle" font-size="10" fill="#1b5e20">3. ocp4_workload_tenant_gitea</text>
+  <rect x="620" y="186" width="240" height="24" rx="4" fill="#a5d6a7"/>
+  <text x="740" y="203" text-anchor="middle" font-size="10" fill="#1b5e20">4. ocp4_workload_litellm_virtual_keys</text>
+  <rect x="620" y="216" width="240" height="24" rx="4" fill="#a5d6a7"/>
+  <text x="740" y="233" text-anchor="middle" font-size="10" fill="#1b5e20">5. ocp4_workload_gitops_bootstrap</text>
+  <rect x="620" y="246" width="240" height="24" rx="4" fill="#a5d6a7"/>
+  <text x="740" y="263" text-anchor="middle" font-size="10" fill="#1b5e20">6. ocp4_workload_showroom</text>
+  <text x="740" y="300" text-anchor="middle" font-size="10" fill="#2e7d32">Configured via AgV common.yaml</text>
+</svg>
+</div>
+
+<div class="two-col">
+  <div class="col-box">
+    <h4>Layer 1 — Cluster Provisioner</h4>
+    <p>A separate playbook (<code>cluster-provision.yml</code>) that runs <strong>once per cluster</strong>, managed by the RHDP ops team. It installs the shared services that all tenants on this cluster use: RHBK (Keycloak), Gitea, OpenShift GitOps (ArgoCD), and LiteMaaS. This is <strong>not part of AgnosticV</strong>.</p>
+  </div>
+  <div class="col-box">
+    <h4>Layer 2 — Sandbox API</h4>
+    <p>Runs per order. Picks a pre-provisioned cluster from the pool, creates a cluster-admin SA token for AgnosticD, and injects a small set of variables (API URL, ingress domain, console URL, token). It does <strong>not</strong> create namespaces, users, or workloads in this pattern.</p>
+  </div>
+</div>
+<div class="col-box" style="margin-top:0;">
+  <h4>Layer 3 — Tenant Roles (AgnosticD, driven by AgV)</h4>
+  <p>Runs per order, after Sandbox API. These are the Ansible roles listed in your AgV <code>workloads:</code>. They create all per-tenant resources: Keycloak user, OCP namespaces, Gitea org, LiteMaaS virtual key, ArgoCD Application, and Showroom deployment. The AgV <code>common.yaml</code> is what you edit to configure this layer.</p>
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sandbox-api-role">What Sandbox API Does in This Pattern</h2>
+
+<p>In the Scheduler-Only pattern, Sandbox API has a deliberately minimal role:</p>
+
+<ol>
+  <li><strong>Selects a cluster</strong> from the pre-warmed pool that was provisioned by Layer 1</li>
+  <li><strong>Creates a temporary cluster-admin service account</strong> so AgnosticD can authenticate with full privileges</li>
+  <li><strong>Injects four variables</strong> into the AgnosticD run environment (listed in the variables table below)</li>
+  <li><strong>Marks the cluster as in-use</strong> so it is not double-allocated</li>
+  <li>When the order is destroyed: <strong>revokes the SA token</strong> and <strong>returns the cluster to the pool</strong></li>
+</ol>
+
+<p>Sandbox API does <strong>not</strong>:</p>
+<ul>
+  <li>Create any namespaces for this tenant</li>
+  <li>Create any OCP user accounts</li>
+  <li>Install any workloads</li>
+  <li>Configure Keycloak, Gitea, ArgoCD, or LiteMaaS (that was Layer 1)</li>
+</ul>
+
+<div class="callout callout-blue">
+  <strong>Why use Scheduler-Only?</strong>
+  Because your lab needs multiple namespaces per tenant, Keycloak SSO, Gitea repos, and ArgoCD — and you want to control the exact topology. Sandbox API getting out of the way and just giving you cluster access gives your Ansible roles the flexibility to build exactly what the lab requires.
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="full-common-yaml">Complete AgV common.yaml — Annotated</h2>
+
+<p>
+  The following is a complete, production-ready <code>common.yaml</code> for the Summit 2026 / Scheduler-Only pattern. Copy it as a starting point and modify the values for your specific catalog item. Every section is explained with inline YAML comments and the section-by-section breakdown below.
+</p>
+
+<div class="callout callout-grey">
+  <strong>File location</strong>
+  In AgnosticV, this file lives at: <code>catalog/&lt;your-catalog-item&gt;/common.yaml</code>
+  It is merged with <code>account.yaml</code> and <code>size.yaml</code> at order time. Variables defined here are passed to every AgnosticD role invocation.
+</div>
+
+<pre><code><span class="cmt">---</span>
+<span class="cmt"># ============================================================</span>
+<span class="cmt"># AgnosticV — common.yaml</span>
+<span class="cmt"># Pattern: Summit 2026 / Scheduler-Only</span>
+<span class="cmt"># The Sandbox API schedules a cluster. All namespaces, users,</span>
+<span class="cmt"># and resources are created by Ansible roles — not by sandbox API.</span>
+<span class="cmt"># ============================================================</span>
+
+<span class="cmt"># ── 1. SANDBOX ENTRY ─────────────────────────────────────────</span>
+<span class="cmt"># Single entry. No namespace_suffix.</span>
+<span class="cmt"># Sandbox API picks a cluster from the pool and gives you</span>
+<span class="cmt"># the cluster API URL, ingress domain, and an admin SA token.</span>
+<span class="cmt"># It does NOT create any namespaces or users.</span>
+<span class="key">sandboxes</span>:
+  - <span class="key">name</span>: <span class="val">openshift</span>
+
+<span class="cmt"># ── 2. IDENTITY: USERNAME AND PASSWORD ───────────────────────</span>
+<span class="cmt"># Central username variable — ALL roles reference this one var.</span>
+<span class="cmt"># Format: mcpuser-&lt;guid&gt;  (e.g. mcpuser-drw4x)</span>
+<span class="key">ocp4_workload_tenant_keycloak_username</span>: <span class="str">"mcpuser-{{ guid }}"</span>
+
+<span class="cmt"># Deterministic password — satisfies complexity (upper, lower, digit, special)</span>
+<span class="cmt"># Stays the same if you re-provision the same GUID.</span>
+<span class="cmt"># Format: Mcp + first 8 chars of sha256(guid) + !</span>
+<span class="key">common_password</span>: <span class="str">"Mcp{{ (guid | hash('sha256'))[:8] }}!"</span>
+
+<span class="cmt"># ── 3. WORKLOAD ORDER ────────────────────────────────────────</span>
+<span class="cmt"># Roles run in this exact order during provisioning.</span>
+<span class="cmt"># Each role sets facts that the next role consumes.</span>
+<span class="key">workloads</span>:
+  - <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_keycloak_user</span>    <span class="cmt"># 1. Create RHBK user</span>
+  - <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_namespace</span>         <span class="cmt"># 2. Create OCP namespaces</span>
+  - <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_gitea</span>             <span class="cmt"># 3. Create Gitea org + push repos</span>
+  - <span class="val">agnosticd.ai_workloads.ocp4_workload_litellm_virtual_keys</span>             <span class="cmt"># 4. Create LiteMaaS API key</span>
+  - <span class="val">agnosticd.core_workloads.ocp4_workload_gitops_bootstrap</span>               <span class="cmt"># 5. Create ArgoCD Application</span>
+  - <span class="val">agnosticd.showroom.ocp4_workload_showroom</span>                             <span class="cmt"># 6. Deploy Showroom tab UI</span>
+
+<span class="cmt"># ── 4. KEYCLOAK CONFIG ───────────────────────────────────────</span>
+<span class="cmt"># RHBK is already installed on the cluster (by cluster provisioner).</span>
+<span class="cmt"># This role creates ONE user per order in the existing realm.</span>
+<span class="key">ocp4_workload_tenant_keycloak_user_rhbk_host</span>: <span class="str">"keycloak-keycloak.{{ sandbox_openshift_ingress_domain }}"</span>
+<span class="key">ocp4_workload_tenant_keycloak_user_realm</span>: <span class="val">sso</span>
+<span class="key">ocp4_workload_tenant_keycloak_user_admin_username</span>: <span class="val">admin</span>
+<span class="key">ocp4_workload_tenant_keycloak_user_admin_password</span>: <span class="str">"{{ common_password }}"</span>
+
+<span class="cmt"># ── 5. NAMESPACES ────────────────────────────────────────────</span>
+<span class="cmt"># Creates one OCP namespace per suffix, prefixed with the username.</span>
+<span class="cmt"># Example: mcpuser-drw4x-gitea, mcpuser-drw4x-agent, etc.</span>
+<span class="cmt"># Each namespace gets a LimitRange with default CPU/memory limits.</span>
+<span class="key">ocp4_workload_tenant_namespace_suffixes</span>:
+  - <span class="val">gitea</span>           <span class="cmt"># Gitea server namespace</span>
+  - <span class="val">agent</span>           <span class="cmt"># AI agent namespace</span>
+  - <span class="val">librechat</span>       <span class="cmt"># LibreChat UI namespace</span>
+  - <span class="val">mcp-gitea</span>       <span class="cmt"># MCP proxy for Gitea</span>
+  - <span class="val">mcp-openshift</span>   <span class="cmt"># MCP proxy for OpenShift</span>
+
+<span class="cmt"># ── 6. GITEA CONFIG ──────────────────────────────────────────</span>
+<span class="cmt"># Gitea is shared on the cluster (installed by cluster provisioner).</span>
+<span class="cmt"># This role creates one org per user and mirrors the GitOps repo into it.</span>
+<span class="cmt"># The mirrored repo is what ArgoCD reads for this tenant.</span>
+<span class="key">ocp4_workload_tenant_gitea_host</span>: <span class="str">"gitea.{{ sandbox_openshift_ingress_domain }}"</span>
+<span class="key">ocp4_workload_tenant_gitea_admin_user</span>: <span class="val">mcpadmin</span>
+<span class="key">ocp4_workload_tenant_gitea_admin_password</span>: <span class="str">"{{ common_password }}"</span>
+<span class="key">ocp4_workload_tenant_gitea_repos</span>:
+  - <span class="key">name</span>: <span class="val">mcp</span>
+    <span class="key">description</span>: <span class="str">"MCP GitOps repository for this tenant"</span>
+    <span class="key">source_repo</span>: <span class="str">"https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops.git"</span>
+    <span class="key">source_revision</span>: <span class="val">main</span>
+
+<span class="cmt"># ── 7. LITEMAAS VIRTUAL KEY ──────────────────────────────────</span>
+<span class="cmt"># Creates a rate-limited AI API key for this tenant.</span>
+<span class="cmt"># catch_all: false is CRITICAL — prevents deleting other tenants' keys.</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_host</span>: <span class="str">"https://litemaas.apps.cluster.example.com"</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_admin_key</span>: <span class="str">"{{ lookup('env', 'LITEMAAS_ADMIN_KEY') }}"</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_models</span>:
+  - <span class="val">gpt-4o</span>
+  - <span class="val">claude-3-5-sonnet-20241022</span>
+  - <span class="val">llama-3.3-70b-instruct</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_max_budget</span>: <span class="num">5.0</span>         <span class="cmt"># $5 per order</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_budget_duration</span>: <span class="val">30d</span>    <span class="cmt"># resets monthly</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_catch_all</span>: <span class="kw">false</span>        <span class="cmt"># NEVER true on shared clusters</span>
+
+<span class="cmt"># ── 8. GITOPS BOOTSTRAP ──────────────────────────────────────</span>
+<span class="cmt"># Creates one ArgoCD Application named bootstrap-tenant-&lt;guid&gt;.</span>
+<span class="cmt"># That Application (app-of-apps) deploys all tenant workloads via ArgoCD.</span>
+<span class="cmt"># repo_url is set automatically by the tenant_gitea role (the mirrored repo).</span>
+<span class="key">ocp4_workload_gitops_bootstrap_revision</span>: <span class="val">main</span>
+<span class="key">ocp4_workload_gitops_bootstrap_path</span>: <span class="val">tenant/bootstrap</span>
+
+<span class="cmt"># Helm values passed into the bootstrap chart:</span>
+<span class="key">ocp4_workload_gitops_bootstrap_helm_values</span>:
+  <span class="key">tenant</span>:
+    <span class="key">username</span>: <span class="str">"{{ ocp4_workload_tenant_keycloak_username }}"</span>
+    <span class="key">password</span>: <span class="str">"{{ common_password }}"</span>
+  <span class="key">deployer</span>:
+    <span class="key">domain</span>: <span class="str">"{{ sandbox_openshift_ingress_domain }}"</span>
+  <span class="key">litemaas</span>:
+    <span class="key">url</span>: <span class="str">"{{ ocp4_workload_litellm_virtual_keys_host }}"</span>
+    <span class="key">key</span>: <span class="str">"{{ litellm_virtual_key }}"</span>       <span class="cmt"># set by litellm_virtual_keys role</span>
+    <span class="key">models</span>: <span class="str">"gpt-4o,claude-3-5-sonnet-20241022,llama-3.3-70b-instruct"</span>
+
+<span class="cmt"># ── 9. SHOWROOM ──────────────────────────────────────────────</span>
+<span class="cmt"># Showroom is the tab-based UI the lab attendee sees in their browser.</span>
+<span class="cmt"># Each tab is a URL pointing to a tenant-specific service.</span>
+<span class="key">showroom_git_repo</span>: <span class="str">"https://github.com/rhpds/mcp-showroom.git"</span>
+<span class="key">showroom_git_repo_revision</span>: <span class="val">main</span>
+<span class="key">showroom_user_data</span>:
+  <span class="key">username</span>: <span class="str">"{{ ocp4_workload_tenant_keycloak_username }}"</span>
+  <span class="key">password</span>: <span class="str">"{{ common_password }}"</span>
+  <span class="key">gitea_url</span>: <span class="str">"https://gitea.{{ sandbox_openshift_ingress_domain }}/{{ ocp4_workload_tenant_keycloak_username }}"</span>
+  <span class="key">librechat_url</span>: <span class="str">"https://librechat-librechat-{{ ocp4_workload_tenant_keycloak_username }}.{{ sandbox_openshift_ingress_domain }}"</span>
+  <span class="key">ocp_console_url</span>: <span class="str">"{{ sandbox_openshift_console_url }}"</span>
+
+<span class="cmt"># ── 10. DESTROY ORDER ────────────────────────────────────────</span>
+<span class="cmt"># MUST be the reverse of workloads above.</span>
+<span class="cmt"># Each role's remove_workload.yml is called in this order.</span>
+<span class="key">remove_workloads</span>:
+  - <span class="val">agnosticd.showroom.ocp4_workload_showroom</span>
+  - <span class="val">agnosticd.ai_workloads.ocp4_workload_litellm_virtual_keys</span>
+  - <span class="val">agnosticd.core_workloads.ocp4_workload_gitops_bootstrap</span>    <span class="cmt"># ArgoCD cascade deletes all apps</span>
+  - <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_gitea</span>
+  - <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_namespace</span>
+  - <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_keycloak_user</span>
+</code></pre>
+
+<h3>Section-by-section breakdown</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Section</th>
+      <th>Key variable(s)</th>
+      <th>What it does / Why it matters</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>1. sandboxes</strong></td>
+      <td><code>sandboxes[0].name: openshift</code></td>
+      <td>Single entry, no <code>namespace_suffix</code>. Tells Sandbox API this is a scheduler-only request — just give me a cluster. No namespaces are created by Sandbox API.</td>
+    </tr>
+    <tr>
+      <td><strong>2. Username &amp; password</strong></td>
+      <td><code>ocp4_workload_tenant_keycloak_username</code><br><code>common_password</code></td>
+      <td>Define once at the top. All roles reference these two vars. The password formula is deterministic — the same GUID always produces the same password, which is useful for retries. Satisfies typical password complexity requirements.</td>
+    </tr>
+    <tr>
+      <td><strong>3. workloads</strong></td>
+      <td><code>workloads:</code></td>
+      <td>Ordered list of AgnosticD roles. AgnosticD calls each role's <code>workload.yml</code> in sequence. Role output facts are available to subsequent roles. Order matters — Keycloak user must exist before namespace creation, Gitea repo must exist before GitOps bootstrap.</td>
+    </tr>
+    <tr>
+      <td><strong>4. Keycloak config</strong></td>
+      <td><code>ocp4_workload_tenant_keycloak_user_*</code></td>
+      <td>Configures the RHBK host and realm. RHBK was installed by the cluster provisioner. The role creates one user per order. The admin password here is for the Keycloak admin API, not the end user.</td>
+    </tr>
+    <tr>
+      <td><strong>5. Namespace suffixes</strong></td>
+      <td><code>ocp4_workload_tenant_namespace_suffixes</code></td>
+      <td>List of suffix strings. The role creates one namespace per suffix, prefixed with the username. Example: <code>mcpuser-drw4x-gitea</code>. Each namespace gets a LimitRange automatically.</td>
+    </tr>
+    <tr>
+      <td><strong>6. Gitea config</strong></td>
+      <td><code>ocp4_workload_tenant_gitea_*</code></td>
+      <td>Configures the shared Gitea host. The role creates a Gitea organization named after the tenant user, then mirrors the specified source repos into that org. ArgoCD watches this tenant-specific Gitea org.</td>
+    </tr>
+    <tr>
+      <td><strong>7. LiteMaaS virtual key</strong></td>
+      <td><code>ocp4_workload_litellm_virtual_keys_*</code></td>
+      <td>Creates a rate-limited AI API key. The admin key comes from an env var — never hardcode it. <code>catch_all: false</code> is mandatory on shared clusters. After the role runs, <code>litellm_virtual_key</code> is set as a fact for downstream roles.</td>
+    </tr>
+    <tr>
+      <td><strong>8. GitOps bootstrap</strong></td>
+      <td><code>ocp4_workload_gitops_bootstrap_*</code></td>
+      <td>Creates an ArgoCD Application (app-of-apps pattern) that deploys all tenant workloads. The repo URL is automatically set by the Gitea role. Helm values are passed to the bootstrap chart, which propagates them to all child apps.</td>
+    </tr>
+    <tr>
+      <td><strong>9. Showroom</strong></td>
+      <td><code>showroom_git_repo</code><br><code>showroom_user_data</code></td>
+      <td>Deploys the Showroom tab UI. <code>showroom_user_data</code> is a dict of per-tenant values that Showroom renders into its tab configuration. Must be the last workload deployed so all URLs are ready.</td>
+    </tr>
+    <tr>
+      <td><strong>10. remove_workloads</strong></td>
+      <td><code>remove_workloads:</code></td>
+      <td>Exact reverse of <code>workloads</code>. Showroom goes first (UI down), then LiteMaaS key revoked, then ArgoCD app deleted (cascade deletes all tenant Kubernetes resources), then Gitea org, then namespaces, then Keycloak user.</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="sandbox-variables">Variables You Receive from Sandbox API</h2>
+
+<p>These four variables are injected by Sandbox API into every AgnosticD run using the Scheduler-Only pattern. You reference them directly in your AgV <code>common.yaml</code>.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Example value</th>
+      <th>How it is used in common.yaml</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>sandbox_openshift_api_url</code></td>
+      <td><code>https://api.cluster-drw4x.example.com:6443</code></td>
+      <td>Passed to any role that needs to authenticate with the cluster API. AgnosticD uses this automatically for <code>k8s</code> module connections.</td>
+    </tr>
+    <tr>
+      <td><code>sandbox_openshift_ingress_domain</code></td>
+      <td><code>apps.cluster-drw4x.example.com</code></td>
+      <td>Used to build all service URLs: Keycloak host, Gitea host, Showroom URLs, LibreChat URL. Example: <code>"keycloak-keycloak.{{ sandbox_openshift_ingress_domain }}"</code></td>
+    </tr>
+    <tr>
+      <td><code>sandbox_openshift_console_url</code></td>
+      <td><code>https://console-openshift-console.apps.cluster-drw4x.example.com</code></td>
+      <td>Passed to Showroom <code>user_data</code> so lab attendees see a direct link to the OCP console tab.</td>
+    </tr>
+    <tr>
+      <td><code>cluster_admin_agnosticd_sa_token</code></td>
+      <td><code>eyJhbGciOiJSUzI1NiIs...</code></td>
+      <td>Used internally by AgnosticD for all Kubernetes API calls. Never reference this in your role vars or log it. Never commit it.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-orange">
+  <strong>sandbox_openshift_namespace is NOT provided</strong>
+  In the Scheduler-Only pattern, <code>sandbox_openshift_namespace</code> is undefined. Sandbox API did not create a namespace. Your <code>ocp4_workload_tenant_namespace</code> role creates namespaces using <code>ocp4_workload_tenant_namespace_suffixes</code>. Do not reference <code>sandbox_openshift_namespace</code> anywhere in your config.
+</div>
+
+<div class="callout callout-grey">
+  <strong>Cluster provisioner runs a separate playbook</strong>
+  The <code>cluster-provision.yml</code> playbook is run by the RHDP ops team when a new cluster is added to the pool. It is not part of AgnosticV and is not triggered per order. If RHBK, Gitea, or ArgoCD are missing from the cluster, the tenant roles will fail — this indicates the cluster was not properly provisioned.
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="role-walkthrough">Role-by-Role Walkthrough</h2>
+
+<h3>Role 1 — ocp4_workload_tenant_keycloak_user</h3>
+<p><strong>Collection:</strong> <code>agnosticd.namespaced_workloads</code></p>
+<p>
+  Creates a single user account in the existing Red Hat Build of Keycloak (RHBK) instance on the cluster. RHBK was installed by the cluster provisioner and serves as the SSO provider for all tenant services (LibreChat, the MCP proxies, etc.).
+</p>
+<ul>
+  <li>Authenticates to RHBK admin API using <code>ocp4_workload_tenant_keycloak_user_admin_username</code> and <code>ocp4_workload_tenant_keycloak_user_admin_password</code></li>
+  <li>Creates a user with username <code>{{ ocp4_workload_tenant_keycloak_username }}</code> and password <code>{{ common_password }}</code></li>
+  <li>Assigns the user to the realm specified by <code>ocp4_workload_tenant_keycloak_user_realm</code></li>
+  <li>Does not create any Kubernetes resources</li>
+</ul>
+<div class="callout callout-blue">
+  <strong>Key vars:</strong> <code>ocp4_workload_tenant_keycloak_user_rhbk_host</code>, <code>ocp4_workload_tenant_keycloak_user_realm</code>, <code>ocp4_workload_tenant_keycloak_username</code>, <code>common_password</code>
+</div>
+
+<h3>Role 2 — ocp4_workload_tenant_namespace</h3>
+<p><strong>Collection:</strong> <code>agnosticd.namespaced_workloads</code></p>
+<p>
+  Creates one OCP namespace per entry in <code>ocp4_workload_tenant_namespace_suffixes</code>. Each namespace is named <code>&lt;username&gt;-&lt;suffix&gt;</code> (e.g., <code>mcpuser-drw4x-agent</code>). The role also:
+</p>
+<ul>
+  <li>Applies a <code>LimitRange</code> with default CPU and memory limits to each namespace</li>
+  <li>Grants the tenant user edit access to each namespace</li>
+  <li>Optionally applies a <code>ResourceQuota</code> if quota vars are set</li>
+</ul>
+<div class="callout callout-blue">
+  <strong>Key vars:</strong> <code>ocp4_workload_tenant_namespace_suffixes</code>, <code>ocp4_workload_tenant_keycloak_username</code>
+</div>
+
+<h3>Role 3 — ocp4_workload_tenant_gitea</h3>
+<p><strong>Collection:</strong> <code>agnosticd.namespaced_workloads</code></p>
+<p>
+  Configures a Gitea organization and repositories for this tenant within the shared Gitea instance. The role:
+</p>
+<ul>
+  <li>Creates a Gitea organization named after the tenant user</li>
+  <li>Creates a Gitea user account for the tenant</li>
+  <li>For each entry in <code>ocp4_workload_tenant_gitea_repos</code>, mirrors the source repo into the tenant org</li>
+  <li>Sets the fact <code>ocp4_workload_tenant_gitea_repo_url</code> for each mirrored repo — this is consumed by the GitOps bootstrap role</li>
+</ul>
+<p>The mirrored Gitea repo is what ArgoCD watches for this tenant. Changes pushed to the tenant's Gitea fork are picked up by ArgoCD and deployed automatically.</p>
+<div class="callout callout-blue">
+  <strong>Key vars:</strong> <code>ocp4_workload_tenant_gitea_host</code>, <code>ocp4_workload_tenant_gitea_admin_user</code>, <code>ocp4_workload_tenant_gitea_repos</code>
+</div>
+
+<h3>Role 4 — ocp4_workload_litellm_virtual_keys</h3>
+<p><strong>Collection:</strong> <code>agnosticd.ai_workloads</code></p>
+<p>
+  Creates a rate-limited AI API virtual key via the LiteMaaS admin API. LiteMaaS provides a unified OpenAI-compatible endpoint in front of multiple LLM providers. The virtual key:
+</p>
+<ul>
+  <li>Is scoped to the models listed in <code>ocp4_workload_litellm_virtual_keys_models</code></li>
+  <li>Has a spending cap of <code>ocp4_workload_litellm_virtual_keys_max_budget</code> USD</li>
+  <li>Resets on the cadence set by <code>ocp4_workload_litellm_virtual_keys_budget_duration</code></li>
+  <li>Is tagged with the tenant GUID for lifecycle management</li>
+  <li>Sets the Ansible fact <code>litellm_virtual_key</code> after creation — used by the GitOps bootstrap role to pass the key to ArgoCD Helm values</li>
+</ul>
+<div class="callout callout-orange">
+  <strong>catch_all: false — always</strong>
+  Setting <code>ocp4_workload_litellm_virtual_keys_catch_all: true</code> causes the destroy playbook to delete ALL virtual keys on the LiteMaaS instance that are not tagged to this tenant. This will break every other concurrent lab's AI access. Keep this <code>false</code>.
+</div>
+
+<h3>Role 5 — ocp4_workload_gitops_bootstrap</h3>
+<p><strong>Collection:</strong> <code>agnosticd.core_workloads</code></p>
+<p>
+  Creates an ArgoCD Application resource (the "bootstrap" app) in the OpenShift GitOps namespace. This bootstrap application uses the app-of-apps pattern: it points to a Helm chart at <code>ocp4_workload_gitops_bootstrap_path</code> in the tenant's Gitea repo, which in turn defines all the child ArgoCD applications for this tenant.
+</p>
+<ul>
+  <li>ArgoCD continuously reconciles the tenant's desired state from Gitea</li>
+  <li>The Helm chart values are passed via <code>ocp4_workload_gitops_bootstrap_helm_values</code>, which includes the tenant username, password, domain, and LiteMaaS key</li>
+  <li>ArgoCD cascade-deletes all child resources when the bootstrap app is deleted during destroy</li>
+</ul>
+<div class="callout callout-blue">
+  <strong>Key vars:</strong> <code>ocp4_workload_gitops_bootstrap_revision</code>, <code>ocp4_workload_gitops_bootstrap_path</code>, <code>ocp4_workload_gitops_bootstrap_helm_values</code>, <code>litellm_virtual_key</code> (fact from role 4)
+</div>
+
+<h3>Role 6 — ocp4_workload_showroom</h3>
+<p><strong>Collection:</strong> <code>agnosticd.showroom</code></p>
+<p>
+  Deploys the Showroom tab-based UI. Showroom is a small web application that presents the lab attendee with a set of browser tabs — typically a lab guide, an OCP console link, and application-specific URLs. It is driven by a Git repository containing an Antora (AsciiDoc) site.
+</p>
+<ul>
+  <li>Clones <code>showroom_git_repo</code> at <code>showroom_git_repo_revision</code> and builds the tab configuration</li>
+  <li>Deploys the Showroom pod into a namespace named after the tenant</li>
+  <li>The <code>showroom_user_data</code> dict is rendered into template variables in the Showroom content — use it to pass per-tenant URLs and credentials</li>
+  <li>Must be deployed last (all other services must be up so their URLs are valid)</li>
+</ul>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="destroy">Destroy Behavior</h2>
+
+<p>
+  When an order is destroyed (user cancels, order expires, or admin triggers destruction), AgnosticD calls the <code>remove_workload.yml</code> of each role in <code>remove_workloads:</code> order. This is the reverse of provisioning.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Step</th>
+      <th>Role</th>
+      <th>What is deleted</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td><code>ocp4_workload_showroom</code></td>
+      <td>Showroom Deployment, Service, Route</td>
+      <td>UI goes down first. Users see the session as ended.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><code>ocp4_workload_litellm_virtual_keys</code></td>
+      <td>LiteMaaS virtual key for this tenant</td>
+      <td>Tenant's AI API access revoked. Budget tracking ends.</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><code>ocp4_workload_gitops_bootstrap</code></td>
+      <td>ArgoCD bootstrap Application + all child apps (cascade delete)</td>
+      <td>ArgoCD's cascade delete removes all Kubernetes resources deployed by ArgoCD in the tenant namespaces. This is the most powerful step — it cleans up all workloads without needing individual role teardowns.</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><code>ocp4_workload_tenant_gitea</code></td>
+      <td>Gitea org, repos, and tenant user account</td>
+      <td>Tenant's Git repositories deleted from shared Gitea.</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><code>ocp4_workload_tenant_namespace</code></td>
+      <td>All OCP namespaces created for this tenant</td>
+      <td>Any remaining in-namespace resources (not cleaned by ArgoCD cascade) are deleted with the namespace.</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td><code>ocp4_workload_tenant_keycloak_user</code></td>
+      <td>RHBK user account for this tenant</td>
+      <td>SSO identity removed. Tenant cannot log in after this step.</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>(Sandbox API)</td>
+      <td>Cluster-admin SA token revoked; cluster returned to pool</td>
+      <td>Automatic — Sandbox API handles this after all remove_workloads complete. The cluster is re-provisioned or returned to available inventory.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-green">
+  <strong>ArgoCD cascade delete is your cleanup friend</strong>
+  By deleting the ArgoCD bootstrap Application with cascade enabled (the default), ArgoCD removes every Kubernetes resource it manages across all tenant namespaces. This means your namespace deletion in step 5 is straightforward — most resources are already gone. Any resources created directly by Ansible (not via ArgoCD) must be handled by the relevant role's <code>remove_workload.yml</code>.
+</div>
+
+<div class="callout callout-grey">
+  <strong>Shared cluster services are not deleted</strong>
+  The destroy playbook does not touch RHBK, Gitea (the server), ArgoCD (the operator), or LiteMaaS themselves — those are shared cluster services managed by the cluster provisioner. Only per-tenant resources (user accounts, orgs, namespaces, keys) are deleted.
+</div>
+
+<hr>
+<p style="color:#888;font-size:0.85rem;">Red Hat Demo Platform (RHDP) &mdash; Internal developer reference &mdash; <a href="index.html">Back to overview</a> &mdash; <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops">GitHub</a></p>
+
+</body>
+</html>
