@@ -12,3 +12,4 @@ roleBindings:
 - name: openshift-pipelines-edit
   namespace: mcp-user1
   clusterRole: edit
+domain: apps.example.com

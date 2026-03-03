@@ -26,3 +26,4 @@ default_user:
   name: user1
   email: user1@example.com
   password: "FROM SECRETS"
+domain: apps.example.com

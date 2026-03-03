@@ -49,3 +49,4 @@ workspace:
 # Container images
 images:
   cliTool: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
+domain: apps.example.com

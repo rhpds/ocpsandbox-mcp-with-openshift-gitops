@@ -4,11 +4,10 @@
 {{- $revision := .Values.targetRevision }}
 
 {{- $apps := list
-  (dict "name" "agent"        "chart" "tenant/agent"        "namespace" (printf "agent-%s"        $username))
-  (dict "name" "librechat"    "chart" "tenant/librechat"    "namespace" (printf "librechat-%s"    $username))
-  (dict "name" "mcp-gitea"    "chart" "tenant/mcp-gitea"   "namespace" (printf "mcp-gitea-%s"    $username))
+  (dict "name" "agent"         "chart" "tenant/agent"         "namespace" (printf "agent-%s"         $username))
+  (dict "name" "librechat"     "chart" "tenant/librechat"     "namespace" (printf "librechat-%s"     $username))
+  (dict "name" "mcp-gitea"     "chart" "tenant/mcp-gitea"    "namespace" (printf "mcp-gitea-%s"     $username))
   (dict "name" "mcp-openshift" "chart" "tenant/mcp-openshift" "namespace" (printf "mcp-openshift-%s" $username))
-  (dict "name" "librechat-config" "chart" "tenant/librechat-config" "namespace" (printf "librechat-%s" $username))
 }}
 
 {{- range $app := $apps }}

@@ -1,0 +1,25 @@
+{{- $username := .Values.tenant.username }}
+{{- $domain := .Values.deployer.domain }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: userinfo-mcp
+  namespace: openshift-gitops
+  labels:
+    demo.redhat.com/userinfo: ""
+data:
+  users_json: |
+    {
+      "users": {
+        "{{ $username }}": {
+          "user": "{{ $username }}",
+          "librechat_url": "https://librechat-librechat-{{ $username }}.{{ $domain }}",
+          "librechat_user": "{{ $username }}@example.com",
+          "gitea_url": "https://gitea-gitea-{{ $username }}.{{ $domain }}",
+          "gitea_user": "{{ $username }}",
+          "openshift_mcp_server_url": "https://mcp-openshift-mcp-openshift-{{ $username }}.{{ $domain }}/sse#openshift",
+          "gitea_mcp_server_url": "https://mcp-gitea-mcp-gitea-{{ $username }}.{{ $domain }}/mcp"
+        }
+      }
+    }
