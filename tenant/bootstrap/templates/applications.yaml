@@ -78,6 +78,44 @@ spec:
             fsGroup: null
             fsGroupChangePolicy: null
           securityContext: {}
+        librechat:
+          configYamlContent: |-
+            version: 1.3.1
+            cache: true
+            mcpServers:
+              openshift:
+                type: sse
+                url: "http://mcp-openshift-proxy.mcp-openshift-{{ $username }}.svc.cluster.local:8080/sse#openshift"
+              gitea:
+                type: streamable-http
+                url: "http://mcp-gitea-proxy.mcp-gitea-{{ $username }}.svc.cluster.local:8080/mcp"
+              fetch:
+                type: streamable-http
+                url: "http://mcp-fetch-proxy.mcp-gitea-{{ $username }}.svc.cluster.local:8080/mcp"
+              yardstick:
+                type: streamable-http
+                url: "http://mcp-yardstick-proxy.mcp-gitea-{{ $username }}.svc.cluster.local:8080/mcp"
+            endpoints:
+              custom:
+              - name: "LiteMaaS"
+                apiKey: "${CUSTOM_MODEL_KEY}"
+                baseURL: {{ $litemaas.url | default "" | quote }}
+                models:
+                  default: {{ $litemaas.models | default "" | quote }}
+                  fetch: true
+                titleConvo: false
+                summarize: false
+                forcePrompt: false
+                modelDisplayLabel: "Demo Dot LiteMaaS"
+                capabilities:
+                - "tools"
+                dropParams:
+                - "user"
+                - "frequency_penalty"
+                - "presence_penalty"
+          configEnv:
+            ALLOW_REGISTRATION: "true"
+            ALLOW_EMAIL_LOGIN: "true"
         resources:
           requests:
             cpu: 100m
