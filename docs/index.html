@@ -365,7 +365,7 @@
 
   <!-- LAYER 2: Platform -->
   <rect x="20" y="162" width="840" height="100" fill="#ede9fe" stroke="#7c3aed" stroke-width="2" rx="8"/>
-  <text x="36" y="185" font-family="sans-serif" font-size="13" font-weight="bold" fill="#4c1d95">Layer 2 — Platform (bootstrap-platform AppSet)</text>
+  <text x="36" y="185" font-family="sans-serif" font-size="13" font-weight="bold" fill="#4c1d95">Layer 2 — Platform (run once per cluster)</text>
 
   <rect x="36" y="194" width="170" height="36" fill="#7c3aed" rx="5"/>
   <text x="121" y="217" font-family="monospace" font-size="10" fill="white" text-anchor="middle">bootstrap-platform</text>
@@ -381,7 +381,7 @@
 
   <line x1="412" y1="212" x2="420" y2="212" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-  <text x="36" y="252" font-family="sans-serif" font-size="11" fill="#4c1d95">Cluster-wide monitoring, alerting, and shared platform services — one per cluster</text>
+  <text x="36" y="252" font-family="sans-serif" font-size="11" fill="#4c1d95">Enables cluster-wide monitoring and shared services once — ArgoCD keeps them healthy, not re-run per order</text>
 
   <!-- Arrow L2 -> L3 -->
   <line x1="440" y1="264" x2="440" y2="284" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
@@ -602,10 +602,10 @@
 
   <!-- Layer 2 block -->
   <rect x="20" y="172" width="780" height="100" fill="#ede9fe" stroke="#7c3aed" stroke-width="2" rx="8"/>
-  <text x="38" y="198" font-family="sans-serif" font-size="13" font-weight="bold" fill="#4c1d95">Layer 2 — Platform</text>
-  <text x="38" y="216" font-family="sans-serif" font-size="11" fill="#5b21b6">Managed by ArgoCD ApplicationSet: bootstrap-platform. Installs shared cluster services.</text>
-  <text x="38" y="233" font-family="sans-serif" font-size="11" fill="#5b21b6">Currently: platform-monitoring (Prometheus, Grafana). Future: shared LiteLLM, LDAP sync, etc.</text>
-  <text x="38" y="250" font-family="sans-serif" font-size="11" fill="#5b21b6">Deployed by gitops_bootstrap role with scope=platform. Updated via GitOps PR, not per-order.</text>
+  <text x="38" y="198" font-family="sans-serif" font-size="13" font-weight="bold" fill="#4c1d95">Layer 2 — Platform (run once per cluster)</text>
+  <text x="38" y="216" font-family="sans-serif" font-size="11" fill="#5b21b6">Bootstrapped by gitops_bootstrap role during cluster onboarding. Installs shared cluster services once.</text>
+  <text x="38" y="233" font-family="sans-serif" font-size="11" fill="#5b21b6">Currently: platform-monitoring (enables user workload monitoring). Future: shared LiteLLM, LDAP sync.</text>
+  <text x="38" y="250" font-family="sans-serif" font-size="11" fill="#5b21b6">ArgoCD (via bootstrap-platform) keeps it healthy. Not re-run per order — runs once at cluster setup.</text>
 
   <!-- Arrow -->
   <line x1="410" y1="274" x2="410" y2="296" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
@@ -634,7 +634,7 @@
     <tr>
       <td><strong>Frequency</strong></td>
       <td>Once per cluster lifetime</td>
-      <td>Once per cluster; updated via GitOps</td>
+      <td>Once per cluster lifetime</td>
       <td>Every catalog order</td>
     </tr>
     <tr>
