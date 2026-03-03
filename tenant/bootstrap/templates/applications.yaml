@@ -1,14 +1,14 @@
 {{- $username := .Values.tenant.username }}
 {{- $domain := .Values.deployer.domain }}
-{{- $repoURL := printf "https://gitea-gitea-%s.%s/%s/mcp.git" $username $domain $username }}
-{{- $revision := .Values.targetRevision }}
+{{- $gitopsURL := printf "https://gitea-gitea-%s.%s/%s/mcp.git" $username $domain $username }}
+{{- $gitopsRevision := .Values.targetRevision }}
 {{- $litemaas := .Values.litemaas | default dict }}
 
 {{- $apps := list
-  (dict "name" "agent"         "chart" "tenant/agent"         "namespace" (printf "agent-%s"         $username))
-  (dict "name" "librechat"     "chart" "tenant/librechat"     "namespace" (printf "librechat-%s"     $username))
-  (dict "name" "mcp-gitea"     "chart" "tenant/mcp-gitea"    "namespace" (printf "mcp-gitea-%s"     $username))
-  (dict "name" "mcp-openshift" "chart" "tenant/mcp-openshift" "namespace" (printf "mcp-openshift-%s" $username))
+  (dict "name" "agent"         "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/agent"         "namespace" (printf "agent-%s"         $username))
+  (dict "name" "librechat"     "repoURL" "https://github.com/danny-avila/LibreChat" "revision" "v0.8.1" "chart" "helm/librechat" "namespace" (printf "librechat-%s" $username))
+  (dict "name" "mcp-gitea"     "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/mcp-gitea"   "namespace" (printf "mcp-gitea-%s"     $username))
+  (dict "name" "mcp-openshift" "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/mcp-openshift" "namespace" (printf "mcp-openshift-%s" $username))
 }}
 
 {{- range $app := $apps }}
@@ -23,20 +23,67 @@ metadata:
 spec:
   project: tenants
   source:
-    repoURL: {{ $repoURL }}
-    targetRevision: {{ $revision }}
+    repoURL: {{ $app.repoURL }}
+    targetRevision: {{ $app.revision }}
     path: {{ $app.chart }}
     helm:
       values: |
         namespace: {{ $app.namespace }}
         user: {{ $username }}
         domain: {{ $domain }}
-        git_url: {{ $repoURL }}
-        git_revision: {{ $revision }}
+        git_url: {{ $gitopsURL }}
+        git_revision: {{ $gitopsRevision }}
         litemaas:
           url: {{ $litemaas.url | default "" | quote }}
           key: {{ $litemaas.key | default "" | quote }}
           models: {{ $litemaas.models | default "" | quote }}
+        fullnameOverride: librechat
+        podSecurityContext:
+          fsGroup: null
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: false
+          runAsUser: null
+        ingress:
+          enabled: false
+        global:
+          compatibility:
+            openshift:
+              adaptSecurityContext: force
+        mongodb:
+          image:
+            tag: "latest"
+          global:
+            compatibility:
+              openshift:
+                adaptSecurityContext: force
+        meilisearch:
+          image:
+            repository: docker.io/getmeili/meilisearch
+            tag: v1.7.3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          podSecurityContext:
+            runAsNonRoot: false
+            runAsUser: null
+            runAsGroup: null
+            fsGroup: null
+            fsGroupChangePolicy: null
+          securityContext: {}
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: "1"
+            memory: 2Gi
   destination:
     server: https://kubernetes.default.svc
     namespace: {{ $app.namespace }}
