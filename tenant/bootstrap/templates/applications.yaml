@@ -30,6 +30,8 @@ spec:
         namespace: {{ $app.namespace }}
         user: {{ $username }}
         domain: {{ $domain }}
+        git_url: {{ $repoURL }}
+        git_revision: {{ $revision }}
   destination:
     server: https://kubernetes.default.svc
     namespace: {{ $app.namespace }}
