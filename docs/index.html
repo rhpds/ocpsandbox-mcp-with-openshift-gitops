@@ -5,372 +5,1562 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sandbox API — Developer Guide for OpenShift Shared Cluster Labs</title>
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1040px; margin: 0 auto; padding: 40px 24px; color: #1a1a1a; line-height: 1.65; }
-  h1 { font-size: 2em; border-bottom: 3px solid #cc0000; padding-bottom: 12px; margin-bottom: 6px; }
-  h2 { font-size: 1.45em; border-bottom: 2px solid #eee; padding-bottom: 6px; margin-top: 48px; color: #cc0000; }
-  h3 { font-size: 1.1em; margin-top: 28px; color: #222; }
-  h4 { font-size: 1em; margin-top: 18px; color: #555; font-weight: 600; }
-  .meta { color: #777; font-size: 0.88em; margin-bottom: 32px; }
-  code { background: #f2f2f2; padding: 2px 6px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 0.88em; }
-  pre { background: #1e1e1e; color: #d4d4d4; border-radius: 6px; padding: 18px 20px; overflow-x: auto; font-size: 0.85em; line-height: 1.55; margin: 12px 0 20px; }
-  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
-  .comment { color: #6a9955; }
-  .key { color: #9cdcfe; }
-  .val { color: #ce9178; }
-  .kw { color: #569cd6; }
-  table { border-collapse: collapse; width: 100%; margin: 12px 0 20px; font-size: 0.92em; }
-  th { background: #cc0000; color: white; padding: 10px 14px; text-align: left; }
-  td { padding: 9px 14px; border-bottom: 1px solid #eee; vertical-align: top; }
-  tr:nth-child(even) td { background: #fafafa; }
-  .callout { border-left: 4px solid #0066cc; background: #f0f7ff; padding: 12px 18px; border-radius: 0 5px 5px 0; margin: 16px 0 20px; }
-  .callout.warn { border-left-color: #e67300; background: #fff8f0; }
-  .callout.tip { border-left-color: #2d8c2d; background: #f0fff0; }
-  .callout.future { border-left-color: #888; background: #f5f5f5; }
-  .callout p { margin: 4px 0; }
-  .callout strong { display: block; margin-bottom: 4px; font-size: 0.95em; }
-  .toc { background: #fafafa; border: 1px solid #e0e0e0; padding: 18px 24px; border-radius: 6px; margin: 24px 0 36px; }
-  .toc h3 { margin: 0 0 10px; color: #333; }
-  .toc ol { margin: 0; padding-left: 22px; }
-  .toc li { margin: 5px 0; }
-  .toc a { color: #0066cc; text-decoration: none; }
-  .toc a:hover { text-decoration: underline; }
-  .badge { display: inline-block; font-size: 0.72em; padding: 2px 8px; border-radius: 10px; margin-left: 6px; font-weight: 600; vertical-align: middle; }
-  .summit { background: #d4edda; color: #155724; }
-  .future-badge { background: #e2e3e5; color: #383d41; }
-  .diagram-wrap { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 6px; padding: 20px; margin: 20px 0; }
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 16px 0; }
-  @media(max-width:700px){ .two-col { grid-template-columns: 1fr; } }
-  .col-box { border: 1px solid #ddd; border-radius: 6px; padding: 16px; }
-  .col-box h4 { margin-top: 0; }
-  .col-summit { border-top: 4px solid #2d8c2d; }
-  .col-future { border-top: 4px solid #888; }
+  :root {
+    --red: #cc0000;
+    --red-dark: #990000;
+    --blue: #0066cc;
+    --blue-light: #e8f0fb;
+    --orange: #f57c00;
+    --orange-light: #fff3e0;
+    --green: #2e7d32;
+    --green-light: #e8f5e9;
+    --grey-light: #f5f5f5;
+    --grey-border: #ddd;
+    --code-bg: #1e1e2e;
+    --code-fg: #cdd6f4;
+    --code-kw: #cba6f7;
+    --code-str: #a6e3a1;
+    --code-comment: #6c7086;
+    --code-num: #fab387;
+    --code-key: #89b4fa;
+    --code-val: #f38ba8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    color: #222;
+    background: #fff;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 2.5rem 4rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+    color: var(--red);
+    border-bottom: 3px solid var(--red);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    color: var(--red);
+    border-left: 5px solid var(--red);
+    padding-left: 0.75rem;
+    margin: 2.5rem 0 1rem;
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    color: #333;
+    margin: 1.5rem 0 0.5rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.25rem;
+  }
+
+  h4 {
+    font-size: 1rem;
+    color: #555;
+    margin: 1rem 0 0.4rem;
+    font-style: italic;
+  }
+
+  p { margin: 0.6rem 0; }
+
+  ul, ol {
+    margin: 0.5rem 0 0.5rem 1.5rem;
+  }
+
+  li { margin: 0.25rem 0; }
+
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .subtitle {
+    color: #666;
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+  }
+
+  /* TOC */
+  .toc {
+    background: #fafafa;
+    border: 1px solid var(--grey-border);
+    border-radius: 6px;
+    padding: 1.25rem 1.5rem;
+    margin: 1.5rem 0 2.5rem;
+  }
+
+  .toc h2 {
+    font-size: 1rem;
+    margin: 0 0 0.75rem;
+    border: none;
+    padding: 0;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .toc ol {
+    margin-left: 1.25rem;
+  }
+
+  .toc li { margin: 0.2rem 0; font-size: 0.93rem; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0 1.5rem;
+    font-size: 0.9rem;
+  }
+
+  thead tr {
+    background: var(--red);
+    color: #fff;
+  }
+
+  thead th {
+    padding: 0.6rem 0.9rem;
+    text-align: left;
+    font-weight: 600;
+  }
+
+  tbody tr:nth-child(even) { background: #fafafa; }
+  tbody tr:hover { background: #f0f0f0; }
+
+  td {
+    padding: 0.55rem 0.9rem;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+  }
+
+  td code, th code {
+    background: #eee;
+    color: #c00;
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+    font-size: 0.88em;
+  }
+
+  /* Code blocks */
+  pre {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    border-radius: 8px;
+    padding: 1.25rem 1.4rem;
+    overflow-x: auto;
+    margin: 0.75rem 0 1.25rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    border: 1px solid #333;
+  }
+
+  code {
+    font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+  }
+
+  pre code {
+    background: none;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  .kw  { color: var(--code-kw); }
+  .str { color: var(--code-str); }
+  .cmt { color: var(--code-comment); font-style: italic; }
+  .num { color: var(--code-num); }
+  .key { color: var(--code-key); }
+  .val { color: #f9e2af; }
+  .op  { color: #89dceb; }
+
+  /* Callout boxes */
+  .callout {
+    border-radius: 6px;
+    padding: 0.9rem 1.2rem;
+    margin: 1rem 0;
+    border-left: 5px solid;
+    font-size: 0.93rem;
+  }
+
+  .callout strong { display: block; margin-bottom: 0.25rem; font-size: 1rem; }
+
+  .callout-blue {
+    background: var(--blue-light);
+    border-color: var(--blue);
+    color: #003a80;
+  }
+
+  .callout-orange {
+    background: var(--orange-light);
+    border-color: var(--orange);
+    color: #7a3e00;
+  }
+
+  .callout-green {
+    background: var(--green-light);
+    border-color: var(--green);
+    color: #1b5e20;
+  }
+
+  .callout-grey {
+    background: var(--grey-light);
+    border-color: #999;
+    color: #444;
+  }
+
+  /* Badge */
+  .badge {
+    display: inline-block;
+    background: var(--red);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.15em 0.55em;
+    border-radius: 3px;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .badge-green {
+    background: var(--green);
+  }
+
+  /* SVG containers */
+  .svg-wrap {
+    overflow-x: auto;
+    margin: 1rem 0 1.5rem;
+  }
+
+  svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Section dividers */
+  hr {
+    border: none;
+    border-top: 1px solid #e0e0e0;
+    margin: 2rem 0;
+  }
+
+  /* Two-col layout */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin: 1rem 0;
+  }
+
+  .col-box {
+    background: #fafafa;
+    border: 1px solid var(--grey-border);
+    border-radius: 6px;
+    padding: 1rem 1.2rem;
+  }
+
+  .col-box h4 {
+    margin-top: 0;
+    font-style: normal;
+    font-weight: 700;
+    color: var(--red);
+  }
 </style>
 </head>
 <body>
 
-<h1>Sandbox API — Developer Guide<br><small style="font-size:0.55em;color:#666;font-weight:400">OpenShift Shared Cluster Labs</small></h1>
-<div class="meta">Author: Prakhar Srivastava &nbsp;·&nbsp; February 2026 &nbsp;·&nbsp; Tested on cnv-us-east-ocp-3</div>
+<h1>Sandbox API — Developer Guide for OpenShift Shared Cluster Labs</h1>
+<p class="subtitle">Author: Prakhar Srivastava &nbsp;|&nbsp; March 2026 &nbsp;|&nbsp; Red Hat Demo Platform (RHDP)</p>
 
-<div class="toc">
-  <h3>Contents</h3>
+<!-- ============================================================ -->
+<!-- TABLE OF CONTENTS                                             -->
+<!-- ============================================================ -->
+<nav class="toc">
+  <h2>Table of Contents</h2>
   <ol>
-    <li><a href="#layers"><strong>Three Layers: Cluster Provisioner, Platform, Tenant</strong></a></li>
-    <li><a href="#what">What the Sandbox API Does</a></li>
-    <li style="color:#0066cc;"><strong>INFRA (Cluster Provisioner)</strong>
-      <ol>
-        <li><a href="#cluster-provisioning">What needs to be on the cluster</a></li>
-        <li><a href="#cluster-provisioning">How clusters enter the sandbox pool</a></li>
-      </ol>
-    </li>
-    <li style="color:#e67300;"><strong>TENANT (User Provisioner) — Summit 2026</strong>
-      <ol>
-        <li><a href="#provides">Variables from sandbox API</a></li>
-        <li><a href="#summit">Scheduler only — how it works</a></li>
-        <li><a href="#keycloak">Keycloak options</a></li>
-        <li><a href="#litemaas">LiteMaaS virtual keys</a></li>
-        <li><a href="#argocd">ArgoCD setup</a></li>
-        <li><a href="#quota">Quota &amp; LimitRange</a></li>
-        <li><a href="#destroy">Destroy behavior</a></li>
-        <li><a href="#showroom">Showroom tab URLs</a></li>
-      </ol>
-    </li>
+    <li><a href="#arch">New Architecture — Three-Layer Workflow</a></li>
+    <li><a href="#three-layers">Three Layers: Cluster Provisioner, Platform, Tenant</a></li>
+    <li><a href="#what-sandbox-does">What the Sandbox API Does</a></li>
+    <li><a href="#variables">Variables Provided to AgnosticD</a></li>
+    <li><a href="#approach-a">Approach A — Scheduler Only (Summit 2026)</a></li>
+    <li><a href="#keycloak">Keycloak: Two Options</a></li>
+    <li><a href="#litemaas">LiteMaaS Virtual Keys</a></li>
+    <li><a href="#argocd-setup">ArgoCD Setup for Shared Clusters</a></li>
+    <li><a href="#quota">Quota &amp; LimitRange</a></li>
+    <li><a href="#destroy">Destroy Behavior</a></li>
+    <li><a href="#showroom-tabs">Showroom Tab URLs</a></li>
     <li><a href="#pitfalls">Common Pitfalls</a></li>
-    <li><a href="#future">Future: CI-Based Cluster Onboarding</a></li>
-    <li><a href="#multi">Future: Sandbox Creates All Namespaces</a></li>
+    <li><a href="#future-ci">Future: CI-Based Cluster Onboarding</a></li>
+    <li><a href="#future-sandbox-ns">Future: Sandbox Creates All Namespaces (MCP Lab)</a></li>
   </ol>
-</div>
+</nav>
 
-<!-- ════════════════════════════════════════════════════ -->
-<h2 id="new-workflow">New Architecture — Complete Workflow</h2>
+<!-- ============================================================ -->
+<!-- SECTION 1: NEW ARCHITECTURE                                   -->
+<!-- ============================================================ -->
+<h2 id="arch">1. New Architecture — Three-Layer Workflow</h2>
 
-<h3>Overview — Three-Layer Architecture</h3>
-<div class="diagram-wrap">
-<svg viewBox="0 0 880 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
+<p>
+  The RHDP shared cluster lab model separates concerns into three distinct layers.
+  A single physical cluster is provisioned once by an operator; a platform bootstrap
+  layer installs monitoring and shared services; and each catalog order creates an
+  isolated tenant environment via the Sandbox API and a set of Ansible roles.
+</p>
+
+<h3>Overview Diagram</h3>
+<div class="svg-wrap">
+<svg viewBox="0 0 880 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three-Layer Architecture Overview">
   <defs>
-    <marker id="ov1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#555"/></marker>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#555"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#cc0000"/>
+    </marker>
   </defs>
 
-  <!-- CLUSTER PROVISIONER LAYER -->
-  <rect x="10" y="10" width="855" height="95" rx="6" fill="#e8f4fd" stroke="#0066cc" stroke-width="2"/>
-  <text x="24" y="32" font-size="12" font-weight="bold" fill="#0066cc">1. CLUSTER PROVISIONER — runs once per cluster · becomes AGV catalog item once GC's automation is ready</text>
-  <rect x="24" y="42" width="95" height="50" rx="4" fill="white" stroke="#0066cc" stroke-width="1"/><text x="71" y="60" text-anchor="middle" font-size="8" font-weight="bold" fill="#0066cc">RHBK</text><text x="71" y="74" text-anchor="middle" font-size="7.5" fill="#555">authentication</text><text x="71" y="85" text-anchor="middle" font-size="7.5" fill="#555">OAuth + users</text>
-  <rect x="128" y="42" width="95" height="50" rx="4" fill="white" stroke="#0066cc" stroke-width="1"/><text x="175" y="60" text-anchor="middle" font-size="8" font-weight="bold" fill="#0066cc">ArgoCD</text><text x="175" y="74" text-anchor="middle" font-size="7.5" fill="#555">openshift_gitops</text><text x="175" y="85" text-anchor="middle" font-size="7.5" fill="#555">+ RBAC</text>
-  <rect x="232" y="42" width="95" height="50" rx="4" fill="white" stroke="#0066cc" stroke-width="1"/><text x="279" y="60" text-anchor="middle" font-size="8" font-weight="bold" fill="#0066cc">Gitea Operator</text><text x="279" y="74" text-anchor="middle" font-size="7.5" fill="#555">gitea_operator</text><text x="279" y="85" text-anchor="middle" font-size="7.5" fill="#555">admin only</text>
-  <rect x="336" y="42" width="95" height="50" rx="4" fill="white" stroke="#0066cc" stroke-width="1"/><text x="383" y="60" text-anchor="middle" font-size="8" font-weight="bold" fill="#0066cc">Tekton</text><text x="383" y="74" text-anchor="middle" font-size="7.5" fill="#555">pipelines</text><text x="383" y="85" text-anchor="middle" font-size="7.5" fill="#555">image builds</text>
-  <rect x="440" y="42" width="95" height="50" rx="4" fill="white" stroke="#0066cc" stroke-width="1"/><text x="487" y="60" text-anchor="middle" font-size="8" font-weight="bold" fill="#0066cc">ToolHive</text><text x="487" y="74" text-anchor="middle" font-size="7.5" fill="#555">MCP server</text><text x="487" y="85" text-anchor="middle" font-size="7.5" fill="#555">runtime</text>
-  <rect x="544" y="42" width="95" height="50" rx="4" fill="#fff8e1" stroke="#e67300" stroke-width="1"/><text x="591" y="57" text-anchor="middle" font-size="8" font-weight="bold" fill="#e67300">gitops_bootstrap</text><text x="591" y="69" text-anchor="middle" font-size="7.5" fill="#555">bootstrap-infra</text><text x="591" y="80" text-anchor="middle" font-size="7.5" fill="#555">AppProjects</text><text x="591" y="88" text-anchor="middle" font-size="7" fill="#e67300">infra/bootstrap/</text>
-  <rect x="648" y="42" width="205" height="50" rx="4" fill="#fff8e1" stroke="#e67300" stroke-width="1"/><text x="750" y="57" text-anchor="middle" font-size="8" font-weight="bold" fill="#e67300">gitops_bootstrap (multi-app list)</text><text x="750" y="69" text-anchor="middle" font-size="7.5" fill="#555">bootstrap-platform → monitoring</text><text x="750" y="80" text-anchor="middle" font-size="7.5" fill="#555">+ future platform resources</text><text x="750" y="88" text-anchor="middle" font-size="7" fill="#e67300">platform/bootstrap/</text>
+  <!-- Background -->
+  <rect width="880" height="500" fill="#f8f8f8" rx="8"/>
 
-  <!-- Arrow down -->
-  <line x1="440" y1="107" x2="440" y2="128" stroke="#aaa" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#ov1)"/>
-  <text x="460" y="122" font-size="8" fill="#aaa" font-style="italic">cluster registered in Sandbox API pool</text>
+  <!-- LAYER 1: Cluster Provisioner -->
+  <rect x="20" y="20" width="840" height="120" fill="#dbeafe" stroke="#3b82f6" stroke-width="2" rx="8"/>
+  <text x="36" y="45" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1e40af">Layer 1 — Cluster Provisioner (run once by operator)</text>
 
-  <!-- TENANT LAYER -->
-  <rect x="10" y="130" width="855" height="200" rx="6" fill="#fff8e1" stroke="#e67300" stroke-width="2"/>
-  <text x="24" y="152" font-size="12" font-weight="bold" fill="#e67300">2. TENANT — runs per order · Sandbox API schedules cluster · Ansible handles foundation · GitOps handles workloads</text>
+  <!-- Layer 1 boxes -->
+  <rect x="36" y="54" width="90" height="36" fill="#3b82f6" rx="5"/>
+  <text x="81" y="76" font-family="monospace" font-size="10" fill="white" text-anchor="middle">RHBK</text>
 
-  <!-- Ansible -->
-  <rect x="24" y="162" width="310" height="155" rx="5" fill="white" stroke="#e67300" stroke-width="1"/>
-  <text x="179" y="180" text-anchor="middle" font-size="10" font-weight="bold" fill="#e67300">Ansible Roles (Foundation)</text>
-  <rect x="36" y="188" width="132" height="42" rx="3" fill="#fff8e1" stroke="#e67300" stroke-width="0.8"/><text x="102" y="204" text-anchor="middle" font-size="8" font-weight="bold" fill="#e67300">tenant_keycloak_user</text><text x="102" y="216" text-anchor="middle" font-size="7.5" fill="#555">RHBK user + cleanup</text><text x="102" y="226" text-anchor="middle" font-size="7.5" fill="#555">mcpuser-{guid}</text>
-  <rect x="178" y="188" width="144" height="42" rx="3" fill="#fff8e1" stroke="#e67300" stroke-width="0.8"/><text x="250" y="204" text-anchor="middle" font-size="8" font-weight="bold" fill="#e67300">tenant_namespace</text><text x="250" y="216" text-anchor="middle" font-size="7.5" fill="#555">6 namespaces + LimitRange</text><text x="250" y="226" text-anchor="middle" font-size="7.5" fill="#555">RBAC + ArgoCD cleanup</text>
-  <rect x="36" y="238" width="132" height="42" rx="3" fill="#fff8e1" stroke="#e67300" stroke-width="0.8"/><text x="102" y="254" text-anchor="middle" font-size="8" font-weight="bold" fill="#e67300">tenant_gitea</text><text x="102" y="266" text-anchor="middle" font-size="7.5" fill="#555">Per-user Gitea</text><text x="102" y="276" text-anchor="middle" font-size="7.5" fill="#555">user + repo migration</text>
-  <rect x="178" y="238" width="144" height="42" rx="3" fill="#fff8e1" stroke="#e67300" stroke-width="0.8"/><text x="250" y="254" text-anchor="middle" font-size="8" font-weight="bold" fill="#e67300">litellm_virtual_keys</text><text x="250" y="266" text-anchor="middle" font-size="7.5" fill="#555">LiteMaaS key</text><text x="250" y="276" text-anchor="middle" font-size="7.5" fill="#555">per user · auto-revoke</text>
-  <rect x="36" y="288" width="286" height="22" rx="3" fill="#f0f7ff" stroke="#0066cc" stroke-width="0.8"/><text x="179" y="303" text-anchor="middle" font-size="7.5" fill="#0066cc">ocp4_workload_showroom · ocp4_workload_ocp_console_embed</text>
+  <rect x="136" y="54" width="90" height="36" fill="#3b82f6" rx="5"/>
+  <text x="181" y="76" font-family="monospace" font-size="10" fill="white" text-anchor="middle">ArgoCD</text>
 
-  <!-- Arrow -->
-  <line x1="336" y1="240" x2="368" y2="240" stroke="#555" stroke-width="1.5" marker-end="url(#ov1)"/>
+  <rect x="236" y="54" width="110" height="36" fill="#3b82f6" rx="5"/>
+  <text x="291" y="76" font-family="monospace" font-size="10" fill="white" text-anchor="middle">Gitea Operator</text>
 
-  <!-- GitOps -->
-  <rect x="370" y="162" width="483" height="155" rx="5" fill="white" stroke="#2d8c2d" stroke-width="1"/>
-  <text x="611" y="180" text-anchor="middle" font-size="10" font-weight="bold" fill="#2d8c2d">GitOps Bootstrap (Workloads) — bootstrap-tenant-{guid}</text>
-  <rect x="382" y="188" width="140" height="42" rx="3" fill="#f0fff0" stroke="#2d8c2d" stroke-width="0.8"/><text x="452" y="204" text-anchor="middle" font-size="8" font-weight="bold" fill="#2d8c2d">agent-mcpuser-{guid}</text><text x="452" y="216" text-anchor="middle" font-size="7.5" fill="#555">AI agent · Tekton build</text><text x="452" y="226" text-anchor="middle" font-size="7" fill="#888">tenant/agent/ + agent-src/</text>
-  <rect x="532" y="188" width="160" height="42" rx="3" fill="#f0fff0" stroke="#2d8c2d" stroke-width="0.8"/><text x="612" y="204" text-anchor="middle" font-size="8" font-weight="bold" fill="#2d8c2d">librechat-mcpuser-{guid}</text><text x="612" y="216" text-anchor="middle" font-size="7.5" fill="#555">LibreChat + MongoDB + Meili</text><text x="612" y="226" text-anchor="middle" font-size="7" fill="#888">upstream: danny-avila/LibreChat</text>
-  <rect x="702" y="188" width="139" height="42" rx="3" fill="#f0fff0" stroke="#2d8c2d" stroke-width="0.8"/><text x="771" y="204" text-anchor="middle" font-size="8" font-weight="bold" fill="#2d8c2d">mcp-gitea / openshift</text><text x="771" y="216" text-anchor="middle" font-size="7.5" fill="#555">ToolHive MCP servers</text><text x="771" y="226" text-anchor="middle" font-size="7" fill="#888">tenant/mcp-*/</text>
-  <rect x="382" y="238" width="459" height="42" rx="3" fill="#fff3e0" stroke="#e67300" stroke-width="0.8"/><text x="611" y="254" text-anchor="middle" font-size="8" font-weight="bold" fill="#e67300">librechat-config-mcpuser-{guid}</text><text x="611" y="266" text-anchor="middle" font-size="7.5" fill="#555">Secrets · routes · user-creation job · MCP configYaml · LiteMaaS endpoint → Showroom userinfo</text><text x="611" y="278" text-anchor="middle" font-size="7" fill="#888">tenant/librechat/</text>
-  <rect x="382" y="288" width="459" height="22" rx="3" fill="#f9f9f9" stroke="#ccc" stroke-width="0.8"/><text x="611" y="303" text-anchor="middle" font-size="7.5" fill="#888">All Applications have resources-finalizer.argocd.argoproj.io — delete bootstrap-tenant-{guid} → ArgoCD cascades cleanup</text>
+  <rect x="356" y="54" width="90" height="36" fill="#3b82f6" rx="5"/>
+  <text x="401" y="76" font-family="monospace" font-size="10" fill="white" text-anchor="middle">Tekton</text>
 
-  <!-- DESTROY ROW -->
-  <rect x="10" y="342" width="855" height="68" rx="6" fill="#fafafa" stroke="#cc0000" stroke-width="1.5" stroke-dasharray="5,3"/>
-  <text x="24" y="361" font-size="11" font-weight="bold" fill="#cc0000">3. DESTROY — explicit remove_workloads order</text>
-  <text x="24" y="377" font-size="8.5" fill="#555">① litellm_virtual_keys → ② gitops_bootstrap (cascade via finalizer) → ③ tenant_gitea → ④ tenant_namespace → ⑤ tenant_keycloak_user</text>
-  <text x="24" y="393" font-size="8.5" fill="#2d8c2d">ArgoCD finalizer prunes all K8s resources before namespaces deleted · Sandbox API removes primary namespace last</text>
-  <text x="24" y="407" font-size="8" fill="#888">catch_all: false — destroy job runs first, then sandbox API deletes sandbox-{guid}-user namespace</text>
-</svg>
-</div>
+  <rect x="456" y="54" width="90" height="36" fill="#3b82f6" rx="5"/>
+  <text x="501" y="76" font-family="monospace" font-size="10" fill="white" text-anchor="middle">ToolHive</text>
 
-<!-- DETAILED: CLUSTER PROVISIONER -->
-<h3>Part 1 — Cluster Provisioner Detail</h3>
-<div class="diagram-wrap">
-<svg viewBox="0 0 860 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
-  <defs><marker id="cp1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#0066cc"/></marker></defs>
-  <rect x="10" y="10" width="835" height="170" rx="6" fill="#e8f4fd" stroke="#0066cc" stroke-width="1.5"/>
-  <text x="24" y="30" font-size="11" font-weight="bold" fill="#0066cc">Cluster Provisioner — AGV catalog item (currently run manually · automated once GC's cluster registration is ready)</text>
-  <!-- Step boxes -->
-  <rect x="24" y="42" width="120" height="55" rx="4" fill="white" stroke="#0066cc" stroke-width="1"/>
-  <text x="84" y="61" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#0066cc">ocp4_workload</text>
-  <text x="84" y="73" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#0066cc">_authentication</text>
-  <text x="84" y="86" text-anchor="middle" font-size="7.5" fill="#555">provider: keycloak</text>
-  <text x="84" y="96" text-anchor="middle" font-size="7.5" fill="#555">num_users: 0</text>
-  <line x1="145" y1="69" x2="163" y2="69" stroke="#0066cc" stroke-width="1" marker-end="url(#cp1)"/>
+  <rect x="556" y="54" width="140" height="36" fill="#3b82f6" rx="5"/>
+  <text x="626" y="76" font-family="monospace" font-size="10" fill="white" text-anchor="middle">gitops_bootstrap(infra)</text>
 
-  <rect x="165" y="42" width="120" height="55" rx="4" fill="white" stroke="#0066cc" stroke-width="1"/>
-  <text x="225" y="61" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#0066cc">ocp4_workload</text>
-  <text x="225" y="73" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#0066cc">_openshift_gitops</text>
-  <text x="225" y="86" text-anchor="middle" font-size="7.5" fill="#555">ArgoCD + RBAC</text>
-  <text x="225" y="96" text-anchor="middle" font-size="7.5" fill="#555">cluster-admin SA</text>
-  <line x1="286" y1="69" x2="304" y2="69" stroke="#0066cc" stroke-width="1" marker-end="url(#cp1)"/>
+  <rect x="706" y="54" width="140" height="36" fill="#3b82f6" rx="5"/>
+  <text x="776" y="76" font-family="monospace" font-size="10" fill="white" text-anchor="middle">gitops_bootstrap(platform)</text>
 
-  <rect x="306" y="42" width="120" height="55" rx="4" fill="white" stroke="#0066cc" stroke-width="1"/>
-  <text x="366" y="61" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#0066cc">ocp4_workload</text>
-  <text x="366" y="73" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#0066cc">_gitea_operator</text>
-  <text x="366" y="86" text-anchor="middle" font-size="7.5" fill="#555">Gitea operator</text>
-  <text x="366" y="96" text-anchor="middle" font-size="7.5" fill="#555">admin only · no users</text>
-  <line x1="427" y1="69" x2="445" y2="69" stroke="#0066cc" stroke-width="1" marker-end="url(#cp1)"/>
+  <!-- Layer 1 sub-label -->
+  <text x="36" y="110" font-family="sans-serif" font-size="11" fill="#1e40af">AgnosticD roles: cluster-scoped installs, GitOps operators, RHBK realm bootstrap</text>
 
-  <rect x="447" y="42" width="120" height="55" rx="4" fill="white" stroke="#0066cc" stroke-width="1"/>
-  <text x="507" y="61" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#0066cc">ocp4_workload</text>
-  <text x="507" y="73" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#0066cc">_pipelines + toolhive</text>
-  <text x="507" y="86" text-anchor="middle" font-size="7.5" fill="#555">Tekton + ToolHive</text>
-  <text x="507" y="96" text-anchor="middle" font-size="7.5" fill="#555">operators</text>
-  <line x1="568" y1="69" x2="586" y2="69" stroke="#0066cc" stroke-width="1" marker-end="url(#cp1)"/>
+  <!-- Arrow L1 -> L2 -->
+  <line x1="440" y1="140" x2="440" y2="160" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
 
-  <rect x="588" y="42" width="245" height="55" rx="4" fill="#fff8e1" stroke="#e67300" stroke-width="1.5"/>
-  <text x="710" y="59" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#e67300">ocp4_workload_gitops_bootstrap (applications list)</text>
-  <text x="710" y="71" text-anchor="middle" font-size="7.5" fill="#555">→ bootstrap-infra: infra/bootstrap/ (AppProjects: platform, infra, tenants)</text>
-  <text x="710" y="83" text-anchor="middle" font-size="7.5" fill="#555">→ bootstrap-platform: platform/bootstrap/ (monitoring + future platform)</text>
-  <text x="710" y="94" text-anchor="middle" font-size="7" fill="#e67300">one role call · multi-app list feature</text>
+  <!-- LAYER 2: Platform -->
+  <rect x="20" y="162" width="840" height="100" fill="#ede9fe" stroke="#7c3aed" stroke-width="2" rx="8"/>
+  <text x="36" y="185" font-family="sans-serif" font-size="13" font-weight="bold" fill="#4c1d95">Layer 2 — Platform (bootstrap-platform AppSet)</text>
 
-  <!-- ArgoCD result -->
-  <text x="24" y="125" font-size="9" font-weight="bold" fill="#333">ArgoCD Applications created:</text>
-  <rect x="24" y="133" width="170" height="30" rx="3" fill="white" stroke="#0066cc" stroke-width="1"/><text x="109" y="152" text-anchor="middle" font-size="8" fill="#0066cc">bootstrap-infra → platform/infra/tenants AppProjects</text>
-  <rect x="204" y="133" width="180" height="30" rx="3" fill="white" stroke="#cc0000" stroke-width="1"/><text x="294" y="152" text-anchor="middle" font-size="8" fill="#cc0000">bootstrap-platform → platform-monitoring Application</text>
-  <rect x="394" y="133" width="445" height="30" rx="3" fill="#f5f5f5" stroke="#aaa" stroke-width="1"/><text x="616" y="152" text-anchor="middle" font-size="8" fill="#555">cluster registered in Sandbox API pool · orders can now land here</text>
-</svg>
-</div>
+  <rect x="36" y="194" width="170" height="36" fill="#7c3aed" rx="5"/>
+  <text x="121" y="217" font-family="monospace" font-size="10" fill="white" text-anchor="middle">bootstrap-platform</text>
 
-<!-- DETAILED: TENANT -->
-<h3>Part 2 — Tenant Provisioner Detail (Per Order)</h3>
-<div class="diagram-wrap">
-<svg viewBox="0 0 860 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
-  <defs><marker id="tp1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#e67300"/></marker><marker id="tp2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#2d8c2d"/></marker></defs>
+  <line x1="208" y1="212" x2="240" y2="212" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="242" y="194" width="170" height="36" fill="#8b5cf6" rx="5"/>
+  <text x="327" y="217" font-family="monospace" font-size="10" fill="white" text-anchor="middle">platform-monitoring</text>
+
+  <rect x="422" y="194" width="170" height="36" fill="#8b5cf6" rx="5"/>
+  <text x="507" y="209" font-family="monospace" font-size="10" fill="white" text-anchor="middle">future platform apps</text>
+  <text x="507" y="222" font-family="monospace" font-size="9" fill="#ddd6fe" text-anchor="middle">(e.g. shared LiteLLM)</text>
+
+  <line x1="412" y1="212" x2="420" y2="212" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <text x="36" y="252" font-family="sans-serif" font-size="11" fill="#4c1d95">Cluster-wide monitoring, alerting, and shared platform services — one per cluster</text>
+
+  <!-- Arrow L2 -> L3 -->
+  <line x1="440" y1="264" x2="440" y2="284" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- LAYER 3: Tenant per order -->
+  <rect x="20" y="286" width="840" height="140" fill="#ffedd5" stroke="#ea580c" stroke-width="2" rx="8"/>
+  <text x="36" y="308" font-family="sans-serif" font-size="13" font-weight="bold" fill="#7c2d12">Layer 3 — Tenant (one per catalog order)</text>
 
   <!-- Sandbox API -->
-  <rect x="10" y="10" width="150" height="50" rx="5" fill="#cc0000" opacity="0.85"/>
-  <text x="85" y="32" text-anchor="middle" font-size="10" font-weight="bold" fill="white">Sandbox API</text>
-  <text x="85" y="46" text-anchor="middle" font-size="8" fill="#ffcccc">scheduler only</text>
-  <line x1="161" y1="35" x2="196" y2="35" stroke="#555" stroke-width="1.5" marker-end="url(#tp1)"/>
-  <text x="178" y="28" text-anchor="middle" font-size="7.5" fill="#888">cluster + 1 ns</text>
+  <rect x="36" y="316" width="100" height="36" fill="#ea580c" rx="5"/>
+  <text x="86" y="338" font-family="monospace" font-size="10" fill="white" text-anchor="middle">Sandbox API</text>
 
-  <!-- Ansible roles -->
-  <rect x="198" y="10" width="375" height="110" rx="5" fill="#fff8e1" stroke="#e67300" stroke-width="1.5"/>
-  <text x="385" y="28" text-anchor="middle" font-size="10" font-weight="bold" fill="#e67300">Ansible Roles — Foundational (sequential)</text>
+  <line x1="138" y1="334" x2="158" y2="334" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-  <rect x="210" y="36" width="80" height="75" rx="3" fill="white" stroke="#e67300" stroke-width="1"/>
-  <text x="250" y="53" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#e67300">keycloak</text>
-  <text x="250" y="64" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#e67300">_user</text>
-  <text x="250" y="76" text-anchor="middle" font-size="7" fill="#555">RHBK user</text>
-  <text x="250" y="87" text-anchor="middle" font-size="7" fill="#555">mcpuser-{guid}</text>
-  <text x="250" y="98" text-anchor="middle" font-size="7" fill="#555">password</text>
-  <text x="250" y="108" text-anchor="middle" font-size="7" fill="#555">kubeconfig</text>
+  <!-- Ansible Roles box -->
+  <rect x="160" y="308" width="210" height="70" fill="#fed7aa" stroke="#ea580c" stroke-width="1" rx="5"/>
+  <text x="265" y="325" font-family="sans-serif" font-size="10" font-weight="bold" fill="#7c2d12" text-anchor="middle">Ansible Roles</text>
+  <text x="265" y="340" font-family="monospace" font-size="9" fill="#431407" text-anchor="middle">keycloak_user  |  tenant_namespace</text>
+  <text x="265" y="353" font-family="monospace" font-size="9" fill="#431407" text-anchor="middle">tenant_gitea  |  litellm_virtual_keys</text>
+  <text x="265" y="366" font-family="monospace" font-size="9" fill="#431407" text-anchor="middle">gitops_bootstrap</text>
 
-  <line x1="292" y1="73" x2="304" y2="73" stroke="#e67300" stroke-width="1" marker-end="url(#tp1)"/>
-  <rect x="306" y="36" width="80" height="75" rx="3" fill="white" stroke="#e67300" stroke-width="1"/>
-  <text x="346" y="53" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#e67300">tenant</text>
-  <text x="346" y="64" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#e67300">_namespace</text>
-  <text x="346" y="76" text-anchor="middle" font-size="7" fill="#555">6 namespaces</text>
-  <text x="346" y="87" text-anchor="middle" font-size="7" fill="#555">LimitRange</text>
-  <text x="346" y="98" text-anchor="middle" font-size="7" fill="#555">RBAC</text>
-  <text x="346" y="108" text-anchor="middle" font-size="7" fill="#555">labels</text>
+  <line x1="372" y1="343" x2="392" y2="343" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-  <line x1="388" y1="73" x2="400" y2="73" stroke="#e67300" stroke-width="1" marker-end="url(#tp1)"/>
-  <rect x="402" y="36" width="80" height="75" rx="3" fill="white" stroke="#e67300" stroke-width="1"/>
-  <text x="442" y="53" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#e67300">tenant</text>
-  <text x="442" y="64" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#e67300">_gitea</text>
-  <text x="442" y="76" text-anchor="middle" font-size="7" fill="#555">Gitea CR</text>
-  <text x="442" y="87" text-anchor="middle" font-size="7" fill="#555">user + repos</text>
-  <text x="442" y="98" text-anchor="middle" font-size="7" fill="#555">exports</text>
-  <text x="442" y="108" text-anchor="middle" font-size="7" fill="#555">gitea_url fact</text>
+  <!-- GitOps Bootstrap -->
+  <rect x="394" y="316" width="160" height="36" fill="#ea580c" rx="5"/>
+  <text x="474" y="338" font-family="monospace" font-size="10" fill="white" text-anchor="middle">bootstrap-tenant-{guid}</text>
 
-  <line x1="484" y1="73" x2="496" y2="73" stroke="#e67300" stroke-width="1" marker-end="url(#tp1)"/>
-  <rect x="498" y="36" width="63" height="75" rx="3" fill="white" stroke="#e67300" stroke-width="1"/>
-  <text x="529" y="53" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#e67300">litellm</text>
-  <text x="529" y="64" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#e67300">_key</text>
-  <text x="529" y="76" text-anchor="middle" font-size="7" fill="#555">LiteMaaS</text>
-  <text x="529" y="87" text-anchor="middle" font-size="7" fill="#555">virtual key</text>
-  <text x="529" y="98" text-anchor="middle" font-size="7" fill="#555">per user</text>
+  <line x1="556" y1="334" x2="576" y2="334" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-  <line x1="575" y1="35" x2="596" y2="35" stroke="#555" stroke-width="1.5" marker-end="url(#tp2)"/>
+  <!-- Tenant Apps box -->
+  <rect x="578" y="308" width="268" height="80" fill="#fed7aa" stroke="#ea580c" stroke-width="1" rx="5"/>
+  <text x="712" y="325" font-family="sans-serif" font-size="10" font-weight="bold" fill="#7c2d12" text-anchor="middle">Tenant Apps (ArgoCD)</text>
+  <text x="712" y="339" font-family="monospace" font-size="9" fill="#431407" text-anchor="middle">agent  |  librechat  |  mcp-gitea</text>
+  <text x="712" y="352" font-family="monospace" font-size="9" fill="#431407" text-anchor="middle">mcp-openshift  |  librechat-config</text>
+  <text x="712" y="365" font-family="monospace" font-size="9" fill="#431407" text-anchor="middle">showroom (tab UI)</text>
 
-  <!-- GitOps -->
-  <rect x="598" y="10" width="250" height="110" rx="5" fill="white" stroke="#2d8c2d" stroke-width="1.5"/>
-  <text x="723" y="28" text-anchor="middle" font-size="10" font-weight="bold" fill="#2d8c2d">gitops_bootstrap</text>
-  <text x="723" y="41" text-anchor="middle" font-size="8" fill="#555">creates bootstrap-tenant-{guid}</text>
-  <text x="723" y="54" text-anchor="middle" font-size="7.5" fill="#555">points to user's Gitea repo</text>
-  <text x="723" y="68" text-anchor="middle" font-size="7.5" fill="#2d8c2d">→ agent · librechat · librechat-config</text>
-  <text x="723" y="80" text-anchor="middle" font-size="7.5" fill="#2d8c2d">→ mcp-gitea · mcp-openshift</text>
-  <text x="723" y="92" text-anchor="middle" font-size="7.5" fill="#555">helm values: username · password</text>
-  <text x="723" y="104" text-anchor="middle" font-size="7.5" fill="#555">litemaas key · MCP server URLs</text>
+  <!-- Layer 3 footer -->
+  <text x="36" y="408" font-family="sans-serif" font-size="11" fill="#7c2d12">Each order gets isolated namespaces, Gitea org, Keycloak user, LiteMaaS virtual key, and ArgoCD AppSet</text>
 
-  <!-- Showroom row -->
-  <rect x="198" y="130" width="650" height="35" rx="4" fill="#f0f7ff" stroke="#0066cc" stroke-width="1"/>
-  <text x="523" y="148" text-anchor="middle" font-size="8.5" fill="#0066cc">ocp4_workload_ocp_console_embed + ocp4_workload_showroom → userinfo ConfigMap → Showroom displays URLs + credentials</text>
-  <text x="523" y="160" text-anchor="middle" font-size="7.5" fill="#888">librechat_url · librechat_user · librechat_password · gitea_url · gitea_password · openshift_mcp · gitea_mcp</text>
+  <!-- DESTROY ROW -->
+  <rect x="20" y="422" width="840" height="66" fill="#fff1f2" stroke="#cc0000" stroke-width="2" stroke-dasharray="6,3" rx="8"/>
+  <text x="36" y="441" font-family="sans-serif" font-size="12" font-weight="bold" fill="#cc0000">Destroy (reverse order)</text>
 
-  <!-- Namespace table -->
-  <text x="10" y="188" font-size="9" font-weight="bold" fill="#333">Namespaces created (tenant label: mcpuser-{guid}):</text>
-  <rect x="10" y="196" width="135" height="50" rx="3" fill="#e8f4fd" stroke="#0066cc" stroke-width="1"/><text x="77" y="213" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#0066cc">sandbox-{guid}-user</text><text x="77" y="226" text-anchor="middle" font-size="7" fill="#555">Sandbox API (primary)</text><text x="77" y="238" text-anchor="middle" font-size="7" fill="#888">cluster scheduling only</text>
-  <rect x="155" y="196" width="135" height="50" rx="3" fill="#f0fff0" stroke="#2d8c2d" stroke-width="1"/><text x="222" y="213" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#2d8c2d">agent-mcpuser-{guid}</text><text x="222" y="226" text-anchor="middle" font-size="7" fill="#555">AI agent + pipeline</text>
-  <rect x="300" y="196" width="135" height="50" rx="3" fill="#f0fff0" stroke="#2d8c2d" stroke-width="1"/><text x="367" y="213" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#2d8c2d">librechat-mcpuser-{guid}</text><text x="367" y="226" text-anchor="middle" font-size="7" fill="#555">LibreChat stack</text>
-  <rect x="445" y="196" width="135" height="50" rx="3" fill="#f0fff0" stroke="#2d8c2d" stroke-width="1"/><text x="512" y="213" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#2d8c2d">mcp-gitea-mcpuser-{guid}</text><text x="512" y="226" text-anchor="middle" font-size="7" fill="#555">Gitea MCP server</text>
-  <rect x="590" y="196" width="145" height="50" rx="3" fill="#f0fff0" stroke="#2d8c2d" stroke-width="1"/><text x="662" y="213" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#2d8c2d">mcp-openshift-mcpuser-{guid}</text><text x="662" y="226" text-anchor="middle" font-size="7" fill="#555">OCP MCP server</text>
-  <rect x="745" y="196" width="110" height="50" rx="3" fill="#f0fff0" stroke="#2d8c2d" stroke-width="1"/><text x="800" y="213" text-anchor="middle" font-size="7.5" font-weight="bold" fill="#2d8c2d">gitea-mcpuser-{guid}</text><text x="800" y="226" text-anchor="middle" font-size="7" fill="#555">Per-user Gitea</text>
+  <rect x="36" y="448" width="100" height="28" fill="#fee2e2" stroke="#cc0000" stroke-width="1" rx="4"/>
+  <text x="86" y="466" font-family="monospace" font-size="9" fill="#7f1d1d" text-anchor="middle">litellm_virt_keys</text>
+
+  <line x1="138" y1="462" x2="158" y2="462" stroke="#cc0000" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+  <rect x="160" y="448" width="120" height="28" fill="#fee2e2" stroke="#cc0000" stroke-width="1" rx="4"/>
+  <text x="220" y="466" font-family="monospace" font-size="9" fill="#7f1d1d" text-anchor="middle">gitops_bootstrap</text>
+
+  <line x1="282" y1="462" x2="302" y2="462" stroke="#cc0000" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+  <rect x="304" y="448" width="120" height="28" fill="#fee2e2" stroke="#cc0000" stroke-width="1" rx="4"/>
+  <text x="364" y="466" font-family="monospace" font-size="9" fill="#7f1d1d" text-anchor="middle">tenant_gitea</text>
+
+  <line x1="426" y1="462" x2="446" y2="462" stroke="#cc0000" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+  <rect x="448" y="448" width="140" height="28" fill="#fee2e2" stroke="#cc0000" stroke-width="1" rx="4"/>
+  <text x="518" y="466" font-family="monospace" font-size="9" fill="#7f1d1d" text-anchor="middle">tenant_namespace</text>
+
+  <line x1="590" y1="462" x2="610" y2="462" stroke="#cc0000" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+  <rect x="612" y="448" width="160" height="28" fill="#fee2e2" stroke="#cc0000" stroke-width="1" rx="4"/>
+  <text x="692" y="466" font-family="monospace" font-size="9" fill="#7f1d1d" text-anchor="middle">tenant_keycloak_user</text>
 </svg>
 </div>
 
-<!-- DETAILED: DESTROY -->
-<h3>Part 3 — Destroy Flow (Cascade via ArgoCD Finalizer)</h3>
-<div class="diagram-wrap">
-<svg viewBox="0 0 860 130" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
-  <defs><marker id="dt1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#cc0000"/></marker></defs>
-  <rect x="10" y="10" width="855" height="110" rx="6" fill="#fafafa" stroke="#cc0000" stroke-width="1.5" stroke-dasharray="5,3"/>
-  <text x="24" y="30" font-size="11" font-weight="bold" fill="#cc0000">Destroy — remove_workloads explicit order (not reversed workloads)</text>
+<h3>Cluster Provisioner — Detail</h3>
+<div class="svg-wrap">
+<svg viewBox="0 0 880 180" xmlns="http://www.w3.org/2000/svg">
+  <rect width="880" height="180" fill="#eff6ff" rx="8"/>
+  <text x="20" y="30" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1e40af">Cluster Provisioner — AgnosticD Roles (run once per cluster)</text>
 
-  <rect x="24" y="40" width="100" height="50" rx="4" fill="white" stroke="#e67300" stroke-width="1"/><text x="74" y="58" text-anchor="middle" font-size="8" font-weight="bold" fill="#e67300">① litellm</text><text x="74" y="70" text-anchor="middle" font-size="7.5" fill="#555">Revoke LiteMaaS</text><text x="74" y="82" text-anchor="middle" font-size="7.5" fill="#555">key first</text>
-  <line x1="125" y1="65" x2="143" y2="65" stroke="#cc0000" stroke-width="1.5" marker-end="url(#dt1)"/>
+  <rect x="20" y="44" width="120" height="50" fill="#3b82f6" rx="6"/>
+  <text x="80" y="65" font-family="monospace" font-size="9" fill="white" text-anchor="middle">ocp4_workload</text>
+  <text x="80" y="78" font-family="monospace" font-size="9" fill="white" text-anchor="middle">_rhbk_operator</text>
+  <text x="80" y="88" font-family="sans-serif" font-size="8" fill="#bfdbfe" text-anchor="middle">Keycloak / RHBK</text>
 
-  <rect x="145" y="40" width="145" height="50" rx="4" fill="white" stroke="#2d8c2d" stroke-width="1.5"/><text x="217" y="55" text-anchor="middle" font-size="8" font-weight="bold" fill="#2d8c2d">② gitops_bootstrap</text><text x="217" y="67" text-anchor="middle" font-size="7.5" fill="#555">Delete bootstrap-tenant-{guid}</text><text x="217" y="79" text-anchor="middle" font-size="7" fill="#2d8c2d">→ ArgoCD cascade via finalizer</text><text x="217" y="89" text-anchor="middle" font-size="7" fill="#2d8c2d">→ all child apps + K8s resources</text>
-  <line x1="291" y1="65" x2="309" y2="65" stroke="#cc0000" stroke-width="1.5" marker-end="url(#dt1)"/>
+  <rect x="155" y="44" width="120" height="50" fill="#3b82f6" rx="6"/>
+  <text x="215" y="65" font-family="monospace" font-size="9" fill="white" text-anchor="middle">ocp4_workload</text>
+  <text x="215" y="78" font-family="monospace" font-size="9" fill="white" text-anchor="middle">_gitea_operator</text>
+  <text x="215" y="88" font-family="sans-serif" font-size="8" fill="#bfdbfe" text-anchor="middle">Gitea + Operator</text>
 
-  <rect x="311" y="40" width="100" height="50" rx="4" fill="white" stroke="#e67300" stroke-width="1"/><text x="361" y="58" text-anchor="middle" font-size="8" font-weight="bold" fill="#e67300">③ tenant_gitea</text><text x="361" y="70" text-anchor="middle" font-size="7.5" fill="#555">Delete Gitea CR</text><text x="361" y="82" text-anchor="middle" font-size="7.5" fill="#555">+ user</text>
-  <line x1="412" y1="65" x2="430" y2="65" stroke="#cc0000" stroke-width="1.5" marker-end="url(#dt1)"/>
+  <rect x="290" y="44" width="120" height="50" fill="#3b82f6" rx="6"/>
+  <text x="350" y="65" font-family="monospace" font-size="9" fill="white" text-anchor="middle">ocp4_workload</text>
+  <text x="350" y="78" font-family="monospace" font-size="9" fill="white" text-anchor="middle">_openshift_gitops</text>
+  <text x="350" y="88" font-family="sans-serif" font-size="8" fill="#bfdbfe" text-anchor="middle">ArgoCD / GitOps</text>
 
-  <rect x="432" y="40" width="145" height="50" rx="4" fill="white" stroke="#e67300" stroke-width="1.5"/><text x="504" y="55" text-anchor="middle" font-size="8" font-weight="bold" fill="#e67300">④ tenant_namespace</text><text x="504" y="67" text-anchor="middle" font-size="7.5" fill="#555">Verify ArgoCD cleaned up</text><text x="504" y="79" text-anchor="middle" font-size="7.5" fill="#555">Delete all 6 namespaces</text>
-  <line x1="578" y1="65" x2="596" y2="65" stroke="#cc0000" stroke-width="1.5" marker-end="url(#dt1)"/>
+  <rect x="425" y="44" width="120" height="50" fill="#3b82f6" rx="6"/>
+  <text x="485" y="65" font-family="monospace" font-size="9" fill="white" text-anchor="middle">ocp4_workload</text>
+  <text x="485" y="78" font-family="monospace" font-size="9" fill="white" text-anchor="middle">_tekton</text>
+  <text x="485" y="88" font-family="sans-serif" font-size="8" fill="#bfdbfe" text-anchor="middle">Pipelines</text>
 
-  <rect x="598" y="40" width="130" height="50" rx="4" fill="white" stroke="#e67300" stroke-width="1"/><text x="663" y="58" text-anchor="middle" font-size="8" font-weight="bold" fill="#e67300">⑤ tenant_keycloak</text><text x="663" y="70" text-anchor="middle" font-size="7.5" fill="#555">Delete RHBK user</text><text x="663" y="82" text-anchor="middle" font-size="7.5" fill="#555">+ OCP identity</text>
-  <line x1="729" y1="65" x2="747" y2="65" stroke="#cc0000" stroke-width="1.5" marker-end="url(#dt1)"/>
+  <rect x="560" y="44" width="120" height="50" fill="#3b82f6" rx="6"/>
+  <text x="620" y="65" font-family="monospace" font-size="9" fill="white" text-anchor="middle">ocp4_workload</text>
+  <text x="620" y="78" font-family="monospace" font-size="9" fill="white" text-anchor="middle">_toolhive</text>
+  <text x="620" y="88" font-family="sans-serif" font-size="8" fill="#bfdbfe" text-anchor="middle">MCP Proxy</text>
 
-  <rect x="749" y="40" width="106" height="50" rx="4" fill="#cc0000" opacity="0.85"/><text x="802" y="58" text-anchor="middle" font-size="8" font-weight="bold" fill="white">Sandbox API</text><text x="802" y="70" text-anchor="middle" font-size="7.5" fill="#ffcccc">Deletes primary</text><text x="802" y="82" text-anchor="middle" font-size="7.5" fill="#ffcccc">namespace last</text>
+  <rect x="695" y="44" width="165" height="50" fill="#1d4ed8" rx="6"/>
+  <text x="777" y="62" font-family="monospace" font-size="9" fill="white" text-anchor="middle">ocp4_workload</text>
+  <text x="777" y="75" font-family="monospace" font-size="9" fill="white" text-anchor="middle">_gitops_bootstrap</text>
+  <text x="777" y="88" font-family="sans-serif" font-size="8" fill="#bfdbfe" text-anchor="middle">infra + platform AppSets</text>
+
+  <text x="20" y="120" font-family="sans-serif" font-size="11" fill="#1e40af">Runs via AgnosticD. Cluster-scoped. One-time setup. Places ArgoCD ApplicationSets for infra and platform tiers.</text>
+  <text x="20" y="137" font-family="sans-serif" font-size="11" fill="#1e40af">Result: a cluster ready to accept tenant orders — operators installed, GitOps wired, RHBK realm ready.</text>
+  <text x="20" y="154" font-family="sans-serif" font-size="11" fill="#1e40af">Cluster is then registered with the Sandbox API pool and marked available for scheduling.</text>
 </svg>
 </div>
 
-<!-- ════════════════════════════════════════════════════ -->
-<h2 id="layers">Three Layers: Cluster Provisioner, Platform, Tenant</h2>
+<h3>Tenant Provisioning Flow — Detail</h3>
+<div class="svg-wrap">
+<svg viewBox="0 0 880 240" xmlns="http://www.w3.org/2000/svg">
+  <rect width="880" height="240" fill="#fff7ed" rx="8"/>
+  <text x="20" y="28" font-family="sans-serif" font-size="13" font-weight="bold" fill="#7c2d12">Tenant Provisioning — Per Order</text>
 
-<p>Everything in a shared cluster lab is organized into three distinct layers. Understanding this separation is the most important concept before reading anything else.</p>
+  <!-- Step boxes -->
+  <!-- Step 1 -->
+  <rect x="20" y="42" width="130" height="60" fill="#ea580c" rx="6"/>
+  <text x="85" y="62" font-family="sans-serif" font-size="10" font-weight="bold" fill="white" text-anchor="middle">1. Sandbox API</text>
+  <text x="85" y="76" font-family="monospace" font-size="9" fill="#fed7aa" text-anchor="middle">schedules cluster</text>
+  <text x="85" y="89" font-family="monospace" font-size="9" fill="#fed7aa" text-anchor="middle">exports vars</text>
 
-<div class="diagram-wrap">
-<svg viewBox="0 0 820 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
-  <defs>
-    <marker id="arr-l" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#555"/></marker>
-  </defs>
+  <line x1="152" y1="72" x2="172" y2="72" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
 
-  <!-- LAYER 1: CLUSTER PROVISIONER -->
-  <rect x="10" y="10" width="790" height="88" rx="8" fill="#e8f4fd" stroke="#0066cc" stroke-width="2"/>
-  <text x="22" y="30" font-size="12" font-weight="bold" fill="#0066cc">LAYER 1 — Cluster Provisioner</text>
-  <text x="22" y="45" font-size="9" fill="#555">Runs ONCE per cluster · RHDP ops / AGV catalog item (pending GC automation) · NOT in per-user catalog item</text>
-  <rect x="22" y="54" width="110" height="36" rx="4" fill="white" stroke="#0066cc" stroke-width="1"/><text x="77" y="69" text-anchor="middle" font-size="8" font-weight="bold" fill="#0066cc">RHBK + ArgoCD</text><text x="77" y="81" text-anchor="middle" font-size="7.5" fill="#666">+ Tekton + ToolHive + Gitea op</text>
-  <rect x="142" y="54" width="140" height="36" rx="4" fill="#fff8e1" stroke="#e67300" stroke-width="1"/><text x="212" y="67" text-anchor="middle" font-size="8" font-weight="bold" fill="#e67300">gitops_bootstrap (infra)</text><text x="212" y="79" text-anchor="middle" font-size="7.5" fill="#555">infra/bootstrap/ → AppProjects</text>
-  <rect x="292" y="54" width="170" height="36" rx="4" fill="#fff8e1" stroke="#e67300" stroke-width="1"/><text x="377" y="67" text-anchor="middle" font-size="8" font-weight="bold" fill="#e67300">gitops_bootstrap (platform)</text><text x="377" y="79" text-anchor="middle" font-size="7.5" fill="#555">platform/bootstrap/ → monitoring</text>
+  <!-- Step 2 -->
+  <rect x="174" y="42" width="160" height="60" fill="#c2410c" rx="6"/>
+  <text x="254" y="60" font-family="sans-serif" font-size="10" font-weight="bold" fill="white" text-anchor="middle">2. AgnosticD Roles</text>
+  <text x="254" y="74" font-family="monospace" font-size="8.5" fill="#fed7aa" text-anchor="middle">keycloak_user</text>
+  <text x="254" y="86" font-family="monospace" font-size="8.5" fill="#fed7aa" text-anchor="middle">tenant_namespace  tenant_gitea</text>
+  <text x="254" y="98" font-family="monospace" font-size="8.5" fill="#fed7aa" text-anchor="middle">litellm_virtual_keys</text>
 
-  <!-- Arrow down -->
-  <line x1="405" y1="100" x2="405" y2="122" stroke="#aaa" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-l)"/>
+  <line x1="336" y1="72" x2="356" y2="72" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
 
-  <!-- LAYER 2: PLATFORM (ArgoCD) -->
-  <rect x="10" y="124" width="790" height="68" rx="8" fill="#f5f0ff" stroke="#9933cc" stroke-width="2"/>
-  <text x="22" y="144" font-size="12" font-weight="bold" fill="#9933cc">LAYER 2 — Platform (ArgoCD managed)</text>
-  <text x="22" y="158" font-size="9" fill="#555">Managed by Argo CD via bootstrap-platform · cluster-level resources · shared across all users</text>
-  <rect x="22" y="163" width="140" height="22" rx="4" fill="white" stroke="#9933cc" stroke-width="1"/><text x="92" y="178" text-anchor="middle" font-size="8" fill="#9933cc">platform-monitoring</text>
-  <rect x="172" y="163" width="200" height="22" rx="4" fill="white" stroke="#9933cc" stroke-width="1" stroke-dasharray="3,2"/><text x="272" y="178" text-anchor="middle" font-size="8" fill="#aaa">future platform apps (operators etc.)</text>
+  <!-- Step 3 -->
+  <rect x="358" y="42" width="180" height="60" fill="#9a3412" rx="6"/>
+  <text x="448" y="60" font-family="sans-serif" font-size="10" font-weight="bold" fill="white" text-anchor="middle">3. gitops_bootstrap Role</text>
+  <text x="448" y="74" font-family="monospace" font-size="8.5" fill="#fed7aa" text-anchor="middle">creates AppSet</text>
+  <text x="448" y="86" font-family="monospace" font-size="8.5" fill="#fed7aa" text-anchor="middle">bootstrap-tenant-{guid}</text>
+  <text x="448" y="98" font-family="monospace" font-size="8.5" fill="#fed7aa" text-anchor="middle">in ArgoCD namespace</text>
 
-  <!-- Arrow down -->
-  <line x1="405" y1="194" x2="405" y2="212" stroke="#aaa" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-l)"/>
+  <line x1="540" y1="72" x2="560" y2="72" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
 
-  <!-- LAYER 3: TENANT -->
-  <rect x="10" y="214" width="790" height="118" rx="8" fill="#fff8e1" stroke="#e67300" stroke-width="2"/>
-  <text x="22" y="234" font-size="12" font-weight="bold" fill="#e67300">LAYER 3 — Tenant (User Provisioner)</text>
-  <text x="22" y="249" font-size="9" fill="#555">Runs on EVERY ORDER · Your catalog item · Sandbox API schedules cluster · Ansible foundation · GitOps workloads</text>
-  <rect x="22" y="258" width="120" height="60" rx="4" fill="white" stroke="#e67300" stroke-width="1"/><text x="82" y="276" text-anchor="middle" font-size="8" font-weight="bold" fill="#e67300">Sandbox API</text><text x="82" y="288" text-anchor="middle" font-size="7.5" fill="#666">schedules cluster</text><text x="82" y="300" text-anchor="middle" font-size="7.5" fill="#666">1 primary namespace</text>
-  <rect x="152" y="258" width="140" height="60" rx="4" fill="white" stroke="#e67300" stroke-width="1"/><text x="222" y="276" text-anchor="middle" font-size="8" font-weight="bold" fill="#e67300">Ansible Roles</text><text x="222" y="288" text-anchor="middle" font-size="7.5" fill="#666">keycloak · namespace</text><text x="222" y="300" text-anchor="middle" font-size="7.5" fill="#666">gitea · litellm key</text>
-  <rect x="302" y="258" width="140" height="60" rx="4" fill="white" stroke="#e67300" stroke-width="1"/><text x="372" y="276" text-anchor="middle" font-size="8" font-weight="bold" fill="#e67300">GitOps Bootstrap</text><text x="372" y="288" text-anchor="middle" font-size="7.5" fill="#666">bootstrap-tenant-{guid}</text><text x="372" y="300" text-anchor="middle" font-size="7.5" fill="#666">tenant/bootstrap/</text>
-  <rect x="452" y="258" width="155" height="60" rx="4" fill="white" stroke="#e67300" stroke-width="1"/><text x="529" y="276" text-anchor="middle" font-size="8" font-weight="bold" fill="#e67300">Tenant Apps (ArgoCD)</text><text x="529" y="288" text-anchor="middle" font-size="7.5" fill="#666">agent · librechat</text><text x="529" y="300" text-anchor="middle" font-size="7.5" fill="#666">mcp-gitea · mcp-openshift</text>
-  <rect x="617" y="258" width="180" height="60" rx="4" fill="white" stroke="#e67300" stroke-width="1"/><text x="707" y="276" text-anchor="middle" font-size="8" font-weight="bold" fill="#e67300">Showroom</text><text x="707" y="288" text-anchor="middle" font-size="7.5" fill="#666">lab instructions UI</text><text x="707" y="300" text-anchor="middle" font-size="7.5" fill="#666">tabs: console · LibreChat · Gitea</text>
+  <!-- Step 4 -->
+  <rect x="562" y="42" width="290" height="60" fill="#7c2d12" rx="6"/>
+  <text x="707" y="60" font-family="sans-serif" font-size="10" font-weight="bold" fill="white" text-anchor="middle">4. ArgoCD Syncs Tenant Apps</text>
+  <text x="707" y="74" font-family="monospace" font-size="8.5" fill="#fed7aa" text-anchor="middle">agent  |  librechat  |  librechat-config</text>
+  <text x="707" y="86" font-family="monospace" font-size="8.5" fill="#fed7aa" text-anchor="middle">mcp-gitea  |  mcp-openshift  |  showroom</text>
+
+  <!-- Variables exported -->
+  <rect x="20" y="122" width="840" height="100" fill="white" stroke="#ea580c" stroke-width="1" rx="6"/>
+  <text x="36" y="142" font-family="sans-serif" font-size="11" font-weight="bold" fill="#7c2d12">Variables Exported by Roles (used by gitops_bootstrap to template Helm values)</text>
+  <text x="36" y="160" font-family="monospace" font-size="10" fill="#374151">tenant_keycloak_user → keycloak_user  |  tenant_gitea → gitea_org_name, gitea_url</text>
+  <text x="36" y="176" font-family="monospace" font-size="10" fill="#374151">tenant_namespace → sandbox_openshift_namespace (confirmed)  |  litellm → litellm_virtual_key</text>
+  <text x="36" y="192" font-family="monospace" font-size="10" fill="#374151">Sandbox API vars → sandbox_openshift_api_url, sandbox_openshift_ingress_domain, cluster_admin_agnosticd_sa_token</text>
+  <text x="36" y="208" font-family="monospace" font-size="10" fill="#374151">All combined into Helm values.yaml via Jinja2 templating inside gitops_bootstrap role</text>
+</svg>
+</div>
+
+<h3>Destroy Flow — Detail</h3>
+<div class="svg-wrap">
+<svg viewBox="0 0 880 120" xmlns="http://www.w3.org/2000/svg">
+  <rect width="880" height="120" fill="#fff1f2" rx="8"/>
+  <text x="20" y="28" font-family="sans-serif" font-size="13" font-weight="bold" fill="#cc0000">Destroy — Reverse Order (each role checks catch_all)</text>
+
+  <rect x="20" y="44" width="140" height="40" fill="#fee2e2" stroke="#cc0000" stroke-width="1.5" rx="5"/>
+  <text x="90" y="61" font-family="monospace" font-size="9" fill="#7f1d1d" text-anchor="middle">litellm_virtual_keys</text>
+  <text x="90" y="75" font-family="sans-serif" font-size="8" fill="#991b1b" text-anchor="middle">delete virtual key</text>
+
+  <line x1="162" y1="64" x2="182" y2="64" stroke="#cc0000" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrow-red)"/>
+
+  <rect x="184" y="44" width="140" height="40" fill="#fee2e2" stroke="#cc0000" stroke-width="1.5" rx="5"/>
+  <text x="254" y="61" font-family="monospace" font-size="9" fill="#7f1d1d" text-anchor="middle">gitops_bootstrap</text>
+  <text x="254" y="75" font-family="sans-serif" font-size="8" fill="#991b1b" text-anchor="middle">delete ArgoCD AppSet</text>
+
+  <line x1="326" y1="64" x2="346" y2="64" stroke="#cc0000" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrow-red)"/>
+
+  <rect x="348" y="44" width="140" height="40" fill="#fee2e2" stroke="#cc0000" stroke-width="1.5" rx="5"/>
+  <text x="418" y="61" font-family="monospace" font-size="9" fill="#7f1d1d" text-anchor="middle">tenant_gitea</text>
+  <text x="418" y="75" font-family="sans-serif" font-size="8" fill="#991b1b" text-anchor="middle">delete Gitea org + repos</text>
+
+  <line x1="490" y1="64" x2="510" y2="64" stroke="#cc0000" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrow-red)"/>
+
+  <rect x="512" y="44" width="150" height="40" fill="#fee2e2" stroke="#cc0000" stroke-width="1.5" rx="5"/>
+  <text x="587" y="61" font-family="monospace" font-size="9" fill="#7f1d1d" text-anchor="middle">tenant_namespace</text>
+  <text x="587" y="75" font-family="sans-serif" font-size="8" fill="#991b1b" text-anchor="middle">delete OCP namespaces</text>
+
+  <line x1="664" y1="64" x2="684" y2="64" stroke="#cc0000" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrow-red)"/>
+
+  <rect x="686" y="44" width="170" height="40" fill="#fee2e2" stroke="#cc0000" stroke-width="1.5" rx="5"/>
+  <text x="771" y="61" font-family="monospace" font-size="9" fill="#7f1d1d" text-anchor="middle">tenant_keycloak_user</text>
+  <text x="771" y="75" font-family="sans-serif" font-size="8" fill="#991b1b" text-anchor="middle">delete Keycloak user</text>
+
+  <text x="20" y="106" font-family="sans-serif" font-size="10" fill="#991b1b">Roles with catch_all: false skip destroy if sandbox_openshift_namespace was externally provided (Approach A)</text>
+</svg>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 2: THREE LAYERS                                       -->
+<!-- ============================================================ -->
+<h2 id="three-layers">2. Three Layers: Cluster Provisioner, Platform, Tenant</h2>
+
+<div class="svg-wrap">
+<svg viewBox="0 0 820 420" xmlns="http://www.w3.org/2000/svg">
+  <rect width="820" height="420" fill="#f9fafb" rx="8"/>
+  <text x="20" y="30" font-family="sans-serif" font-size="14" font-weight="bold" fill="#111">Shared Cluster — Layered Architecture</text>
+
+  <!-- Layer 1 block -->
+  <rect x="20" y="46" width="780" height="100" fill="#dbeafe" stroke="#2563eb" stroke-width="2" rx="8"/>
+  <text x="38" y="72" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1e3a8a">Layer 1 — Cluster Provisioner</text>
+  <text x="38" y="90" font-family="sans-serif" font-size="11" fill="#1e40af">Installs operators and cluster-wide infrastructure. Run ONCE when the cluster is first onboarded.</text>
+  <text x="38" y="107" font-family="sans-serif" font-size="11" fill="#1e40af">Includes: RHBK (Keycloak), ArgoCD, Gitea, Tekton, ToolHive, cluster RBAC, GitOps Bootstrap (infra tier).</text>
+  <text x="38" y="124" font-family="sans-serif" font-size="11" fill="#1e40af">Owned by: cluster operator / RHDP team. Not touched per order.</text>
+
+  <!-- Arrow -->
+  <line x1="410" y1="148" x2="410" y2="170" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="420" y="163" font-family="sans-serif" font-size="10" fill="#555">cluster ready</text>
+
+  <!-- Layer 2 block -->
+  <rect x="20" y="172" width="780" height="100" fill="#ede9fe" stroke="#7c3aed" stroke-width="2" rx="8"/>
+  <text x="38" y="198" font-family="sans-serif" font-size="13" font-weight="bold" fill="#4c1d95">Layer 2 — Platform</text>
+  <text x="38" y="216" font-family="sans-serif" font-size="11" fill="#5b21b6">Managed by ArgoCD ApplicationSet: bootstrap-platform. Installs shared cluster services.</text>
+  <text x="38" y="233" font-family="sans-serif" font-size="11" fill="#5b21b6">Currently: platform-monitoring (Prometheus, Grafana). Future: shared LiteLLM, LDAP sync, etc.</text>
+  <text x="38" y="250" font-family="sans-serif" font-size="11" fill="#5b21b6">Deployed by gitops_bootstrap role with scope=platform. Updated via GitOps PR, not per-order.</text>
+
+  <!-- Arrow -->
+  <line x1="410" y1="274" x2="410" y2="296" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="420" y="289" font-family="sans-serif" font-size="10" fill="#555">per order</text>
+
+  <!-- Layer 3 block -->
+  <rect x="20" y="298" width="780" height="105" fill="#ffedd5" stroke="#ea580c" stroke-width="2" rx="8"/>
+  <text x="38" y="324" font-family="sans-serif" font-size="13" font-weight="bold" fill="#7c2d12">Layer 3 — Tenant (N tenants per cluster)</text>
+  <text x="38" y="342" font-family="sans-serif" font-size="11" fill="#9a3412">Created per catalog order. Isolated namespace(s), Gitea org, Keycloak user, LiteMaaS virtual key.</text>
+  <text x="38" y="359" font-family="sans-serif" font-size="11" fill="#9a3412">AgnosticD roles + gitops_bootstrap (scope=tenant) → ArgoCD AppSet bootstrap-tenant-{guid}.</text>
+  <text x="38" y="376" font-family="sans-serif" font-size="11" fill="#9a3412">Tenant apps: LibreChat, MCP servers, Showroom tab, AI agent. Destroyed when order ends.</text>
+  <text x="38" y="393" font-family="sans-serif" font-size="11" fill="#9a3412">Multiple tenants coexist on same cluster — namespace isolation + RBAC per user.</text>
 </svg>
 </div>
 
 <table>
-  <tr>
-    <th style="background:#0066cc;width:33%;">🔷 Cluster Provisioner</th>
-    <th style="background:#9933cc;width:33%;">🟣 Platform</th>
-    <th style="background:#e67300;width:33%;">🟠 Tenant</th>
-  </tr>
-  <tr>
-    <td>Run <strong>once per cluster</strong></td>
-    <td>Managed by ArgoCD continuously</td>
-    <td>Run on <strong>every order</strong></td>
-  </tr>
-  <tr>
-    <td>RHDP ops / AGV catalog item</td>
-    <td>Bootstrapped by cluster provisioner</td>
-    <td>This is <strong>your</strong> catalog item</td>
-  </tr>
-  <tr>
-    <td>Installs operators, RHBK, ArgoCD, ToolHive</td>
-    <td>Cluster monitoring, future platform resources</td>
-    <td>User, namespaces, Gitea, workloads</td>
-  </tr>
-  <tr>
-    <td>Registers cluster in Sandbox API pool</td>
-    <td>Shared across all users on the cluster</td>
-    <td>Scoped to one user / one order</td>
-  </tr>
-  <tr>
-    <td><strong>NOT in your catalog item</strong></td>
-    <td><strong>NOT in your catalog item</strong></td>
-    <td><strong>This is your <code>common.yaml</code> + workloads + GitOps</strong></td>
-  </tr>
+  <thead>
+    <tr>
+      <th>Attribute</th>
+      <th>Layer 1 — Cluster Provisioner</th>
+      <th>Layer 2 — Platform</th>
+      <th>Layer 3 — Tenant</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Frequency</strong></td>
+      <td>Once per cluster lifetime</td>
+      <td>Once per cluster; updated via GitOps</td>
+      <td>Every catalog order</td>
+    </tr>
+    <tr>
+      <td><strong>Owner</strong></td>
+      <td>RHDP cluster operator</td>
+      <td>RHDP platform team</td>
+      <td>AgnosticD + Sandbox API</td>
+    </tr>
+    <tr>
+      <td><strong>ArgoCD AppSet</strong></td>
+      <td>None (roles apply directly)</td>
+      <td><code>bootstrap-platform</code></td>
+      <td><code>bootstrap-tenant-{guid}</code></td>
+    </tr>
+    <tr>
+      <td><strong>Scope</strong></td>
+      <td>Cluster-wide</td>
+      <td>Cluster-wide shared services</td>
+      <td>Namespaced, per user</td>
+    </tr>
+    <tr>
+      <td><strong>Destroyed on order end?</strong></td>
+      <td>No</td>
+      <td>No</td>
+      <td>Yes — full teardown</td>
+    </tr>
+    <tr>
+      <td><strong>Key components</strong></td>
+      <td>RHBK, ArgoCD, Gitea, Tekton, ToolHive</td>
+      <td>platform-monitoring, future shared services</td>
+      <td>LibreChat, MCP servers, Showroom, agent</td>
+    </tr>
+  </tbody>
 </table>
 
-<!-- ════════════════════════════════════════════════════ -->
-<h2 id="what">What the Sandbox API Does</h2>
+<!-- ============================================================ -->
+<!-- SECTION 3: WHAT THE SANDBOX API DOES                         -->
+<!-- ============================================================ -->
+<h2 id="what-sandbox-does">3. What the Sandbox API Does</h2>
+
+<p>
+  The Sandbox API is the RHDP scheduling layer for shared OpenShift clusters.
+  When a user places a catalog order, the Sandbox API selects an available cluster
+  from the pool and exports a fixed set of variables to AgnosticD. It does not
+  install any workloads — that is AgnosticD's job.
+</p>
+
+<ul>
+  <li><strong>Schedules a cluster</strong> — picks an available shared OCP cluster from the pool registered under the matching <code>cloud_selector</code> tag, marks it as in-use for the order duration.</li>
+  <li><strong>Creates one namespace (always)</strong> — the Sandbox API always creates at least one namespace on the cluster (named after the order GUID). Additional namespaces can be requested but this is optional per approach.</li>
+  <li><strong>Creates a Keycloak user (optional)</strong> — in Approach A, Keycloak user creation is handled by the <code>ocp4_workload_tenant_keycloak_user</code> role, not the sandbox API. In future approaches, the API may manage this directly.</li>
+</ul>
+
+<div class="callout callout-blue">
+  <strong>Key Constraint</strong>
+  The Sandbox API does not know about your application. It only knows about clusters and namespaces.
+  All workload provisioning (Gitea repos, Keycloak users, ArgoCD apps, AI agents) is handled
+  by AgnosticD roles that run <em>after</em> the sandbox API schedules a cluster.
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 4: VARIABLES                                          -->
+<!-- ============================================================ -->
+<h2 id="variables">4. Variables Provided to AgnosticD</h2>
+
+<p>
+  The following variables are injected into the AgnosticD run automatically by the Sandbox API
+  after a cluster is scheduled. They are available as Ansible facts throughout the workload roles.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Example Value</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>sandbox_openshift_namespace</code></td>
+      <td><code>guid-abc12</code></td>
+      <td>Primary namespace created by the sandbox API. Used as the base namespace for tenant workloads.</td>
+    </tr>
+    <tr>
+      <td><code>sandbox_openshift_api_url</code></td>
+      <td><code>https://api.cluster.example.com:6443</code></td>
+      <td>OCP API server URL. Used for <code>k8s_auth</code>, <code>kubernetes.core</code>, and SA token auth.</td>
+    </tr>
+    <tr>
+      <td><code>sandbox_openshift_console_url</code></td>
+      <td><code>https://console-openshift-console.apps.cluster.example.com</code></td>
+      <td>Web console URL for the cluster. Surfaced in Showroom tabs and user-facing info.</td>
+    </tr>
+    <tr>
+      <td><code>sandbox_openshift_ingress_domain</code></td>
+      <td><code>apps.cluster.example.com</code></td>
+      <td>Wildcard ingress domain. Used to construct per-user Route hostnames (<code>${USER}.${DOMAIN}</code>).</td>
+    </tr>
+    <tr>
+      <td><code>cluster_admin_agnosticd_sa_token</code></td>
+      <td><em>(JWT, never hardcoded)</em></td>
+      <td>Service Account token with cluster-admin scope. Used by roles that need cluster-level access. Must never be written to files.</td>
+    </tr>
+    <tr>
+      <td><code>sandbox_openshift_user</code></td>
+      <td><code>user-abc12</code></td>
+      <td>Username for the RHBK/Keycloak user created for this order. Also used as the Gitea username prefix.</td>
+    </tr>
+    <tr>
+      <td><code>sandbox_openshift_password</code></td>
+      <td><em>(generated, from vault)</em></td>
+      <td>Password for the Keycloak user. Set via the <code>ocp4_workload_tenant_keycloak_user</code> role.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-orange">
+  <strong>Secret Handling</strong>
+  <code>cluster_admin_agnosticd_sa_token</code> and <code>sandbox_openshift_password</code> are secrets.
+  Never write them into AgnosticV YAML files. Always reference via <code>{{ lookup('env', 'VAR_NAME') }}</code>
+  or from vault-injected extra vars.
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 5: APPROACH A                                         -->
+<!-- ============================================================ -->
+<h2 id="approach-a">5. Approach A — Scheduler Only <span class="badge">Summit 2026</span></h2>
+
+<p>
+  In Approach A, the Sandbox API is used <strong>only as a scheduler</strong>.
+  The API assigns a cluster but does not create any additional namespaces beyond the default one.
+  AgnosticD roles handle all namespace creation, Keycloak user setup, Gitea org creation, and
+  ArgoCD bootstrapping. This is the approach used for the Summit 2026 MCP lab.
+</p>
+
+<div class="callout callout-blue">
+  <strong>Note: The Sandbox API Always Creates at Least One Namespace</strong>
+  Even in Approach A, the sandbox API creates the primary namespace (<code>sandbox_openshift_namespace</code>).
+  Roles like <code>ocp4_workload_tenant_namespace</code> then create additional namespaces
+  (e.g., <code>-gitea</code>, <code>-agent</code>, <code>-librechat</code>) on top of this base.
+</div>
+
+<h3>AgnosticV common.yaml — Full Configuration</h3>
+
+<pre><code><span class="cmt"># AgnosticV catalog entry — Approach A (Scheduler Only)</span>
+<span class="cmt"># File: agnosticv/catalog/ocp-shared-mcp-lab/common.yaml</span>
+
+<span class="cmt"># Sandbox API scheduling — selects the shared OCP cluster pool</span>
+<span class="key">cloud_provider</span>: <span class="str">openshift</span>
+<span class="key">cloud_selector</span>: <span class="str">ocp4-mcp-lab-shared</span>   <span class="cmt"># matches the label on registered clusters</span>
+
+<span class="cmt"># Environment metadata</span>
+<span class="key">env_type</span>: <span class="str">ocp4-workload</span>
+<span class="key">guid</span>: <span class="str">"{{ guid }}"</span>
+
+<span class="cmt"># Workload roles — order matters for both create and destroy</span>
+<span class="key">workloads</span>:
+  - <span class="str">ocp4_workload_tenant_keycloak_user</span>
+  - <span class="str">ocp4_workload_tenant_namespace</span>
+  - <span class="str">ocp4_workload_tenant_gitea</span>
+  - <span class="str">ocp4_workload_litellm_virtual_keys</span>
+  - <span class="str">ocp4_workload_gitops_bootstrap</span>
+  - <span class="str">ocp4_workload_showroom</span>
+
+<span class="cmt"># Keycloak user config (Approach A — role manages, not sandbox API)</span>
+<span class="key">ocp4_workload_tenant_keycloak_user_rhbk_host</span>: <span class="str">"rhbk.apps.{{ sandbox_openshift_ingress_domain }}"</span>
+<span class="key">ocp4_workload_tenant_keycloak_user_realm</span>: <span class="str">rhdp</span>
+<span class="key">ocp4_workload_tenant_keycloak_user_username</span>: <span class="str">"user-{{ guid }}"</span>
+
+<span class="cmt"># Namespace config</span>
+<span class="key">ocp4_workload_tenant_namespace_prefix</span>: <span class="str">"{{ guid }}"</span>
+<span class="key">ocp4_workload_tenant_namespace_namespaces</span>:
+  - <span class="str">gitea</span>
+  - <span class="str">agent</span>
+  - <span class="str">librechat</span>
+  - <span class="str">mcp</span>
+
+<span class="cmt"># Gitea config</span>
+<span class="key">ocp4_workload_tenant_gitea_host</span>: <span class="str">"gitea.apps.{{ sandbox_openshift_ingress_domain }}"</span>
+<span class="key">ocp4_workload_tenant_gitea_org</span>: <span class="str">"{{ guid }}"</span>
+<span class="key">ocp4_workload_tenant_gitea_repos</span>:
+  - <span class="key">name</span>: <span class="str">mcp-openshift</span>
+    <span class="key">template_repo</span>: <span class="str">https://github.com/rhpds/mcp-openshift-template</span>
+  - <span class="key">name</span>: <span class="str">agent-config</span>
+    <span class="key">template_repo</span>: <span class="str">https://github.com/rhpds/agent-config-template</span>
+
+<span class="cmt"># LiteMaaS virtual key config</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_litellm_host</span>: <span class="str">"litemaas.rhdp.redhat.com"</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_key_alias</span>: <span class="str">"{{ guid }}"</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_models</span>:
+  - <span class="str">gpt-4o</span>
+  - <span class="str">claude-3-5-sonnet</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_catch_all</span>: <span class="kw">false</span>
+
+<span class="cmt"># GitOps bootstrap — creates ArgoCD AppSet for tenant apps</span>
+<span class="key">ocp4_workload_gitops_bootstrap_scope</span>: <span class="str">tenant</span>
+<span class="key">ocp4_workload_gitops_bootstrap_gitops_repo</span>: <span class="str">"https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops"</span>
+<span class="key">ocp4_workload_gitops_bootstrap_gitops_branch</span>: <span class="str">main</span>
+<span class="key">ocp4_workload_gitops_bootstrap_helm_values_template</span>: <span class="str">tenant-values.yaml.j2</span>
+
+<span class="cmt"># Showroom tab configuration</span>
+<span class="key">showroom_git_repo</span>: <span class="str">"https://github.com/rhpds/lb1726-mcp-showroom"</span>
+<span class="key">showroom_git_ref</span>: <span class="str">sandbox-login-instructions</span>
+<span class="key">showroom_subdomain</span>: <span class="str">"showroom-{{ guid }}.{{ sandbox_openshift_ingress_domain }}"</span>
+</code></pre>
+
+<h4>cloud_selector — How Cluster Scheduling Works</h4>
+<p>
+  The <code>cloud_selector</code> field maps to a label on clusters registered in the Sandbox API pool.
+  When an order is placed, the API finds a cluster tagged with <code>ocp4-mcp-lab-shared</code>
+  that has capacity, assigns it, and exports the cluster variables. Multiple catalog items
+  can share the same pool (same <code>cloud_selector</code>) and will be load-balanced across
+  available clusters.
+</p>
+
+<h3>Tenant Roles — Repos &amp; Branches</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Role / Component</th>
+      <th>Repository</th>
+      <th>Branch</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>ocp4_workload_tenant_keycloak_user</code></td>
+      <td><a href="https://github.com/redhat-cop/agnosticd" target="_blank">agnosticd/namespaced_workloads</a></td>
+      <td><code>tenant-roles</code></td>
+      <td>Creates RHBK user, sets password, exports user facts</td>
+    </tr>
+    <tr>
+      <td><code>ocp4_workload_tenant_namespace</code></td>
+      <td><a href="https://github.com/redhat-cop/agnosticd" target="_blank">agnosticd/namespaced_workloads</a></td>
+      <td><code>tenant-roles</code></td>
+      <td>Creates OCP namespaces with quota and LimitRange</td>
+    </tr>
+    <tr>
+      <td><code>ocp4_workload_tenant_gitea</code></td>
+      <td><a href="https://github.com/redhat-cop/agnosticd" target="_blank">agnosticd/namespaced_workloads</a></td>
+      <td><code>tenant-roles</code></td>
+      <td>Creates Gitea org, forks template repos, sets user access</td>
+    </tr>
+    <tr>
+      <td><code>ocp4_workload_gitops_bootstrap</code></td>
+      <td><a href="https://github.com/redhat-cop/agnosticd" target="_blank">agnosticd/core_workloads</a></td>
+      <td><code>gitops-bootstrap-userinfo</code></td>
+      <td>Creates ArgoCD AppSet <code>bootstrap-tenant-{guid}</code>; templates Helm values</td>
+    </tr>
+    <tr>
+      <td><code>ocp4_workload_litellm_virtual_keys</code></td>
+      <td><a href="https://github.com/rhpds/rhpds.litellm_virtual_keys" target="_blank">rhpds/rhpds.litellm_virtual_keys</a></td>
+      <td><code>main</code></td>
+      <td>Creates per-order LiteMaaS virtual API key; exports <code>litellm_virtual_key</code></td>
+    </tr>
+    <tr>
+      <td><code>ocp4_workload_showroom</code></td>
+      <td><a href="https://github.com/redhat-cop/agnosticd" target="_blank">agnosticd/showroom</a></td>
+      <td><code>main</code></td>
+      <td>Deploys Showroom tab with lab instructions; configured via <code>ui-config.yml</code></td>
+    </tr>
+    <tr>
+      <td>AgnosticV catalog entry</td>
+      <td><a href="https://github.com/rhpds/agnosticv" target="_blank">rhpds/agnosticv</a> — catalog/ocp-shared-mcp-lab/</td>
+      <td><code>master</code></td>
+      <td>Defines workloads list, cloud_selector, variable defaults</td>
+    </tr>
+    <tr>
+      <td>GitOps Helm charts</td>
+      <td><a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops" target="_blank">rhpds/ocpsandbox-mcp-with-openshift-gitops</a></td>
+      <td><code>main</code></td>
+      <td>ArgoCD ApplicationSets and Helm charts for all tenant apps</td>
+    </tr>
+    <tr>
+      <td>Showroom content</td>
+      <td><a href="https://github.com/rhpds/lb1726-mcp-showroom" target="_blank">rhpds/lb1726-mcp-showroom</a></td>
+      <td><code>sandbox-login-instructions</code></td>
+      <td>AsciiDoc lab guide with login instructions for sandbox-provisioned users</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>GitOps Repository Structure</h3>
+
+<pre><code><span class="cmt"># rhpds/ocpsandbox-mcp-with-openshift-gitops</span>
+ocpsandbox-mcp-with-openshift-gitops/
+├── bootstrap/
+│   ├── <span class="key">bootstrap-infra/</span>          <span class="cmt"># Layer 1 — applied by cluster provisioner role</span>
+│   │   ├── Chart.yaml
+│   │   └── templates/
+│   │       └── appset-infra.yaml
+│   ├── <span class="key">bootstrap-platform/</span>       <span class="cmt"># Layer 2 — platform-monitoring etc.</span>
+│   │   ├── Chart.yaml
+│   │   └── templates/
+│   │       └── appset-platform.yaml
+│   └── <span class="key">bootstrap-tenant/</span>         <span class="cmt"># Layer 3 — created per order by gitops_bootstrap role</span>
+│       ├── Chart.yaml
+│       ├── values.yaml               <span class="cmt"># defaults</span>
+│       └── templates/
+│           ├── appset-tenant.yaml    <span class="cmt"># ApplicationSet with generators</span>
+│           └── appproject.yaml       <span class="cmt"># per-tenant AppProject</span>
+├── apps/
+│   ├── agent/                        <span class="cmt"># AI agent Helm chart</span>
+│   ├── librechat/                    <span class="cmt"># LibreChat Helm chart</span>
+│   ├── librechat-config/             <span class="cmt"># ConfigMap / Secret for LibreChat</span>
+│   ├── mcp-gitea/                    <span class="cmt"># MCP server for Gitea</span>
+│   ├── mcp-openshift/                <span class="cmt"># MCP server for OpenShift</span>
+│   └── showroom/                     <span class="cmt"># Showroom tab deployment</span>
+└── tenant-values/
+    └── guid-abc12.yaml               <span class="cmt"># Generated by gitops_bootstrap role (Jinja2)</span>
+</code></pre>
+
+<h3>ArgoCD AppProject — Wildcard Configuration</h3>
+
+<pre><code><span class="cmt"># bootstrap-tenant/templates/appproject.yaml</span>
+<span class="cmt"># One AppProject per tenant — scoped to tenant namespaces only</span>
+<span class="key">apiVersion</span>: <span class="str">argoproj.io/v1alpha1</span>
+<span class="key">kind</span>: <span class="str">AppProject</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">"tenant-{{ guid }}"</span>
+  <span class="key">namespace</span>: <span class="str">openshift-gitops</span>
+<span class="key">spec</span>:
+  <span class="key">description</span>: <span class="str">"Tenant project for order {{ guid }}"</span>
+  <span class="key">sourceRepos</span>:
+    - <span class="str">"*"</span>   <span class="cmt"># wildcard — allows any repo; lock down in production</span>
+  <span class="key">destinations</span>:
+    - <span class="key">server</span>: <span class="str">"https://kubernetes.default.svc"</span>
+      <span class="key">namespace</span>: <span class="str">"{{ guid }}-*"</span>   <span class="cmt"># matches all namespaces for this tenant</span>
+  <span class="key">clusterResourceWhitelist</span>: []     <span class="cmt"># no cluster-scoped resources from tenant</span>
+  <span class="key">namespaceResourceWhitelist</span>:
+    - <span class="key">group</span>: <span class="str">"*"</span>
+      <span class="key">kind</span>: <span class="str">"*"</span>
+</code></pre>
+
+<div class="callout callout-grey">
+  <strong>Wildcard sourceRepos</strong>
+  The <code>"*"</code> wildcard in <code>sourceRepos</code> allows ArgoCD to deploy from any Git repository.
+  This is acceptable for lab environments where tenants are trusted. For production, restrict to specific repos.
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 6: KEYCLOAK                                           -->
+<!-- ============================================================ -->
+<h2 id="keycloak">6. Keycloak: Two Options</h2>
+
+<p>
+  Lab environments on shared clusters need a Keycloak user for authentication into LibreChat,
+  the AI agent UI, and OpenShift itself (if using RHBK as the OCP identity provider).
+  There are two ways to provision this user:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Option</th>
+      <th>Option A — Sandbox API Keycloak</th>
+      <th>Option B — Bring Your Own RHBK</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Who creates the user</strong></td>
+      <td>Sandbox API (automatic, built-in)</td>
+      <td><code>ocp4_workload_tenant_keycloak_user</code> role</td>
+    </tr>
+    <tr>
+      <td><strong>RHBK host</strong></td>
+      <td>Managed by RHDP infra team</td>
+      <td>Installed on shared cluster by provisioner role</td>
+    </tr>
+    <tr>
+      <td><strong>Realm</strong></td>
+      <td>Sandbox-managed realm</td>
+      <td><code>rhdp</code> (configurable)</td>
+    </tr>
+    <tr>
+      <td><strong>Username pattern</strong></td>
+      <td>Set by sandbox API config</td>
+      <td><code>user-{{ guid }}</code> (configurable)</td>
+    </tr>
+    <tr>
+      <td><strong>Password</strong></td>
+      <td>Generated by sandbox API; available as <code>sandbox_openshift_password</code></td>
+      <td>Generated by role; exported as Ansible fact</td>
+    </tr>
+    <tr>
+      <td><strong>Destroy</strong></td>
+      <td>Sandbox API deletes on order end</td>
+      <td>Role destroy task deletes user from RHBK</td>
+    </tr>
+    <tr>
+      <td><strong>Best for</strong></td>
+      <td>Simple setups; no cluster-installed RHBK</td>
+      <td>Summit 2026 MCP lab (Approach A) — full control</td>
+    </tr>
+    <tr>
+      <td><strong>Approach A uses?</strong></td>
+      <td>No — role manages user</td>
+      <td>Yes — this is Approach A</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-green">
+  <strong>Approach A Recommendation</strong>
+  Use Option B (RHBK installed on cluster, role creates user) for Summit 2026.
+  This gives full control over the realm configuration, client scopes, and user attributes.
+  The RHBK admin credentials are managed via vault and injected as environment variables.
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 7: LITEMAAS VIRTUAL KEYS                              -->
+<!-- ============================================================ -->
+<h2 id="litemaas">7. LiteMaaS Virtual Keys</h2>
+
+<p>
+  LiteMaaS (the RHDP LiteLLM proxy service) issues per-order virtual API keys.
+  These keys restrict which AI models a tenant can use, set rate limits, and are
+  automatically deleted when the order ends. The <code>ocp4_workload_litellm_virtual_keys</code>
+  role handles creation and deletion.
+</p>
+
+<div class="callout callout-orange">
+  <strong>Critical: catch_all: false</strong>
+  Always set <code>ocp4_workload_litellm_virtual_keys_catch_all: false</code> for shared cluster labs.
+  If <code>catch_all: true</code>, the destroy task will attempt to delete ALL virtual keys — including
+  keys belonging to other tenants on the same cluster. This is a data-loss risk.
+  With <code>catch_all: false</code>, only the key created for this specific order (matched by alias <code>guid</code>) is deleted.
+</div>
+
+<h3>AgnosticV Configuration</h3>
+
+<pre><code><span class="cmt"># Workload definition in common.yaml</span>
+<span class="key">workloads</span>:
+  - <span class="str">ocp4_workload_litellm_virtual_keys</span>
+
+<span class="cmt"># Variable configuration</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_litellm_host</span>: <span class="str">"litemaas.rhdp.redhat.com"</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_litellm_master_key</span>: <span class="str">"{{ lookup('env', 'LITEMAAS_MASTER_KEY') | default('REPLACE_ME', true) }}"</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_key_alias</span>: <span class="str">"{{ guid }}"</span>   <span class="cmt"># unique per order</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_models</span>:
+  - <span class="str">gpt-4o</span>
+  - <span class="str">gpt-4o-mini</span>
+  - <span class="str">claude-3-5-sonnet</span>
+  - <span class="str">claude-3-haiku</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_max_budget</span>: <span class="num">5.0</span>           <span class="cmt"># USD per order</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_budget_duration</span>: <span class="str">"30d"</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_catch_all</span>: <span class="kw">false</span>           <span class="cmt"># REQUIRED for shared clusters</span>
+
+<span class="cmt"># Exported facts (set_fact by role — used downstream by gitops_bootstrap)</span>
+<span class="cmt"># litellm_virtual_key: "sk-vk-xxxx..."   (available as Ansible fact)</span>
+<span class="cmt"># litellm_virtual_key_id: 42             (used for deletion on destroy)</span>
+</code></pre>
+
+<h3>How the Key Is Passed to Tenant Apps</h3>
+<p>
+  The <code>ocp4_workload_litellm_virtual_keys</code> role sets <code>litellm_virtual_key</code>
+  as an Ansible fact via <code>set_fact</code>. The <code>ocp4_workload_gitops_bootstrap</code> role
+  reads this fact when templating the Helm values file for the tenant AppSet. The value is written
+  into a Kubernetes Secret in the tenant namespace, which LibreChat and the AI agent mount at runtime.
+</p>
+
+<div class="callout callout-grey">
+  <strong>set_fact Ordering</strong>
+  The <code>litellm_virtual_keys</code> role must run <em>before</em> <code>gitops_bootstrap</code>
+  in the workloads list so that <code>litellm_virtual_key</code> is available when the Helm values
+  template is rendered. Ordering in the <code>workloads</code> list is execution order.
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 8: ARGOCD SETUP                                       -->
+<!-- ============================================================ -->
+<h2 id="argocd-setup">8. ArgoCD Setup for Shared Clusters</h2>
+
+<h3>Per-User ApplicationSet Names</h3>
+<p>
+  Each tenant gets a uniquely named ArgoCD ApplicationSet:
+  <code>bootstrap-tenant-{guid}</code>. This prevents collisions between concurrent orders
+  on the same cluster. The name is deterministic and used by the destroy task to find and
+  delete the correct AppSet.
+</p>
+
+<pre><code><span class="cmt"># ApplicationSet created by gitops_bootstrap role</span>
+<span class="key">apiVersion</span>: <span class="str">argoproj.io/v1alpha1</span>
+<span class="key">kind</span>: <span class="str">ApplicationSet</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="str">"bootstrap-tenant-{{ guid }}"</span>   <span class="cmt"># unique per order</span>
+  <span class="key">namespace</span>: <span class="str">openshift-gitops</span>
+<span class="key">spec</span>:
+  <span class="key">generators</span>:
+    - <span class="key">list</span>:
+        <span class="key">elements</span>:
+          - <span class="key">guid</span>: <span class="str">"{{ guid }}"</span>
+            <span class="key">namespace</span>: <span class="str">"{{ sandbox_openshift_namespace }}"</span>
+            <span class="key">ingress_domain</span>: <span class="str">"{{ sandbox_openshift_ingress_domain }}"</span>
+            <span class="key">keycloak_user</span>: <span class="str">"{{ ocp4_workload_tenant_keycloak_user_username }}"</span>
+            <span class="key">gitea_org</span>: <span class="str">"{{ guid }}"</span>
+            <span class="key">litellm_key</span>: <span class="str">"{{ litellm_virtual_key }}"</span>
+  <span class="key">template</span>:
+    <span class="key">metadata</span>:
+      <span class="key">name</span>: <span class="str">"{{ '{{guid}}' }}-{{ '{{app}}' }}"</span>
+    <span class="key">spec</span>:
+      <span class="key">project</span>: <span class="str">"tenant-{{ guid }}"</span>
+      <span class="key">source</span>:
+        <span class="key">repoURL</span>: <span class="str">"https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops"</span>
+        <span class="key">targetRevision</span>: <span class="str">main</span>
+        <span class="key">path</span>: <span class="str">"apps/{{ '{{app}}' }}"</span>
+      <span class="key">destination</span>:
+        <span class="key">server</span>: <span class="str">"https://kubernetes.default.svc"</span>
+        <span class="key">namespace</span>: <span class="str">"{{ '{{namespace}}' }}-{{ '{{app}}' }}"</span>
+      <span class="key">syncPolicy</span>:
+        <span class="key">automated</span>:
+          <span class="key">prune</span>: <span class="kw">true</span>
+          <span class="key">selfHeal</span>: <span class="kw">true</span>
+        <span class="key">syncOptions</span>:
+          - <span class="str">CreateNamespace=false</span>    <span class="cmt"># REQUIRED — namespaces pre-created by role</span>
+</code></pre>
+
+<h3>CreateNamespace=false — Why This Matters</h3>
+<p>
+  The <code>CreateNamespace=false</code> sync option is <strong>required</strong> for shared cluster labs.
+  Namespaces are created by the <code>ocp4_workload_tenant_namespace</code> role with specific
+  quota, LimitRange, and RBAC configured. If ArgoCD creates namespaces automatically, those
+  constraints are absent, which can lead to resource exhaustion on the shared cluster.
+</p>
+<p>
+  Additionally, <code>CreateNamespace=false</code> ensures that if the ArgoCD AppSet is accidentally
+  applied to an existing namespace, it does not reset namespace metadata.
+</p>
+
+<div class="callout callout-orange">
+  <strong>Common Mistake</strong>
+  Omitting <code>CreateNamespace=false</code> causes ArgoCD to create namespaces before the
+  <code>tenant_namespace</code> role runs (on re-sync), which skips quota and LimitRange setup.
+  Always set this option in the AppSet template.
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 9: QUOTA & LIMITRANGE                                 -->
+<!-- ============================================================ -->
+<h2 id="quota">9. Quota &amp; LimitRange</h2>
+
+<p>
+  Every tenant namespace must have a ResourceQuota and LimitRange to protect the shared cluster
+  from resource exhaustion. The <code>ocp4_workload_tenant_namespace</code> role applies these
+  automatically based on the variables you define in AgnosticV.
+</p>
+
+<h3>Shorthand Quota Format</h3>
+
+<pre><code><span class="cmt"># In common.yaml — shorthand format (role parses this)</span>
+<span class="key">ocp4_workload_tenant_namespace_quota</span>:
+  <span class="key">requests.cpu</span>: <span class="str">"4"</span>
+  <span class="key">requests.memory</span>: <span class="str">"8Gi"</span>
+  <span class="key">limits.cpu</span>: <span class="str">"8"</span>
+  <span class="key">limits.memory</span>: <span class="str">"16Gi"</span>
+  <span class="key">pods</span>: <span class="str">"20"</span>
+  <span class="key">services</span>: <span class="str">"10"</span>
+  <span class="key">persistentvolumeclaims</span>: <span class="str">"5"</span>
+  <span class="key">requests.storage</span>: <span class="str">"20Gi"</span>
+
+<span class="cmt"># LimitRange — defaults applied to containers without explicit limits</span>
+<span class="key">ocp4_workload_tenant_namespace_limitrange</span>:
+  <span class="key">default_request</span>:
+    <span class="key">cpu</span>: <span class="str">"100m"</span>
+    <span class="key">memory</span>: <span class="str">"256Mi"</span>
+  <span class="key">default_limit</span>:
+    <span class="key">cpu</span>: <span class="str">"1"</span>
+    <span class="key">memory</span>: <span class="str">"1Gi"</span>
+  <span class="key">max</span>:
+    <span class="key">cpu</span>: <span class="str">"4"</span>
+    <span class="key">memory</span>: <span class="str">"8Gi"</span>
+</code></pre>
+
+<div class="callout callout-orange">
+  <strong>Warning: Do Not Use <code>resources: {}</code></strong>
+  If a Helm chart sets <code>resources: {}</code> (empty resources block), the LimitRange defaults
+  will <em>not</em> apply. This causes pods to be scheduled without resource limits, which can
+  consume unbounded CPU/memory on the shared cluster. Always set explicit resource requests and
+  limits in your Helm charts, or use <code>resources: null</code> to let LimitRange defaults apply.
+</div>
+
+<p>
+  Quota and LimitRange are applied per-namespace. If you create multiple namespaces
+  (e.g., <code>gitea</code>, <code>agent</code>, <code>librechat</code>), each gets its own
+  quota. You can configure per-namespace overrides using the list format:
+</p>
+
+<pre><code><span class="cmt"># Per-namespace quota override</span>
+<span class="key">ocp4_workload_tenant_namespace_namespaces</span>:
+  - <span class="key">name</span>: <span class="str">gitea</span>
+    <span class="key">quota</span>:
+      <span class="key">requests.memory</span>: <span class="str">"4Gi"</span>
+      <span class="key">limits.memory</span>: <span class="str">"8Gi"</span>
+  - <span class="key">name</span>: <span class="str">librechat</span>
+    <span class="key">quota</span>:
+      <span class="key">requests.memory</span>: <span class="str">"2Gi"</span>
+      <span class="key">limits.memory</span>: <span class="str">"4Gi"</span>
+  - <span class="key">name</span>: <span class="str">agent</span>     <span class="cmt"># uses global default quota</span>
+  - <span class="key">name</span>: <span class="str">mcp</span>        <span class="cmt"># uses global default quota</span>
+</code></pre>
+
+<!-- ============================================================ -->
+<!-- SECTION 10: DESTROY BEHAVIOR                                  -->
+<!-- ============================================================ -->
+<h2 id="destroy">10. Destroy Behavior</h2>
+
+<p>
+  When an order ends, AgnosticD runs the destroy playbook. Each role's destroy tasks
+  are executed in <strong>reverse order</strong> of the workloads list. The <code>catch_all</code>
+  flag controls whether a role tries to clean up resources it did not create in this run
+  (e.g., pre-existing namespaces passed in via variables).
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Role</th>
+      <th><code>catch_all: true</code> (default)</th>
+      <th><code>catch_all: false</code> (shared cluster)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>ocp4_workload_tenant_namespace</code></td>
+      <td>Deletes ALL namespaces matching the prefix, even if they existed before the order</td>
+      <td>Only deletes namespaces the role itself created (tracked via Ansible facts)</td>
+    </tr>
+    <tr>
+      <td><code>ocp4_workload_tenant_gitea</code></td>
+      <td>Deletes the entire Gitea org and all repos unconditionally</td>
+      <td>Deletes only if Gitea org was created in this run</td>
+    </tr>
+    <tr>
+      <td><code>ocp4_workload_tenant_keycloak_user</code></td>
+      <td>Deletes user by username; may fail if user does not exist</td>
+      <td>Deletes only if user was created in this run; skips gracefully if not found</td>
+    </tr>
+    <tr>
+      <td><code>ocp4_workload_litellm_virtual_keys</code></td>
+      <td>Deletes ALL virtual keys — dangerous on shared clusters</td>
+      <td>Deletes only the key with alias matching <code>guid</code> — safe for shared clusters</td>
+    </tr>
+    <tr>
+      <td><code>ocp4_workload_gitops_bootstrap</code></td>
+      <td>Deletes all ArgoCD AppSets in the gitops namespace</td>
+      <td>Deletes only <code>bootstrap-tenant-{guid}</code> — leaves platform AppSets intact</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-orange">
+  <strong>Always Use catch_all: false on Shared Clusters</strong>
+  Without this setting, a destroy run on one tenant's order can accidentally remove namespaces,
+  Gitea orgs, or LiteMaaS keys belonging to other concurrent tenants on the same cluster.
+  This is the single most important configuration choice for multi-tenant shared cluster labs.
+</div>
+
+<pre><code><span class="cmt"># Set catch_all: false for all roles that support it</span>
+<span class="key">ocp4_workload_tenant_namespace_catch_all</span>: <span class="kw">false</span>
+<span class="key">ocp4_workload_tenant_gitea_catch_all</span>: <span class="kw">false</span>
+<span class="key">ocp4_workload_tenant_keycloak_user_catch_all</span>: <span class="kw">false</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_catch_all</span>: <span class="kw">false</span>
+<span class="key">ocp4_workload_gitops_bootstrap_catch_all</span>: <span class="kw">false</span>
+</code></pre>
+
+<!-- ============================================================ -->
+<!-- SECTION 11: SHOWROOM TAB URLS                                 -->
+<!-- ============================================================ -->
+<h2 id="showroom-tabs">11. Showroom Tab URLs</h2>
+
+<p>
+  The Showroom tab displays lab instructions to the user. It also has "tabs" configured
+  to open directly to the LibreChat UI, Gitea instance, and OpenShift console.
+  Tab URLs use the per-user Route hostnames derived from the ingress domain.
+</p>
+
+<pre><code><span class="cmt"># showroom/ui-config.yml — tab configuration</span>
+<span class="cmt"># Variables substituted by the Showroom deployment role</span>
+
+<span class="key">tabs</span>:
+  - <span class="key">title</span>: <span class="str">"LibreChat"</span>
+    <span class="key">url</span>: <span class="str">"https://librechat-librechat-${USER}.${DOMAIN}"</span>
+    <span class="cmt"># expands to: librechat-librechat-user-abc12.apps.cluster.example.com</span>
+    <span class="key">icon</span>: <span class="str">chat</span>
+
+  - <span class="key">title</span>: <span class="str">"Gitea"</span>
+    <span class="key">url</span>: <span class="str">"https://gitea-gitea-${USER}.${DOMAIN}"</span>
+    <span class="cmt"># expands to: gitea-gitea-user-abc12.apps.cluster.example.com</span>
+    <span class="key">icon</span>: <span class="str">git</span>
+
+  - <span class="key">title</span>: <span class="str">"OpenShift Console"</span>
+    <span class="key">url</span>: <span class="str">"${OCP_CONSOLE_URL}"</span>
+    <span class="cmt"># expands to sandbox_openshift_console_url</span>
+    <span class="key">icon</span>: <span class="str">openshift</span>
+
+  - <span class="key">title</span>: <span class="str">"Agent UI"</span>
+    <span class="key">url</span>: <span class="str">"https://agent-agent-${USER}.${DOMAIN}"</span>
+    <span class="key">icon</span>: <span class="str">robot</span>
+
+<span class="cmt"># Variable substitution mappings (set in AgnosticV or Showroom role vars)</span>
+<span class="key">showroom_user_data</span>:
+  <span class="key">USER</span>: <span class="str">"{{ sandbox_openshift_user }}"</span>          <span class="cmt"># e.g. user-abc12</span>
+  <span class="key">DOMAIN</span>: <span class="str">"{{ sandbox_openshift_ingress_domain }}"</span>  <span class="cmt"># e.g. apps.cluster.example.com</span>
+  <span class="key">OCP_CONSOLE_URL</span>: <span class="str">"{{ sandbox_openshift_console_url }}"</span>
+  <span class="key">GITEA_URL</span>: <span class="str">"https://gitea.{{ sandbox_openshift_ingress_domain }}"</span>
+  <span class="key">LITECHAT_KEY</span>: <span class="str">"{{ litellm_virtual_key }}"</span>    <span class="cmt"># from litellm_virtual_keys role</span>
+</code></pre>
+
+<p>
+  The URL pattern <code>librechat-librechat-${USER}.${DOMAIN}</code> follows the
+  convention: <code>{service-name}-{namespace}-{username}.{ingress-domain}</code>.
+  The namespace is <code>librechat-{username}</code>, which is created by the
+  <code>ocp4_workload_tenant_namespace</code> role. The Route hostname is constructed
+  deterministically so Showroom can reference it without querying the cluster.
+</p>
+
+<!-- ============================================================ -->
+<!-- SECTION 12: COMMON PITFALLS                                   -->
+<!-- ============================================================ -->
+<h2 id="pitfalls">12. Common Pitfalls</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Pitfall</th>
+      <th>Symptom</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td><strong>Quota rejection on pod creation</strong></td>
+      <td>ArgoCD sync shows <code>forbidden: exceeded quota</code>; pods stay in Pending</td>
+      <td>Increase <code>ocp4_workload_tenant_namespace_quota</code> values, or reduce Helm chart resource requests. Ensure LimitRange defaults are not overridden by <code>resources: {}</code></td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><strong>set_fact not visible to downstream role</strong></td>
+      <td>gitops_bootstrap Jinja2 template fails with <code>undefined variable: litellm_virtual_key</code></td>
+      <td>Ensure <code>ocp4_workload_litellm_virtual_keys</code> is listed <em>before</em> <code>ocp4_workload_gitops_bootstrap</code> in the workloads list. Role ordering = execution ordering.</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><strong>ArgoCD AppProject wildcard too restrictive</strong></td>
+      <td>Apps fail to sync with <code>application repo not permitted</code></td>
+      <td>Add the specific repo URL to <code>sourceRepos</code> in the AppProject, or use <code>"*"</code> for lab environments where security is acceptable.</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><strong>ApplicationSet name collision</strong></td>
+      <td>Second order on same cluster overwrites first order's AppSet; first tenant's apps deleted</td>
+      <td>Always include <code>{{ guid }}</code> in the ApplicationSet name: <code>bootstrap-tenant-{{ guid }}</code>. Never use a static name.</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><strong>Showroom tab is blank / 404</strong></td>
+      <td>Showroom tab opens but shows empty content or 404</td>
+      <td>Check that <code>showroom_git_ref</code> branch exists and the <code>content/modules/ROOT/pages/</code> directory is present. Check Showroom pod logs for git clone errors.</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td><strong>Wrong namespace used by ArgoCD</strong></td>
+      <td>App deployed to <code>openshift-gitops</code> instead of tenant namespace</td>
+      <td>Verify <code>destination.namespace</code> in the AppSet template is set to <code>{{ '{{namespace}}' }}-{app}</code> and not hardcoded. Ensure <code>CreateNamespace=false</code> is set.</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td><strong>LiteMaaS virtual key orphaned after destroy</strong></td>
+      <td>Destroy succeeds but LiteMaaS still shows old key; rate limit charges accumulate</td>
+      <td>Confirm <code>ocp4_workload_litellm_virtual_keys_catch_all: false</code> and that the alias matches the <code>guid</code>. Check LiteMaaS API logs. Manually delete via <code>POST /key/delete</code> with the key ID if needed.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<!-- SECTION 13: FUTURE CI-BASED ONBOARDING                       -->
+<!-- ============================================================ -->
+<h2 id="future-ci">13. Future: CI-Based Cluster Onboarding</h2>
+
+<p>
+  Today, onboarding a new shared cluster into the RHDP pool requires manual steps by the
+  RHDP infrastructure team. The future goal is to make this self-service via the
+  demo.redhat.com UI, with CI validating cluster readiness before it enters the pool.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Step</th>
+      <th>Today (Manual)</th>
+      <th>Future (Self-Service via demo.redhat.com UI)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Cluster registration</strong></td>
+      <td>Operator manually adds cluster to Sandbox API pool YAML and opens PR</td>
+      <td>Admin submits cluster credentials via demo.redhat.com UI form; CI validates connectivity</td>
+    </tr>
+    <tr>
+      <td><strong>Provisioner roles</strong></td>
+      <td>Operator runs AgnosticD provisioner playbook manually from laptop or AWX</td>
+      <td>CI pipeline (Tekton or GitHub Actions) runs provisioner roles on cluster registration event</td>
+    </tr>
+    <tr>
+      <td><strong>Validation</strong></td>
+      <td>Manual check: operators installed, RHBK accessible, ArgoCD healthy</td>
+      <td>Automated test suite: checks operator status, ArgoCD sync, RHBK realm, Gitea API, Tekton pipeline run</td>
+    </tr>
+    <tr>
+      <td><strong>Pool entry</strong></td>
+      <td>Manual PR merge to sandbox-api pool config</td>
+      <td>Automatic after CI passes; cluster added to pool via API call</td>
+    </tr>
+    <tr>
+      <td><strong>Capacity update</strong></td>
+      <td>Manual edit to pool config</td>
+      <td>Cluster reports capacity automatically via metrics; auto-scaling rules apply</td>
+    </tr>
+    <tr>
+      <td><strong>Decommission</strong></td>
+      <td>Operator removes cluster from pool YAML manually; drains orders</td>
+      <td>Admin marks cluster for decommission in UI; Sandbox API drains orders gracefully, then removes from pool</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-blue">
+  <strong>Design Principle</strong>
+  The CI-based onboarding model treats clusters as cattle, not pets.
+  The provisioner playbook is idempotent, so re-running it on an existing cluster
+  is safe and brings the cluster back to the desired state. The CI pipeline
+  re-runs the provisioner on any detected drift.
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 14: FUTURE SANDBOX CREATES ALL NAMESPACES            -->
+<!-- ============================================================ -->
+<h2 id="future-sandbox-ns">14. Future: Sandbox Creates All Namespaces (Future / MCP Lab)</h2>
+
+<div class="callout callout-orange">
+  <strong>Not for Summit 2026</strong>
+  This section describes a future architecture where the Sandbox API creates all tenant namespaces
+  directly, without the <code>ocp4_workload_tenant_namespace</code> role. This is being designed
+  for post-Summit iterations and is <strong>not</strong> used in the Summit 2026 MCP lab.
+  Summit 2026 uses Approach A (scheduler only) described in Section 5.
+</div>
+
+<p>
+  In this future model, the Sandbox API would become namespace-aware: instead of creating only
+  one default namespace, it would accept a list of namespaces to create as part of the order
+  specification. This would simplify the AgnosticD workload list and reduce the number of roles
+  needed for a minimal setup.
+</p>
+
+<h3>Key Concepts for Future Namespace Model</h3>
+<ul>
+  <li><strong>Declarative namespace manifest</strong> — The catalog entry declares required namespaces in the AgnosticV common.yaml. The Sandbox API reads these and creates them before AgnosticD runs.</li>
+  <li><strong>Pre-applied quota</strong> — Namespace quotas would be specified in the catalog entry and applied by the Sandbox API on namespace creation, eliminating the need for the tenant_namespace role in simple cases.</li>
+  <li><strong>Role reduction</strong> — In simple labs, only two roles would be needed: <code>ocp4_workload_gitops_bootstrap</code> (to wire up ArgoCD) and <code>ocp4_workload_showroom</code> (for the lab UI). Namespace, Keycloak, and Gitea provisioning would be handled by the API layer.</li>
+  <li><strong>Faster provisioning</strong> — Eliminating Ansible-based namespace creation reduces provisioning time by removing sequential API calls. The Sandbox API can create namespaces in parallel.</li>
+  <li><strong>Destroy integration</strong> — When an order ends, the Sandbox API deletes all namespaces it created. No destroy tasks needed in AgnosticD for namespace cleanup.</li>
+  <li><strong>Migration path</strong> — Labs using Approach A (tenant_namespace role) can migrate to this model without changing their GitOps charts — only the AgnosticV configuration changes.</li>
+</ul>
+
+<h3>Reference — Key Repositories</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Repository</th>
+      <th>Purpose</th>
+      <th>Link</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Sandbox API</td>
+      <td>Core scheduling service; future namespace API extension</td>
+      <td><a href="https://github.com/rhpds/sandbox" target="_blank">rhpds/sandbox</a></td>
+    </tr>
+    <tr>
+      <td>AgnosticD namespaced_workloads</td>
+      <td>Tenant roles: keycloak_user, tenant_namespace, tenant_gitea</td>
+      <td><a href="https://github.com/redhat-cop/agnosticd" target="_blank">redhat-cop/agnosticd (tenant-roles branch)</a></td>
+    </tr>
+    <tr>
+      <td>ocpsandbox-mcp-with-openshift-gitops</td>
+      <td>GitOps charts for MCP lab tenant apps</td>
+      <td><a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops" target="_blank">rhpds/ocpsandbox-mcp-with-openshift-gitops</a></td>
+    </tr>
+    <tr>
+      <td>rhpds.litellm_virtual_keys</td>
+      <td>Ansible collection role for LiteMaaS virtual key management</td>
+      <td><a href="https://github.com/rhpds/rhpds.litellm_virtual_keys" target="_blank">rhpds/rhpds.litellm_virtual_keys</a></td>
+    </tr>
+    <tr>
+      <td>lb1726-mcp-showroom</td>
+      <td>Showroom lab content for the MCP shared cluster lab</td>
+      <td><a href="https://github.com/rhpds/lb1726-mcp-showroom" target="_blank">rhpds/lb1726-mcp-showroom (sandbox-login-instructions branch)</a></td>
+    </tr>
+    <tr>
+      <td>AgnosticV</td>
+      <td>Catalog entry definitions; cloud_selector configuration</td>
+      <td><a href="https://github.com/rhpds/agnosticv" target="_blank">rhpds/agnosticv</a></td>
+    </tr>
+    <tr>
+      <td>demo.redhat.com</td>
+      <td>RHDP catalog frontend; future cluster onboarding UI</td>
+      <td><a href="https://demo.redhat.com" target="_blank">demo.redhat.com</a> (internal)</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr>
+
+<p style="color: #888; font-size: 0.85rem; text-align: center; margin-top: 2rem;">
+  Sandbox API Developer Guide &mdash; Prakhar Srivastava &mdash; March 2026 &mdash; Red Hat Demo Platform (RHDP)<br>
+  Internal document. Not for external distribution.
+</p>
+
+</body>
+</html>
