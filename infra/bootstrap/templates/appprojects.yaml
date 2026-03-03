@@ -1,0 +1,57 @@
+---
+# Platform AppProject -- cluster-level operators and base config
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: platform
+  namespace: openshift-gitops
+spec:
+  description: "Cluster platform layer (operators, base config)"
+  sourceRepos:
+  - "*"
+  destinations:
+  - namespace: "*"
+    server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+  - group: "*"
+    kind: "*"
+---
+# Infra AppProject -- lab infrastructure (RHBK, Gitea, ToolHive)
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: infra
+  namespace: openshift-gitops
+spec:
+  description: "Lab infrastructure layer (RHBK, Gitea operator, ToolHive)"
+  sourceRepos:
+  - "*"
+  destinations:
+  - namespace: "*"
+    server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+  - group: "*"
+    kind: "*"
+---
+# Tenants AppProject -- shared project for all tenant labs
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: tenants
+  namespace: openshift-gitops
+spec:
+  description: "Shared AppProject for all tenant labs"
+  sourceRepos:
+  - "*"
+  destinations:
+  - namespace: "*"
+    server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+  - group: ""
+    kind: Namespace
+  - group: rbac.authorization.k8s.io
+    kind: ClusterRole
+  - group: rbac.authorization.k8s.io
+    kind: ClusterRoleBinding
+  - group: security.openshift.io
+    kind: SecurityContextConstraints
