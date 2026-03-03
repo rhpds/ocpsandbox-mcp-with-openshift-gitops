@@ -1,0 +1,5 @@
+---
+apiVersion: v2
+name: tenant-bootstrap
+description: ArgoCD app-of-apps for MCP with OpenShift tenant
+version: 0.1.0

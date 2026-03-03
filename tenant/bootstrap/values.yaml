@@ -1,0 +1,10 @@
+---
+deployer:
+  domain: apps.example.com
+  guid: guid
+
+tenant:
+  username: user-guid
+
+repoURL: http://gitea:3000/user/mcp.git
+targetRevision: main
