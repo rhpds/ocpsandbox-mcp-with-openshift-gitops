@@ -1,0 +1,5 @@
+---
+apiVersion: v2
+name: platform-bootstrap
+description: App-of-apps for cluster platform resources
+version: 0.1.0

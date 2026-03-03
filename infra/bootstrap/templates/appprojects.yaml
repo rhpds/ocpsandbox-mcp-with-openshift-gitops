@@ -52,22 +52,3 @@ spec:
     kind: ClusterRoleBinding
   - group: security.openshift.io
     kind: SecurityContextConstraints
----
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: platform
-  namespace: openshift-gitops
-spec:
-  project: platform
-  source:
-    repoURL: https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops.git
-    targetRevision: main
-    path: platform
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: openshift-monitoring
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
