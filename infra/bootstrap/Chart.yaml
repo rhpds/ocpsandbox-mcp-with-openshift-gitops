@@ -1,0 +1,5 @@
+---
+apiVersion: v2
+name: infra-bootstrap
+description: Cluster-level ArgoCD resources for MCP with OpenShift
+version: 0.1.0
