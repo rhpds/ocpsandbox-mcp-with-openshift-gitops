@@ -2,6 +2,7 @@
 {{- $domain := .Values.deployer.domain }}
 {{- $repoURL := printf "https://gitea-gitea-%s.%s/%s/mcp.git" $username $domain $username }}
 {{- $revision := .Values.targetRevision }}
+{{- $litemaas := .Values.litemaas | default dict }}
 
 {{- $apps := list
   (dict "name" "agent"         "chart" "tenant/agent"         "namespace" (printf "agent-%s"         $username))
@@ -32,6 +33,10 @@ spec:
         domain: {{ $domain }}
         git_url: {{ $repoURL }}
         git_revision: {{ $revision }}
+        litemaas:
+          url: {{ $litemaas.url | default "" | quote }}
+          key: {{ $litemaas.key | default "" | quote }}
+          models: {{ $litemaas.models | default "" | quote }}
   destination:
     server: https://kubernetes.default.svc
     namespace: {{ $app.namespace }}
