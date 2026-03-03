@@ -114,7 +114,10 @@ spec:
                 apiKey: "${CUSTOM_MODEL_KEY}"
                 baseURL: {{ $litemaas.url | default "" | quote }}
                 models:
-                  default: {{ $litemaas.models | default "" | quote }}
+                  default:
+{{- range splitList "," ($litemaas.models | default "") }}
+                  - {{ . | trim | quote }}
+{{- end }}
                   fetch: true
                 titleConvo: false
                 summarize: false
