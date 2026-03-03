@@ -33,6 +33,26 @@ spec:
   - group: "*"
     kind: "*"
 ---
+# Platform Application -- manages infra/platform/ resources via ArgoCD
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform
+  namespace: openshift-gitops
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops.git
+    targetRevision: main
+    path: infra/platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openshift-monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
 # Tenants AppProject -- shared project for all tenant labs
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
