@@ -1,0 +1,31 @@
+---
+# PostSync hook — waits until LibreChat is actually responding before
+# ArgoCD marks the librechat Application as Healthy.
+# Runs after all resources sync. Deleted automatically on success.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: librechat-readiness-check
+  namespace: {{ .Values.namespace }}
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: check
+        image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Waiting for LibreChat to be ready..."
+          until curl -sf --max-time 5 \
+            https://librechat-{{ .Values.namespace }}.{{ .Values.domain }}/api/health; do
+            echo "LibreChat not ready yet, retrying in 15s..."
+            sleep 15
+          done
+          echo "LibreChat is ready."
