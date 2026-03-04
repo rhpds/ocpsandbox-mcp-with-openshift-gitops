@@ -7,6 +7,26 @@ Per-user Helm charts for the **MCP with OpenShift** lab, deployed via ArgoCD App
 
 toc::[]
 
+== Why Sandbox API — Shared Clusters
+
+The original MCP with OpenShift lab provisioned a **full dedicated CNV cluster per order**. That model does not scale for modern workshop delivery.
+
+=== Zero Touch OpenShift
+
+The goal is for an attendee to click *Order* and have a fully working OpenShift environment in minutes — not 45–60 minutes. This is only possible with pre-provisioned shared clusters. The Sandbox API scheduler-only pattern is the foundation that makes this possible.
+
+=== Key Drivers
+
+*Speed* — A dedicated CNV cluster takes 45–60 minutes to provision. A shared cluster order using Sandbox API takes 2–3 minutes — the cluster is already running, only per-tenant resources are provisioned. For event formats like *Lightning Labs* at Summit 2026 (self-service, walk-up sessions with no instructor) or booth demos, waiting an hour is not an option.
+
+*Lightning Labs at Summit 2026* — The event team is introducing self-service labs as one of the biggest attractions of the event. An attendee walks up, orders, gets their environment in 2–3 minutes, completes the lab, and the environment is destroyed automatically. That cycle must work at scale, concurrently, across the event floor. One dedicated cluster per order cannot support that.
+
+*Scale across use cases* — Full workshop sessions, Lightning Labs, booth demos, and on-demand ordering from demo.redhat.com can all be served from a single shared cluster pool without provisioning a dedicated cluster for each.
+
+*Establishing a reusable pattern* — This is the first lab in RHDP to use the shared cluster + Sandbox API scheduler-only pattern end-to-end. The tenant roles (`ocp4_workload_tenant_keycloak_user`, `ocp4_workload_tenant_namespace`, `ocp4_workload_tenant_gitea`) were built to be generic and reusable — not tied to MCP. Any lab running on a shared OpenShift cluster can use the same building blocks.
+
+*Authentication* — HTPasswd with sequential usernames (`user1`, `user2`) made sense when each order got its own cluster. On a shared cluster that model breaks down: sequential usernames conflict across concurrent orders and you need an identity provider that handles isolated user sessions. RHBK is already on the cluster; each order adds one user to the existing realm and removes it on destroy.
+
 == Deployment Architecture
 
 This lab uses the **Infra / Tenant** pattern for OCP Sandbox deployments. Shared cluster infrastructure is provisioned once (infra), and per-user resources are deployed on demand (tenant).
