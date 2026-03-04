@@ -248,125 +248,227 @@
 <span class="cmt"># ============================================================</span>
 <span class="cmt"># AgnosticV — common.yaml</span>
 <span class="cmt"># Pattern: Summit 2026 / Scheduler-Only</span>
+<span class="cmt"># Catalog item: MCP with OpenShift (Sandbox)</span>
 <span class="cmt"># The Sandbox API schedules a cluster. All namespaces, users,</span>
 <span class="cmt"># and resources are created by Ansible roles — not by sandbox API.</span>
 <span class="cmt"># ============================================================</span>
 
-<span class="cmt"># ── 1. SANDBOX ENTRY ─────────────────────────────────────────</span>
-<span class="cmt"># Single entry. No namespace_suffix.</span>
-<span class="cmt"># Sandbox API picks a cluster from the pool and gives you</span>
-<span class="cmt"># the cluster API URL, ingress domain, and an admin SA token.</span>
-<span class="cmt"># It does NOT create any namespaces or users.</span>
-<span class="key">sandboxes</span>:
-  - <span class="key">name</span>: <span class="val">openshift</span>
+<span class="cmt"># ── 1. INCLUDES ──────────────────────────────────────────────</span>
+<span class="cmt"># Standard AgV includes — wired by AgnosticV automatically.</span>
+<span class="cmt"># litellm_metadata: captures requester_email + catalog_item_name</span>
+<span class="cmt"># for LiteMaaS key attribution and usage tracking.</span>
+<span class="cmt">#include /includes/agd-v2-mapping.yaml</span>
+<span class="cmt">#include /includes/sandbox-api.yaml</span>
+<span class="cmt">#include /includes/catalog-icon-openshift.yaml</span>
+<span class="cmt">#include /includes/terms-of-service.yaml</span>
+<span class="cmt">#include /includes/parameters/purpose.yaml</span>
+<span class="cmt">#include /includes/parameters/salesforce-id.yaml</span>
+<span class="cmt">#include /includes/parameters/litellm_metadata.yaml</span>
+<span class="cmt">#include /includes/secrets/litemaas-master_api.yaml</span>
 
-<span class="cmt"># ── 2. IDENTITY: USERNAME AND PASSWORD ───────────────────────</span>
-<span class="cmt"># Central username variable — ALL roles reference this one var.</span>
-<span class="cmt"># Format: mcpuser-&lt;guid&gt;  (e.g. mcpuser-drw4x)</span>
-<span class="key">ocp4_workload_tenant_keycloak_username</span>: <span class="str">"mcpuser-{{ guid }}"</span>
+<span class="cmt"># ── 2. MANDATORY VARS ────────────────────────────────────────</span>
+<span class="cmt"># cloud_provider: none  — no cloud account needed.</span>
+<span class="cmt">#   We use pre-provisioned OCP clusters from the sandbox pool.</span>
+<span class="cmt"># config: namespace  — AgnosticD namespace config:</span>
+<span class="cmt">#   - Runs workloads on provision</span>
+<span class="cmt">#   - Runs remove_workloads in listed order on destroy</span>
+<span class="cmt">#   - Sets K8S_AUTH_* env vars for kubernetes.core modules</span>
+<span class="key">cloud_provider</span>: <span class="val">none</span>
+<span class="key">config</span>: <span class="val">namespace</span>
 
-<span class="cmt"># Deterministic password — satisfies complexity (upper, lower, digit, special)</span>
-<span class="cmt"># Stays the same if you re-provision the same GUID.</span>
-<span class="cmt"># Format: Mcp + first 8 chars of sha256(guid) + !</span>
-<span class="key">common_password</span>: <span class="str">"Mcp{{ (guid | hash('sha256'))[:8] }}!"</span>
+<span class="cmt"># ── 3. COLLECTIONS ───────────────────────────────────────────</span>
+<span class="cmt"># Extra Ansible collections installed at deploy time.</span>
+<span class="cmt"># Point to specific branches to pin the behavior you tested.</span>
+<span class="key">requirements_content</span>:
+  <span class="key">collections</span>:
+  - <span class="key">name</span>: <span class="str">https://github.com/agnosticd/namespaced_workloads.git</span>
+    <span class="key">type</span>: <span class="val">git</span>
+    <span class="key">version</span>: <span class="val">tenant-roles</span>          <span class="cmt"># keycloak_user, namespace, gitea roles</span>
+  - <span class="key">name</span>: <span class="str">https://github.com/agnosticd/core_workloads.git</span>
+    <span class="key">type</span>: <span class="val">git</span>
+    <span class="key">version</span>: <span class="val">gitops-bootstrap-userinfo</span>  <span class="cmt"># finalizer + remove_workload + userinfo</span>
+  - <span class="key">name</span>: <span class="str">https://github.com/rhpds/rhpds.litellm_virtual_keys.git</span>
+    <span class="key">type</span>: <span class="val">git</span>
+    <span class="key">version</span>: <span class="val">main</span>
+  - <span class="key">name</span>: <span class="str">https://github.com/agnosticd/showroom.git</span>
+    <span class="key">type</span>: <span class="val">git</span>
+    <span class="key">version</span>: <span class="val">v1.5.1</span>
 
-<span class="cmt"># ── 3. WORKLOAD ORDER ────────────────────────────────────────</span>
+<span class="cmt"># ── 4. WORKLOAD ORDER ────────────────────────────────────────</span>
 <span class="cmt"># Roles run in this exact order during provisioning.</span>
-<span class="cmt"># Each role sets facts that the next role consumes.</span>
+<span class="cmt"># Each role sets facts consumed by the roles that follow it.</span>
 <span class="key">workloads</span>:
-  - <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_keycloak_user</span>    <span class="cmt"># 1. Create RHBK user</span>
-  - <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_namespace</span>         <span class="cmt"># 2. Create OCP namespaces</span>
-  - <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_gitea</span>             <span class="cmt"># 3. Create Gitea org + push repos</span>
-  - <span class="val">agnosticd.ai_workloads.ocp4_workload_litellm_virtual_keys</span>             <span class="cmt"># 4. Create LiteMaaS API key</span>
-  - <span class="val">agnosticd.core_workloads.ocp4_workload_gitops_bootstrap</span>               <span class="cmt"># 5. Create ArgoCD Application</span>
-  - <span class="val">agnosticd.showroom.ocp4_workload_showroom</span>                             <span class="cmt"># 6. Deploy Showroom tab UI</span>
+- <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_keycloak_user</span>  <span class="cmt"># 1. Create RHBK user</span>
+- <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_namespace</span>       <span class="cmt"># 2. Create OCP namespaces</span>
+- <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_gitea</span>           <span class="cmt"># 3. Per-user Gitea org + repo mirror</span>
+- <span class="val">rhpds.litellm_virtual_keys.ocp4_workload_litellm_virtual_keys</span>       <span class="cmt"># 4. LiteMaaS virtual key</span>
+- <span class="val">agnosticd.core_workloads.ocp4_workload_gitops_bootstrap</span>             <span class="cmt"># 5. ArgoCD app-of-apps</span>
+- <span class="val">agnosticd.showroom.ocp4_workload_ocp_console_embed</span>                  <span class="cmt"># 6. OCP console iframe support</span>
+- <span class="val">agnosticd.showroom.ocp4_workload_showroom</span>                           <span class="cmt"># 7. Showroom tab UI</span>
 
-<span class="cmt"># ── 4. KEYCLOAK CONFIG ───────────────────────────────────────</span>
-<span class="cmt"># RHBK is already installed on the cluster (by cluster provisioner).</span>
-<span class="cmt"># This role creates ONE user per order in the existing realm.</span>
-<span class="key">ocp4_workload_tenant_keycloak_user_rhbk_host</span>: <span class="str">"keycloak-keycloak.{{ sandbox_openshift_ingress_domain }}"</span>
-<span class="key">ocp4_workload_tenant_keycloak_user_realm</span>: <span class="val">sso</span>
-<span class="key">ocp4_workload_tenant_keycloak_user_admin_username</span>: <span class="val">admin</span>
-<span class="key">ocp4_workload_tenant_keycloak_user_admin_password</span>: <span class="str">"{{ common_password }}"</span>
+<span class="cmt"># ── 5. DESTROY ORDER ─────────────────────────────────────────</span>
+<span class="cmt"># Explicit destroy order — runs in the ORDER listed (not reversed).</span>
+<span class="cmt"># External resources (LiteMaaS key, ArgoCD app) must be removed</span>
+<span class="cmt"># before namespace deletion. ArgoCD cascade handles workload cleanup.</span>
+<span class="key">remove_workloads</span>:
+- <span class="val">rhpds.litellm_virtual_keys.ocp4_workload_litellm_virtual_keys</span>
+- <span class="val">agnosticd.core_workloads.ocp4_workload_gitops_bootstrap</span>  <span class="cmt"># cascade deletes all ArgoCD apps first</span>
+- <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_gitea</span>
+- <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_namespace</span>
+- <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_keycloak_user</span>
 
-<span class="cmt"># ── 5. NAMESPACES ────────────────────────────────────────────</span>
-<span class="cmt"># Creates one OCP namespace per suffix, prefixed with the username.</span>
-<span class="cmt"># Example: mcpuser-drw4x-gitea, mcpuser-drw4x-agent, etc.</span>
-<span class="cmt"># Each namespace gets a LimitRange with default CPU/memory limits.</span>
+<span class="cmt"># ── 6. IDENTITY: USERNAME AND PASSWORD ───────────────────────</span>
+<span class="cmt"># ocp4_workload_tenant_keycloak_username is the single identity var.</span>
+<span class="cmt"># ALL tenant roles reference this one variable.</span>
+<span class="cmt"># Format: mcpuser-&lt;guid&gt;  e.g. mcpuser-drw4x</span>
+<span class="key">ocp4_workload_tenant_keycloak_username</span>: <span class="str">"mcpuser-{{ guid }}"</span>
+<span class="key">ocp4_workload_tenant_namespace_username</span>: <span class="str">"{{ ocp4_workload_tenant_keycloak_username }}"</span>
+
+<span class="cmt"># Deterministic password — same value every time for the same GUID.</span>
+<span class="cmt"># Satisfies complexity: uppercase + lowercase + digit + special char.</span>
+<span class="key">common_password</span>: <span class="str">"Mcp{{ (guid | hash('sha256'))[:8] }}!"</span>
+<span class="key">ocp4_workload_tenant_keycloak_user_password</span>: <span class="str">"{{ common_password }}"</span>
+
+<span class="cmt"># ── 7. NAMESPACES ────────────────────────────────────────────</span>
+<span class="cmt"># ocp4_workload_tenant_namespace creates one namespace per suffix.</span>
+<span class="cmt"># Format: {suffix}-{username}  e.g. librechat-mcpuser-drw4x</span>
+<span class="cmt"># All namespaces are pre-created by Ansible before ArgoCD syncs.</span>
+<span class="key">ocp4_workload_tenant_namespace_prefix</span>: <span class="str">"{{ ocp4_workload_tenant_keycloak_username }}"</span>
 <span class="key">ocp4_workload_tenant_namespace_suffixes</span>:
-  - <span class="val">gitea</span>           <span class="cmt"># Gitea server namespace</span>
-  - <span class="val">agent</span>           <span class="cmt"># AI agent namespace</span>
-  - <span class="val">librechat</span>       <span class="cmt"># LibreChat UI namespace</span>
-  - <span class="val">mcp-gitea</span>       <span class="cmt"># MCP proxy for Gitea</span>
-  - <span class="val">mcp-openshift</span>   <span class="cmt"># MCP proxy for OpenShift</span>
+- <span class="val">agent</span>
+- <span class="val">librechat</span>
+- <span class="val">mcp-gitea</span>
+- <span class="val">mcp-openshift</span>
+- <span class="val">gitea</span>
+- <span class="val">showroom</span>
+<span class="key">ocp4_workload_tenant_namespace_limit_range</span>:
+  <span class="key">default</span>:
+    <span class="key">cpu</span>: <span class="val">500m</span>
+    <span class="key">memory</span>: <span class="val">512Mi</span>
+  <span class="key">defaultRequest</span>:
+    <span class="key">cpu</span>: <span class="val">50m</span>
+    <span class="key">memory</span>: <span class="val">128Mi</span>
 
-<span class="cmt"># ── 6. GITEA CONFIG ──────────────────────────────────────────</span>
-<span class="cmt"># Gitea is shared on the cluster (installed by cluster provisioner).</span>
-<span class="cmt"># This role creates one org per user and mirrors the GitOps repo into it.</span>
-<span class="cmt"># The mirrored repo is what ArgoCD reads for this tenant.</span>
-<span class="key">ocp4_workload_tenant_gitea_host</span>: <span class="str">"gitea.{{ sandbox_openshift_ingress_domain }}"</span>
-<span class="key">ocp4_workload_tenant_gitea_admin_user</span>: <span class="val">mcpadmin</span>
+<span class="cmt"># ── 8. GITEA ─────────────────────────────────────────────────</span>
+<span class="cmt"># Shared Gitea instance on the cluster (installed by cluster provisioner).</span>
+<span class="cmt"># This role creates one org + repo per user and mirrors the GitOps repo.</span>
+<span class="cmt"># ArgoCD reads from this mirrored repo — not directly from GitHub.</span>
+<span class="key">ocp4_workload_tenant_gitea_namespace</span>: <span class="str">"gitea-{{ ocp4_workload_tenant_keycloak_username }}"</span>
+<span class="key">ocp4_workload_tenant_gitea_username</span>: <span class="str">"{{ ocp4_workload_tenant_keycloak_username }}"</span>
+<span class="key">ocp4_workload_tenant_gitea_password</span>: <span class="str">"{{ common_password }}"</span>
 <span class="key">ocp4_workload_tenant_gitea_admin_password</span>: <span class="str">"{{ common_password }}"</span>
-<span class="key">ocp4_workload_tenant_gitea_repos</span>:
-  - <span class="key">name</span>: <span class="val">mcp</span>
-    <span class="key">description</span>: <span class="str">"MCP GitOps repository for this tenant"</span>
-    <span class="key">source_repo</span>: <span class="str">"https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops.git"</span>
-    <span class="key">source_revision</span>: <span class="val">main</span>
+<span class="key">ocp4_workload_tenant_gitea_repositories</span>:
+- <span class="key">name</span>: <span class="val">mcp</span>
+  <span class="key">repo</span>: <span class="str">https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops</span>
+  <span class="key">private</span>: <span class="kw">false</span>
 
-<span class="cmt"># ── 7. LITEMAAS VIRTUAL KEY ──────────────────────────────────</span>
-<span class="cmt"># Creates a rate-limited AI API key for this tenant.</span>
-<span class="cmt"># catch_all: false is CRITICAL — prevents deleting other tenants' keys.</span>
-<span class="key">ocp4_workload_litellm_virtual_keys_host</span>: <span class="str">"https://litemaas.apps.cluster.example.com"</span>
-<span class="key">ocp4_workload_litellm_virtual_keys_admin_key</span>: <span class="str">"{{ lookup('env', 'LITEMAAS_ADMIN_KEY') }}"</span>
+<span class="cmt"># ── 9. LITEMAAS VIRTUAL KEY ──────────────────────────────────</span>
+<span class="cmt"># Creates a rate-limited AI API key scoped to this tenant.</span>
+<span class="cmt"># The role exports: litellm_virtual_key, litellm_api_endpoint,</span>
+<span class="cmt"># litellm_available_models — consumed by gitops_bootstrap below.</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_duration</span>: <span class="str">"7d"</span>
 <span class="key">ocp4_workload_litellm_virtual_keys_models</span>:
-  - <span class="val">gpt-4o</span>
-  - <span class="val">claude-3-5-sonnet-20241022</span>
-  - <span class="val">llama-3.3-70b-instruct</span>
-<span class="key">ocp4_workload_litellm_virtual_keys_max_budget</span>: <span class="num">5.0</span>         <span class="cmt"># $5 per order</span>
-<span class="key">ocp4_workload_litellm_virtual_keys_budget_duration</span>: <span class="val">30d</span>    <span class="cmt"># resets monthly</span>
-<span class="key">ocp4_workload_litellm_virtual_keys_catch_all</span>: <span class="kw">false</span>        <span class="cmt"># NEVER true on shared clusters</span>
+- <span class="val">qwen3-14b</span>
+- <span class="val">llama-scout-17b</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_multi_user</span>: <span class="kw">false</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_user_count</span>: <span class="num">1</span>
+<span class="key">ocp4_workload_litellm_virtual_keys_verify_ssl</span>: <span class="kw">true</span>
 
-<span class="cmt"># ── 8. GITOPS BOOTSTRAP ──────────────────────────────────────</span>
-<span class="cmt"># Creates one ArgoCD Application named bootstrap-tenant-&lt;guid&gt;.</span>
-<span class="cmt"># That Application (app-of-apps) deploys all tenant workloads via ArgoCD.</span>
-<span class="cmt"># repo_url is set automatically by the tenant_gitea role (the mirrored repo).</span>
-<span class="key">ocp4_workload_gitops_bootstrap_revision</span>: <span class="val">main</span>
-<span class="key">ocp4_workload_gitops_bootstrap_path</span>: <span class="val">tenant/bootstrap</span>
-
-<span class="cmt"># Helm values passed into the bootstrap chart:</span>
+<span class="cmt"># ── 10. GITOPS BOOTSTRAP ─────────────────────────────────────</span>
+<span class="cmt"># Creates one ArgoCD Application: bootstrap-tenant</span>
+<span class="cmt"># That app-of-apps deploys all per-user workloads via ArgoCD.</span>
+<span class="cmt"># repo_url is set automatically by the tenant_gitea role.</span>
+<span class="key">ocp4_workload_gitops_bootstrap_application_name</span>: <span class="str">"bootstrap-tenant"</span>
+<span class="key">ocp4_workload_gitops_bootstrap_repo_path</span>: <span class="str">"tenant/bootstrap"</span>
+<span class="key">ocp4_workload_gitops_bootstrap_repo_revision</span>: <span class="val">main</span>
 <span class="key">ocp4_workload_gitops_bootstrap_helm_values</span>:
   <span class="key">tenant</span>:
     <span class="key">username</span>: <span class="str">"{{ ocp4_workload_tenant_keycloak_username }}"</span>
     <span class="key">password</span>: <span class="str">"{{ common_password }}"</span>
-  <span class="key">deployer</span>:
-    <span class="key">domain</span>: <span class="str">"{{ sandbox_openshift_ingress_domain }}"</span>
   <span class="key">litemaas</span>:
-    <span class="key">url</span>: <span class="str">"{{ ocp4_workload_litellm_virtual_keys_host }}"</span>
-    <span class="key">key</span>: <span class="str">"{{ litellm_virtual_key }}"</span>       <span class="cmt"># set by litellm_virtual_keys role</span>
-    <span class="key">models</span>: <span class="str">"gpt-4o,claude-3-5-sonnet-20241022,llama-3.3-70b-instruct"</span>
+    <span class="key">url</span>: <span class="str">"{{ litellm_api_endpoint | default('') }}/v1"</span>
+    <span class="key">key</span>: <span class="str">"{{ litellm_virtual_key | default('') }}"</span>
+    <span class="key">models</span>: <span class="str">"{{ litellm_available_models | default([]) | join(',') }}"</span>
 
-<span class="cmt"># ── 9. SHOWROOM ──────────────────────────────────────────────</span>
+<span class="cmt"># ── 11. SHOWROOM ─────────────────────────────────────────────</span>
 <span class="cmt"># Showroom is the tab-based UI the lab attendee sees in their browser.</span>
-<span class="cmt"># Each tab is a URL pointing to a tenant-specific service.</span>
-<span class="key">showroom_git_repo</span>: <span class="str">"https://github.com/rhpds/mcp-showroom.git"</span>
-<span class="key">showroom_git_repo_revision</span>: <span class="val">main</span>
-<span class="key">showroom_user_data</span>:
-  <span class="key">username</span>: <span class="str">"{{ ocp4_workload_tenant_keycloak_username }}"</span>
-  <span class="key">password</span>: <span class="str">"{{ common_password }}"</span>
-  <span class="key">gitea_url</span>: <span class="str">"https://gitea.{{ sandbox_openshift_ingress_domain }}/{{ ocp4_workload_tenant_keycloak_username }}"</span>
-  <span class="key">librechat_url</span>: <span class="str">"https://librechat-librechat-{{ ocp4_workload_tenant_keycloak_username }}.{{ sandbox_openshift_ingress_domain }}"</span>
-  <span class="key">ocp_console_url</span>: <span class="str">"{{ sandbox_openshift_console_url }}"</span>
+<span class="key">ocp4_workload_showroom_namespace</span>: <span class="str">"showroom-{{ ocp4_workload_tenant_keycloak_username }}"</span>
+<span class="key">ocp4_workload_showroom_content_git_repo</span>: <span class="str">https://github.com/rhpds/lb1726-mcp-showroom</span>
+<span class="key">ocp4_workload_showroom_content_git_repo_ref</span>: <span class="val">sandbox-login-instructions</span>
+<span class="key">ocp4_workload_showroom_content_only</span>: <span class="kw">false</span>
+<span class="key">openshift_api_url</span>: <span class="str">"{{ sandbox_openshift_api_url }}"</span>
+<span class="key">openshift_cluster_admin_token</span>: <span class="str">"{{ cluster_admin_agnosticd_sa_token }}"</span>
 
-<span class="cmt"># ── 10. DESTROY ORDER ────────────────────────────────────────</span>
-<span class="cmt"># MUST be the reverse of workloads above.</span>
-<span class="cmt"># Each role's remove_workload.yml is called in this order.</span>
-<span class="key">remove_workloads</span>:
-  - <span class="val">agnosticd.showroom.ocp4_workload_showroom</span>
-  - <span class="val">agnosticd.ai_workloads.ocp4_workload_litellm_virtual_keys</span>
-  - <span class="val">agnosticd.core_workloads.ocp4_workload_gitops_bootstrap</span>    <span class="cmt"># ArgoCD cascade deletes all apps</span>
-  - <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_gitea</span>
-  - <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_namespace</span>
-  - <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_keycloak_user</span>
+<span class="cmt"># ── 12. METADATA (__meta__) ──────────────────────────────────</span>
+<span class="cmt"># Babylon/AgnosticV metadata: catalog display, ownership, deployer,</span>
+<span class="cmt"># and the sandbox API request (cluster selector + quota).</span>
+<span class="cmt"># The sandboxes entry lives here — it tells the Sandbox API</span>
+<span class="cmt"># which cluster to schedule and what quota to apply.</span>
+<span class="key">__meta__</span>:
+  <span class="key">asset_uuid</span>: <span class="str">8030d69b-c145-48fa-a8a9-219ffa0f780e</span>
+  <span class="key">owners</span>:
+    <span class="key">maintainer</span>:
+    - <span class="key">name</span>: <span class="str">Wolfgang Kulhanek</span>
+      <span class="key">email</span>: <span class="str">wkulhane@redhat.com</span>
+    - <span class="key">name</span>: <span class="str">Tony Kay</span>
+      <span class="key">email</span>: <span class="str">ankay@redhat.com</span>
+  <span class="key">deployer</span>:
+    <span class="key">scm_url</span>: <span class="str">https://github.com/agnosticd/agnosticd-v2</span>
+    <span class="key">scm_ref</span>: <span class="val">tenant-roles-support</span>
+    <span class="key">execution_environment</span>:
+      <span class="key">image</span>: <span class="str">quay.io/agnosticd/ee-multicloud:chained-2025-12-17</span>
+      <span class="key">pull</span>: <span class="val">missing</span>
+  <span class="key">catalog</span>:
+    <span class="key">namespace</span>: <span class="str">"babylon-catalog-{{ stage | default('?') }}"</span>
+    <span class="key">display_name</span>: <span class="str">"MCP with OpenShift (Sandbox)"</span>
+    <span class="key">category</span>: <span class="val">Workshops</span>
+    <span class="key">keywords</span>:
+    - <span class="val">mcp</span>
+    - <span class="val">openshift</span>
+    - <span class="val">ai</span>
+    <span class="key">labels</span>:
+      <span class="key">Product</span>: <span class="val">Red_Hat_OpenShift_Container_Platform</span>
+      <span class="key">Provider</span>: <span class="val">RHDP</span>
+    <span class="key">multiuser</span>: <span class="kw">false</span>
+    <span class="key">workshopLabUiRedirect</span>: <span class="kw">true</span>
+    <span class="key">reportingLabels</span>:
+      <span class="key">primaryBU</span>: <span class="val">Hybrid_Platforms</span>
+      <span class="key">secondaryBU</span>: <span class="val">Artificial_Intelligence</span>
+  <span class="key">sandbox_api</span>:
+    <span class="key">actions</span>:
+      <span class="key">destroy</span>: <span class="val">{}</span>
+  <span class="cmt"># ── SANDBOX ENTRY ──────────────────────────────────────────</span>
+  <span class="cmt"># Single entry — scheduler only.</span>
+  <span class="cmt"># kind: OcpSandbox  — request an OpenShift cluster from the pool.</span>
+  <span class="cmt"># alias: cluster    — used to reference this sandbox in role vars.</span>
+  <span class="cmt"># namespace_suffix  — Sandbox API creates one primary namespace</span>
+  <span class="cmt">#   named: &lt;catalog-item&gt;-user-&lt;guid&gt;</span>
+  <span class="cmt">#   This is the scheduling artifact. All other namespaces are</span>
+  <span class="cmt">#   created by ocp4_workload_tenant_namespace (Ansible role).</span>
+  <span class="cmt"># cloud_selector    — tags that must match the cluster in the pool.</span>
+  <span class="cmt"># quota             — applied to the primary namespace only.</span>
+  <span class="cmt"># limit_range       — default CPU/memory for pods in primary namespace.</span>
+  <span class="key">sandboxes</span>:
+  - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
+    <span class="key">alias</span>: <span class="val">cluster</span>
+    <span class="key">namespace_suffix</span>: <span class="val">user</span>
+    <span class="key">cloud_selector</span>:
+      <span class="key">cloud</span>: <span class="val">cnv-dedicated-shared</span>
+      <span class="key">demo</span>: <span class="val">mcp-with-openshift</span>
+      <span class="key">purpose</span>: <span class="val">prod</span>
+    <span class="key">quota</span>:
+      <span class="key">limits.cpu</span>: <span class="str">"2"</span>
+      <span class="key">requests.cpu</span>: <span class="str">"2"</span>
+      <span class="key">limits.memory</span>: <span class="val">4Gi</span>
+      <span class="key">requests.memory</span>: <span class="val">4Gi</span>
+      <span class="key">requests.storage</span>: <span class="val">10Gi</span>
+    <span class="key">limit_range</span>:
+      <span class="key">default</span>:
+        <span class="key">cpu</span>: <span class="val">500m</span>
+        <span class="key">memory</span>: <span class="val">512Mi</span>
+      <span class="key">defaultRequest</span>:
+        <span class="key">cpu</span>: <span class="val">50m</span>
+        <span class="key">memory</span>: <span class="val">128Mi</span>
 </code></pre>
 
 <h3>Section-by-section breakdown</h3>
