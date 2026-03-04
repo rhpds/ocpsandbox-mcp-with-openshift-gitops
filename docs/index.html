@@ -106,8 +106,6 @@
     <li><a href="#which-pattern">Which pattern should I use?</a></li>
     <li><a href="#scheduler-only-overview">Summit 2026 — Scheduler-Only Pattern</a></li>
     <li><a href="#namespace-api-overview">Full Namespace API Pattern</a></li>
-    <li><a href="#variables-reference">Variables from Sandbox API — Full Reference</a></li>
-    <li><a href="#common-features">Common Features</a></li>
   </ol>
 </div>
 
@@ -133,7 +131,7 @@
 
 <div class="callout callout-blue">
   <strong>Key insight</strong>
-  In both patterns your AgnosticV <code>common.yaml</code> configures which Ansible roles run, in what order, and with what variables. Sandbox API just gives you a cluster and injects variables. Everything else is Ansible.
+  In both patterns your AgnosticV <code>common.yaml</code> configures what runs, in what order, and with what variables. Sandbox API just gives you a cluster and injects variables. Everything else is up to your workloads — Ansible roles, GitOps, or both.
 </div>
 
 <hr>
@@ -255,53 +253,12 @@
 <h2 id="scheduler-only-overview">Summit 2026 — Scheduler-Only Pattern</h2>
 
 <p>
-  In the Scheduler-Only pattern, Sandbox API does the minimum: it schedules a cluster from the pool and gives your AgnosticD run the cluster credentials. All per-tenant resources (namespaces, Keycloak users, Gitea orgs, ArgoCD applications) are created by Ansible roles on every order.
+  Sandbox API schedules a cluster and injects credentials. All per-tenant resources are created by your workloads — RHBK user, namespaces, Gitea instance, ArgoCD Applications. A separate cluster provisioner installs shared services once per cluster (RHBK, Gitea, ArgoCD, ToolHive).
 </p>
 
-<p>
-  A separate <strong>cluster provisioner playbook</strong> (not in AgV) runs once per cluster to install shared services: Red Hat Build of Keycloak (RHBK), Gitea, OpenShift GitOps (ArgoCD), and LiteMaaS. Once the cluster is provisioned, it accepts tenant orders until it reaches capacity.
-</p>
+<p>Key AgV fields: single <code>OcpSandbox</code> entry under <code>__meta__.sandboxes</code> with <code>alias</code>, <code>cloud_selector</code>, and <code>quota</code>. No <code>keycloak: yes</code> — you manage users yourself.</p>
 
-<div class="callout callout-orange">
-  <strong>Important: Three-layer architecture</strong>
-  The cluster provisioner runs <em>once</em>. The platform layer may also run once. Each order runs the tenant Ansible roles. Do not confuse these layers — they are separate playbooks with separate scopes.
-</div>
-
-<h3>Minimal AgV sandboxes entry</h3>
-<pre><code><span class="cmt"># Scheduler-Only: single entry under __meta__</span>
-<span class="cmt"># Sandbox API schedules a cluster and provides credentials.</span>
-<span class="cmt"># It does NOT create namespaces or users — Ansible roles do that.</span>
-<span class="key">__meta__</span>:
-  <span class="key">sandboxes</span>:
-  - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
-    <span class="key">alias</span>: <span class="val">cluster</span>
-    <span class="key">namespace_suffix</span>: <span class="val">user</span>       <span class="cmt"># scheduling artifact — not used by your roles</span>
-    <span class="key">cloud_selector</span>:
-      <span class="key">cloud</span>: <span class="val">cnv-dedicated-shared</span>
-      <span class="key">demo</span>: <span class="val">my-lab</span>
-      <span class="key">purpose</span>: <span class="val">prod</span>
-    <span class="key">quota</span>:
-      <span class="key">limits.cpu</span>: <span class="str">"2"</span>
-      <span class="key">requests.cpu</span>: <span class="str">"2"</span>
-      <span class="key">limits.memory</span>: <span class="val">4Gi</span>
-      <span class="key">requests.memory</span>: <span class="val">4Gi</span>
-
-<span class="cmt"># Sandbox API provides:</span>
-<span class="cmt">#   sandbox_openshift_api_url        — cluster API endpoint</span>
-<span class="cmt">#   sandbox_openshift_ingress_domain — wildcard apps domain</span>
-<span class="cmt">#   sandbox_openshift_console_url    — web console URL</span>
-<span class="cmt">#   cluster_admin_agnosticd_sa_token — cluster-admin SA token</span></code></pre>
-
-<h3>Minimal workloads list</h3>
-<pre><code><span class="key">workloads</span>:
-  - <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_keycloak_user</span>
-  - <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_namespace</span>
-  - <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_gitea</span>
-  - <span class="val">agnosticd.ai_workloads.ocp4_workload_litellm_virtual_keys</span>
-  - <span class="val">agnosticd.core_workloads.ocp4_workload_gitops_bootstrap</span>
-  - <span class="val">agnosticd.showroom.ocp4_workload_showroom</span></code></pre>
-
-<p><a href="scheduler-only.html">See the complete Scheduler-Only guide with full annotated common.yaml &rarr;</a></p>
+<p><a href="scheduler-only.html">Full guide with complete annotated common.yaml &rarr;</a></p>
 
 <hr>
 
@@ -309,267 +266,13 @@
 <h2 id="namespace-api-overview">Full Namespace API Pattern</h2>
 
 <p>
-  In the Full Namespace API pattern, each sandbox entry in your AgV <code>sandboxes:</code> list causes Sandbox API to create one namespace and one OCP user account. Your Ansible roles then deploy lab content directly into those ready-made namespaces using the sandbox-provided variables.
+  Sandbox API creates the namespaces and an RHSSO user for each order. Your workloads deploy lab content into the ready-made namespaces. Simpler setup — no cluster provisioner, no Keycloak role, no Gitea role. Less flexibility.
 </p>
 
-<p>
-  This pattern is simpler to operate: there is no cluster provisioner, no Keycloak role, no Gitea role. The tradeoff is less flexibility — you get whatever Sandbox API creates, not a fully custom per-tenant environment.
-</p>
+<p>Key AgV fields: one <code>OcpSandbox</code> entry per namespace with <code>namespace_suffix</code>. Add <code>keycloak: "yes"</code> to create an RHSSO user. Use <code>cluster_condition: same('alias')</code> to pin multiple namespaces to the same cluster.</p>
 
-<h3>AgV sandboxes entry for two namespaces</h3>
-<pre><code><span class="cmt"># Full Namespace API: one entry per namespace under __meta__</span>
-<span class="cmt"># alias + cluster_condition: same() ensures both namespaces</span>
-<span class="cmt"># land on the SAME cluster — without this they can end up on different clusters.</span>
-<span class="key">__meta__</span>:
-  <span class="key">sandboxes</span>:
-  - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
-    <span class="key">alias</span>: <span class="val">primary</span>
-    <span class="key">namespace_suffix</span>: <span class="val">user</span>       <span class="cmt"># → sandbox-&lt;guid&gt;-user</span>
-    <span class="key">cloud_selector</span>:
-      <span class="key">cloud</span>: <span class="val">cnv-dedicated-shared</span>
-      <span class="key">demo</span>: <span class="val">my-lab</span>
-      <span class="key">purpose</span>: <span class="val">prod</span>
-      <span class="key">keycloak</span>: <span class="str">"yes"</span>              <span class="cmt"># creates RHSSO user (sandbox_username/password)</span>
-    <span class="key">quota</span>:
-      <span class="key">limits.cpu</span>: <span class="str">"10"</span>
-      <span class="key">requests.memory</span>: <span class="val">20Gi</span>
-  - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
-    <span class="key">alias</span>: <span class="val">tools</span>
-    <span class="key">var</span>: <span class="val">sandbox_tools</span>             <span class="cmt"># sets Ansible variable prefix for this entry</span>
-    <span class="key">namespace_suffix</span>: <span class="val">tools</span>       <span class="cmt"># → sandbox-&lt;guid&gt;-tools</span>
-    <span class="key">cluster_condition</span>: <span class="str">same('primary')</span>   <span class="cmt"># MUST be on the same cluster as primary</span>
-    <span class="key">cloud_selector</span>:
-      <span class="key">cloud</span>: <span class="val">cnv-dedicated-shared</span>
-      <span class="key">demo</span>: <span class="val">my-lab</span>
-      <span class="key">purpose</span>: <span class="val">prod</span>
-    <span class="key">quota</span>:
-      <span class="key">limits.cpu</span>: <span class="str">"4"</span>
-      <span class="key">requests.memory</span>: <span class="val">8Gi</span>
+<p><a href="namespace-api.html">Full guide with complete annotated common.yaml &rarr;</a></p>
 
-<span class="cmt"># Sandbox API provides:</span>
-<span class="cmt">#   sandbox_openshift_namespace       = "sandbox-&lt;guid&gt;-user"    (primary)</span>
-<span class="cmt">#   sandbox_tools_namespace           = "sandbox-&lt;guid&gt;-tools"   (second, via var:)</span>
-<span class="cmt">#   sandbox_username / sandbox_password  — RHSSO user (keycloak: yes)</span>
-<span class="cmt">#   sandbox_openshift_api_url, sandbox_openshift_ingress_domain</span>
-<span class="cmt">#   cluster_admin_agnosticd_sa_token</span>
-<span class="cmt">#   cluster_admin_agnosticd_sa_token  = "&lt;SA token&gt;"</span>
-<span class="cmt"># For the second entry (name: tools):</span>
-<span class="cmt">#   sandbox_openshift_tools_namespace = "mylab-tools-&lt;guid&gt;"</span></code></pre>
-
-<h3>Minimal workloads list</h3>
-<pre><code><span class="key">workloads</span>:
-  - <span class="val">my_collection.ocp4_workload_my_lab_setup</span>
-  - <span class="val">agnosticd.showroom.ocp4_workload_showroom</span></code></pre>
-
-<p><a href="namespace-api.html">See the complete Full Namespace API guide with full annotated common.yaml &rarr;</a></p>
-
-<hr>
-
-<!-- ============================================================ -->
-<h2 id="variables-reference">Variables from Sandbox API — Full Reference</h2>
-
-<p>
-  These variables are automatically injected by Sandbox API into your AgnosticD run. You do not declare them — you only consume them in your role variables and templates.
-</p>
-
-<h3>Scheduler-Only variables (no namespace_suffix)</h3>
-<table>
-  <thead>
-    <tr>
-      <th>Variable</th>
-      <th>Example value</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>sandbox_openshift_api_url</code></td>
-      <td><code>https://api.cluster-abc12.example.com:6443</code></td>
-      <td>Cluster API endpoint. Used by <code>k8s</code> module and <code>oc</code> CLI.</td>
-    </tr>
-    <tr>
-      <td><code>sandbox_openshift_ingress_domain</code></td>
-      <td><code>apps.cluster-abc12.example.com</code></td>
-      <td>Wildcard ingress domain. Use to build Route hostnames and service URLs.</td>
-    </tr>
-    <tr>
-      <td><code>sandbox_openshift_console_url</code></td>
-      <td><code>https://console-openshift-console.apps.cluster-abc12.example.com</code></td>
-      <td>OpenShift web console URL. Useful for Showroom tabs and lab instructions.</td>
-    </tr>
-    <tr>
-      <td><code>cluster_admin_agnosticd_sa_token</code></td>
-      <td><code>eyJhbGciOiJSUzI1NiIs...</code></td>
-      <td>Cluster-admin SA token for AgnosticD. Never log or commit this value. Used automatically by the AgnosticD k8s connection.</td>
-    </tr>
-  </tbody>
-</table>
-
-<div class="callout callout-orange">
-  <strong>No sandbox_openshift_namespace in Scheduler-Only</strong>
-  When you use a single <code>sandboxes:</code> entry with no <code>namespace_suffix</code>, Sandbox API does not create a namespace. The variable <code>sandbox_openshift_namespace</code> will not be set. Your roles are responsible for creating their own namespaces.
-</div>
-
-<h3>Full Namespace API variables (with namespace_suffix)</h3>
-<table>
-  <thead>
-    <tr>
-      <th>Variable</th>
-      <th>Example value</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>sandbox_openshift_namespace</code></td>
-      <td><code>mylab-user-abc12</code></td>
-      <td>Primary namespace created by Sandbox API. Format: <code>&lt;catalog&gt;-&lt;suffix&gt;-&lt;guid&gt;</code>.</td>
-    </tr>
-    <tr>
-      <td><code>sandbox_openshift_api_url</code></td>
-      <td><code>https://api.cluster-abc12.example.com:6443</code></td>
-      <td>Cluster API endpoint. Same across all sandbox entries for a given order.</td>
-    </tr>
-    <tr>
-      <td><code>sandbox_openshift_ingress_domain</code></td>
-      <td><code>apps.cluster-abc12.example.com</code></td>
-      <td>Wildcard ingress domain for the cluster.</td>
-    </tr>
-    <tr>
-      <td><code>sandbox_openshift_console_url</code></td>
-      <td><code>https://console-openshift-console.apps.cluster-abc12.example.com</code></td>
-      <td>OpenShift web console URL.</td>
-    </tr>
-    <tr>
-      <td><code>cluster_admin_agnosticd_sa_token</code></td>
-      <td><code>eyJhbGciOiJSUzI1NiIs...</code></td>
-      <td>Cluster-admin SA token. Never log or commit.</td>
-    </tr>
-    <tr>
-      <td><code>sandbox_username</code></td>
-      <td><code>user-abc12</code></td>
-      <td>OCP local user account created by Sandbox API for this order.</td>
-    </tr>
-    <tr>
-      <td><code>sandbox_password</code></td>
-      <td><code>(from RHDP vault)</code></td>
-      <td>Password for <code>sandbox_username</code>. Comes from RHDP secret management — never hardcode.</td>
-    </tr>
-    <tr>
-      <td><code>sandbox_openshift_&lt;name&gt;_namespace</code></td>
-      <td><code>sandbox_openshift_tools_namespace</code></td>
-      <td>For additional sandbox entries (name != primary), the namespace variable is prefixed with the entry name. E.g., a sandbox named <code>tools</code> provides <code>sandbox_openshift_tools_namespace</code>.</td>
-    </tr>
-  </tbody>
-</table>
-
-<h3>The guid variable</h3>
-<table>
-  <thead>
-    <tr>
-      <th>Variable</th>
-      <th>Example</th>
-      <th>Notes</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>guid</code></td>
-      <td><code>drw4x</code></td>
-      <td>5-character unique identifier for this order. Injected by AgnosticD, not Sandbox API. Use it to generate unique names: <code>mcpuser-{{ guid }}</code>.</td>
-    </tr>
-  </tbody>
-</table>
-
-<hr>
-
-<!-- ============================================================ -->
-<h2 id="common-features">Common Features</h2>
-
-<h3>LiteMaaS — AI API Keys</h3>
-<p>
-  LiteMaaS is the RHDP AI gateway that provides a unified OpenAI-compatible API in front of multiple LLM providers. You can create a per-tenant virtual API key using the <code>ocp4_workload_litellm_virtual_keys</code> role. The key is rate-limited by budget and duration so one tenant cannot exhaust shared capacity.
-</p>
-<ul>
-  <li>Role: <code>agnosticd.ai_workloads.ocp4_workload_litellm_virtual_keys</code></li>
-  <li>The role sets <code>litellm_virtual_key</code> after creation — subsequent roles can reference this fact</li>
-  <li>Always set <code>ocp4_workload_litellm_virtual_keys_catch_all: false</code> on shared clusters. Setting it to <code>true</code> will attempt to delete all keys not owned by this tenant.</li>
-  <li>Budget is in USD. Set a per-order cap appropriate to your lab duration.</li>
-  <li>The admin key is a secret — use <code>lookup('env', 'LITEMAAS_ADMIN_KEY')</code>, never hardcode it.</li>
-</ul>
-
-<div class="callout callout-orange">
-  <strong>catch_all: false is mandatory on shared clusters</strong>
-  If <code>ocp4_workload_litellm_virtual_keys_catch_all</code> is <code>true</code>, the destroy playbook will delete ALL virtual keys on the LiteMaaS instance that were not created by this tenant. This will break every other tenant's AI API access. Always set it to <code>false</code>.
-</div>
-
-<h3>Showroom</h3>
-<p>
-  Showroom is the RHDP tab-based UI framework. It displays a set of browser tabs to the lab attendee — typically a lab guide, an OpenShift console, and application URLs. It is deployed as a workload via the <code>ocp4_workload_showroom</code> role and is driven by a Git repository containing tab configuration.
-</p>
-<ul>
-  <li>Role: <code>agnosticd.showroom.ocp4_workload_showroom</code></li>
-  <li>Configure <code>showroom_git_repo</code> and <code>showroom_git_repo_revision</code> in AgV</li>
-  <li>Pass per-tenant data through <code>showroom_user_data</code> — a dict of key/value pairs that become template variables in the Showroom content</li>
-  <li>Always the last workload in the provisioning list; always the first in the destroy list</li>
-</ul>
-
-<h3>Destroy behavior</h3>
-<p>
-  The <code>remove_workloads</code> list in AgV determines which roles run during order destruction. This list must be in the <strong>reverse order</strong> of <code>workloads</code>. Each role's <code>remove_workload.yml</code> is called, which undoes what the corresponding <code>workload.yml</code> created.
-</p>
-<div class="callout callout-green">
-  <strong>Sandbox API handles cluster reclamation</strong>
-  After all remove_workloads complete, Sandbox API reclaims the cluster (or namespace). You do not need to delete the cluster itself, only the per-tenant resources your roles created.
-</div>
-
-<h3>Common pitfalls</h3>
-<table>
-  <thead>
-    <tr>
-      <th>Pitfall</th>
-      <th>Consequence</th>
-      <th>Fix</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Hardcoding a secret (token, password, API key) in AgV YAML</td>
-      <td>Secret committed to Git; security incident</td>
-      <td>Use <code>lookup('env', 'VAR_NAME')</code> or AgnosticD secret injection</td>
-    </tr>
-    <tr>
-      <td>Setting <code>catch_all: true</code> for LiteMaaS on shared cluster</td>
-      <td>All other tenants lose their AI API keys on destroy</td>
-      <td>Always <code>catch_all: false</code></td>
-    </tr>
-    <tr>
-      <td>Wrong destroy order</td>
-      <td>Resources left orphaned; cluster may not be reclaimable</td>
-      <td><code>remove_workloads</code> must be exact reverse of <code>workloads</code></td>
-    </tr>
-    <tr>
-      <td>Using <code>sandbox_openshift_namespace</code> in Scheduler-Only pattern</td>
-      <td>Variable is undefined; role fails</td>
-      <td>In Scheduler-Only, use <code>ocp4_workload_tenant_namespace_suffixes</code> to define namespaces</td>
-    </tr>
-    <tr>
-      <td>Not setting <code>ocp4_workload_tenant_keycloak_username</code> consistently</td>
-      <td>Roles use different usernames; resources get orphaned</td>
-      <td>Define once at the top of common.yaml; all roles reference this single var</td>
-    </tr>
-    <tr>
-      <td>Forgetting to add Showroom to remove_workloads</td>
-      <td>Showroom deployment left running after order expires</td>
-      <td>Showroom must be first in <code>remove_workloads</code></td>
-    </tr>
-    <tr>
-      <td>Using <code>/</code> in branch names</td>
-      <td>Git ref ambiguity; CI pipeline may fail</td>
-      <td>Use dashes only: <code>my-feature-branch</code></td>
-    </tr>
-  </tbody>
-</table>
 
 <hr>
 <p style="color:#888;font-size:0.85rem;">Red Hat Demo Platform (RHDP) &mdash; Internal developer reference &mdash; <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops">GitHub</a></p>
