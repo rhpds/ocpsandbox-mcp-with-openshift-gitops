@@ -5,6 +5,8 @@
 
 Per-user Helm charts for the **MCP with OpenShift** lab, deployed via ArgoCD ApplicationSets during user provisioning.
 
+📖 **Developer Guide & Documentation:** https://rhpds.github.io/ocpsandbox-mcp-with-openshift-gitops/
+
 toc::[]
 
 == Why Sandbox API — Shared Clusters
