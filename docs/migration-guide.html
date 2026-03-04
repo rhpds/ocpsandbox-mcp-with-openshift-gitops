@@ -169,6 +169,7 @@
     <li><a href="#why">Why we changed it</a></li>
     <li><a href="#design">Design decisions — why we built it this way</a></li>
     <li><a href="#agv-changes">What changed in AgV — before and after</a></li>
+    <li><a href="#layers-mcp">What we put in each layer — MCP lab</a></li>
     <li><a href="#roles">Role-by-role conversion</a></li>
     <li><a href="#challenges">Challenges and fixes</a></li>
     <li><a href="#lessons">Lessons learned</a></li>
@@ -416,7 +417,150 @@
 <hr>
 
 <!-- ============================================================ -->
-<h2 id="roles">5. Role-by-Role Conversion</h2>
+<h2 id="layers-mcp">5. What We Put in Each Layer — MCP Lab</h2>
+
+<p>
+  This table shows exactly what ended up in each layer for the MCP with OpenShift lab. Each row links to the actual role or GitOps path so you can read the implementation directly.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Layer</th>
+      <th>What</th>
+      <th>Role / Path</th>
+      <th>Repo</th>
+    </tr>
+  </thead>
+  <tbody>
+
+    <!-- INFRA -->
+    <tr>
+      <td rowspan="7" style="font-weight:700; color:#1e3a8a; background:#dbeafe; vertical-align:top; padding-top:1rem;">
+        Infra<br>
+        <span style="font-weight:400; font-size:0.82rem;">Install Operators<br>Runs once<br>cluster-provision.yml</span>
+      </td>
+      <td>RHBK (Keycloak) operator</td>
+      <td><code>ocp4_workload_authentication</code></td>
+      <td><a href="https://github.com/agnosticd/core_workloads" target="_blank">agnosticd/core_workloads</a></td>
+    </tr>
+    <tr>
+      <td>Gitea operator</td>
+      <td><code>ocp4_workload_gitea_operator</code></td>
+      <td><a href="https://github.com/agnosticd/core_workloads" target="_blank">agnosticd/core_workloads</a></td>
+    </tr>
+    <tr>
+      <td>OpenShift GitOps (ArgoCD)</td>
+      <td><code>ocp4_workload_openshift_gitops</code></td>
+      <td><a href="https://github.com/agnosticd/core_workloads" target="_blank">agnosticd/core_workloads</a></td>
+    </tr>
+    <tr>
+      <td>Tekton (Pipelines)</td>
+      <td><code>ocp4_workload_pipelines</code></td>
+      <td><a href="https://github.com/agnosticd/core_workloads" target="_blank">agnosticd/core_workloads</a></td>
+    </tr>
+    <tr>
+      <td>ToolHive (MCP proxy runner)</td>
+      <td><code>ocp4_workload_toolhive</code></td>
+      <td><a href="https://github.com/agnosticd/ai_workloads" target="_blank">agnosticd/ai_workloads</a></td>
+    </tr>
+    <tr>
+      <td>CloudNativePG operator</td>
+      <td>Kubernetes Subscription CR (direct)</td>
+      <td><a href="https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift/blob/main/tests/e2e/cluster-provision.yml" target="_blank">cluster-provision.yml</a></td>
+    </tr>
+    <tr>
+      <td>AppProjects (infra, platform, tenants) + bootstrap-infra &amp; bootstrap-platform Applications</td>
+      <td><code>ocp4_workload_gitops_bootstrap</code> (applications list)</td>
+      <td><a href="https://github.com/agnosticd/core_workloads" target="_blank">agnosticd/core_workloads</a> — GitOps: <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/infra/bootstrap" target="_blank">infra/bootstrap/</a></td>
+    </tr>
+
+    <!-- PLATFORM -->
+    <tr>
+      <td rowspan="2" style="font-weight:700; color:#4c1d95; background:#ede9fe; vertical-align:top; padding-top:1rem;">
+        Platform<br>
+        <span style="font-weight:400; font-size:0.82rem;">Create Instances<br>&amp; Configure<br>Runs once<br>(same provisioning)</span>
+      </td>
+      <td>Gitea server instance (created from Gitea operator CR)</td>
+      <td>GitOps: <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/platform/bootstrap" target="_blank">platform/bootstrap/</a></td>
+      <td><a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops" target="_blank">ocpsandbox-mcp-with-openshift-gitops</a></td>
+    </tr>
+    <tr>
+      <td>User workload monitoring (enables Prometheus/Grafana for tenant namespaces)</td>
+      <td>GitOps: <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/platform" target="_blank">platform/monitoring.yaml</a></td>
+      <td><a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops" target="_blank">ocpsandbox-mcp-with-openshift-gitops</a></td>
+    </tr>
+
+    <!-- TENANT -->
+    <tr>
+      <td rowspan="10" style="font-weight:700; color:#7c2d12; background:#ffedd5; vertical-align:top; padding-top:1rem;">
+        Tenant<br>
+        <span style="font-weight:400; font-size:0.82rem;">The User<br>Per order<br>AgV workloads:</span>
+      </td>
+      <td>Create RHBK user (<code>mcpuser-&lt;guid&gt;</code>)</td>
+      <td><code>ocp4_workload_tenant_keycloak_user</code></td>
+      <td><a href="https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_keycloak_user" target="_blank">agnosticd/namespaced_workloads</a></td>
+    </tr>
+    <tr>
+      <td>Create 6 OCP namespaces (agent, librechat, mcp-gitea, mcp-openshift, gitea, showroom)</td>
+      <td><code>ocp4_workload_tenant_namespace</code></td>
+      <td><a href="https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_namespace" target="_blank">agnosticd/namespaced_workloads</a></td>
+    </tr>
+    <tr>
+      <td>Deploy per-tenant Gitea instance + user + mirror GitOps repo</td>
+      <td><code>ocp4_workload_tenant_gitea</code></td>
+      <td><a href="https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_gitea" target="_blank">agnosticd/namespaced_workloads</a></td>
+    </tr>
+    <tr>
+      <td>Create LiteMaaS virtual API key with rate limit</td>
+      <td><code>ocp4_workload_litellm_virtual_keys</code></td>
+      <td><a href="https://github.com/rhpds/rhpds.litellm_virtual_keys" target="_blank">rhpds/rhpds.litellm_virtual_keys</a></td>
+    </tr>
+    <tr>
+      <td>Create <code>bootstrap-tenant</code> ArgoCD Application (app-of-apps)</td>
+      <td><code>ocp4_workload_gitops_bootstrap</code></td>
+      <td><a href="https://github.com/agnosticd/core_workloads" target="_blank">agnosticd/core_workloads</a> — GitOps: <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/tenant/bootstrap" target="_blank">tenant/bootstrap/</a></td>
+    </tr>
+    <tr>
+      <td>OCP console iframe support for Showroom</td>
+      <td><code>ocp4_workload_ocp_console_embed</code></td>
+      <td><a href="https://github.com/agnosticd/showroom" target="_blank">agnosticd/showroom</a></td>
+    </tr>
+    <tr>
+      <td>Showroom tab UI (lab instructions)</td>
+      <td><code>ocp4_workload_showroom</code></td>
+      <td><a href="https://github.com/agnosticd/showroom" target="_blank">agnosticd/showroom</a></td>
+    </tr>
+    <tr>
+      <td>LibreChat + MongoDB + Meilisearch (AI chat UI)</td>
+      <td>GitOps: <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/tenant/librechat" target="_blank">tenant/librechat/</a></td>
+      <td><a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops" target="_blank">ocpsandbox-mcp-with-openshift-gitops</a></td>
+    </tr>
+    <tr>
+      <td>MCP servers (Gitea MCP + OpenShift MCP via ToolHive)</td>
+      <td>GitOps: <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/tenant/mcp-gitea" target="_blank">tenant/mcp-gitea/</a> &amp; <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/tenant/mcp-openshift" target="_blank">tenant/mcp-openshift/</a></td>
+      <td><a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops" target="_blank">ocpsandbox-mcp-with-openshift-gitops</a></td>
+    </tr>
+    <tr>
+      <td>AI agent (Python, built by Tekton pipeline)</td>
+      <td>GitOps: <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/tenant/agent" target="_blank">tenant/agent/</a> — Source: <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/tenant/agent-src" target="_blank">tenant/agent-src/</a></td>
+      <td><a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops" target="_blank">ocpsandbox-mcp-with-openshift-gitops</a></td>
+    </tr>
+
+  </tbody>
+</table>
+
+<div class="callout callout-orange">
+  <strong>Infra and Platform layers: manual for now, AgV when automation is ready</strong>
+  Currently, the Infra and Platform layers are triggered manually by running <code>cluster-provision.yml</code> against a pre-assigned cluster. This was done this way for testing — we needed to validate the full end-to-end bootstrap before the automation existed.
+  <br><br>
+  Once GC's integration lands (programmatic cluster attachment to the Sandbox API pool from demo.redhat.com), the Infra and Platform layers will move into AgV as a separate <strong>cluster provisioner catalog item</strong> — ordered once when a cluster is onboarded, just like any other lab order. At that point, the full three-layer lifecycle will be driven by AgV and AgnosticD with no manual steps.
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="roles">7. Role-by-Role Conversion</h2>
 
 <p>
   This section walks through every component of the original lab and shows exactly what it became — or where it moved to — in the new pattern.
@@ -691,7 +835,7 @@
 <hr>
 
 <!-- ============================================================ -->
-<h2 id="challenges">6. Challenges and Fixes</h2>
+<h2 id="challenges">8. Challenges and Fixes</h2>
 
 <p>
   These are the real problems we encountered during the migration — not theoretical edge cases, but actual failures that blocked progress.
@@ -828,7 +972,7 @@
 <hr>
 
 <!-- ============================================================ -->
-<h2 id="lessons">7. Lessons Learned</h2>
+<h2 id="lessons">9. Lessons Learned</h2>
 
 <ol>
   <li>
