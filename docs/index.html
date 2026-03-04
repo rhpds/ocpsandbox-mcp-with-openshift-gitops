@@ -227,7 +227,7 @@
     </tr>
     <tr>
       <td><code>sandboxes:</code> entries in AgV</td>
-      <td>One entry, no <code>namespace_suffix</code></td>
+      <td>One <code>OcpSandbox</code> entry under <code>__meta__</code> with <code>alias</code>, <code>cloud_selector</code>, <code>quota</code></td>
       <td>One entry per namespace, each with <code>namespace_suffix</code></td>
     </tr>
     <tr>
@@ -257,15 +257,29 @@
 </div>
 
 <h3>Minimal AgV sandboxes entry</h3>
-<pre><code><span class="cmt"># Scheduler-Only: one entry, no namespace_suffix</span>
-<span class="key">sandboxes</span>:
-  - <span class="key">name</span>: <span class="val">openshift</span>
+<pre><code><span class="cmt"># Scheduler-Only: single entry under __meta__</span>
+<span class="cmt"># Sandbox API schedules a cluster and provides credentials.</span>
+<span class="cmt"># It does NOT create namespaces or users — Ansible roles do that.</span>
+<span class="key">__meta__</span>:
+  <span class="key">sandboxes</span>:
+  - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
+    <span class="key">alias</span>: <span class="val">cluster</span>
+    <span class="key">namespace_suffix</span>: <span class="val">user</span>       <span class="cmt"># scheduling artifact — not used by your roles</span>
+    <span class="key">cloud_selector</span>:
+      <span class="key">cloud</span>: <span class="val">cnv-dedicated-shared</span>
+      <span class="key">demo</span>: <span class="val">my-lab</span>
+      <span class="key">purpose</span>: <span class="val">prod</span>
+    <span class="key">quota</span>:
+      <span class="key">limits.cpu</span>: <span class="str">"2"</span>
+      <span class="key">requests.cpu</span>: <span class="str">"2"</span>
+      <span class="key">limits.memory</span>: <span class="val">4Gi</span>
+      <span class="key">requests.memory</span>: <span class="val">4Gi</span>
 
 <span class="cmt"># Sandbox API provides:</span>
-<span class="cmt">#   sandbox_openshift_api_url</span>
-<span class="cmt">#   sandbox_openshift_ingress_domain</span>
-<span class="cmt">#   sandbox_openshift_console_url</span>
-<span class="cmt">#   cluster_admin_agnosticd_sa_token</span></code></pre>
+<span class="cmt">#   sandbox_openshift_api_url        — cluster API endpoint</span>
+<span class="cmt">#   sandbox_openshift_ingress_domain — wildcard apps domain</span>
+<span class="cmt">#   sandbox_openshift_console_url    — web console URL</span>
+<span class="cmt">#   cluster_admin_agnosticd_sa_token — cluster-admin SA token</span></code></pre>
 
 <h3>Minimal workloads list</h3>
 <pre><code><span class="key">workloads</span>:
@@ -292,20 +306,41 @@
 </p>
 
 <h3>AgV sandboxes entry for two namespaces</h3>
-<pre><code><span class="cmt"># Full Namespace API: one entry per namespace</span>
-<span class="key">sandboxes</span>:
-  - <span class="key">name</span>: <span class="val">user</span>
-    <span class="key">namespace_suffix</span>: <span class="val">user</span>     <span class="cmt"># → mylab-user-&lt;guid&gt;</span>
-  - <span class="key">name</span>: <span class="val">tools</span>
-    <span class="key">namespace_suffix</span>: <span class="val">tools</span>    <span class="cmt"># → mylab-tools-&lt;guid&gt;</span>
+<pre><code><span class="cmt"># Full Namespace API: one entry per namespace under __meta__</span>
+<span class="cmt"># alias + cluster_condition: same() ensures both namespaces</span>
+<span class="cmt"># land on the SAME cluster — without this they can end up on different clusters.</span>
+<span class="key">__meta__</span>:
+  <span class="key">sandboxes</span>:
+  - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
+    <span class="key">alias</span>: <span class="val">primary</span>
+    <span class="key">namespace_suffix</span>: <span class="val">user</span>       <span class="cmt"># → sandbox-&lt;guid&gt;-user</span>
+    <span class="key">cloud_selector</span>:
+      <span class="key">cloud</span>: <span class="val">cnv-dedicated-shared</span>
+      <span class="key">demo</span>: <span class="val">my-lab</span>
+      <span class="key">purpose</span>: <span class="val">prod</span>
+      <span class="key">keycloak</span>: <span class="str">"yes"</span>              <span class="cmt"># creates RHSSO user (sandbox_username/password)</span>
+    <span class="key">quota</span>:
+      <span class="key">limits.cpu</span>: <span class="str">"10"</span>
+      <span class="key">requests.memory</span>: <span class="val">20Gi</span>
+  - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
+    <span class="key">alias</span>: <span class="val">tools</span>
+    <span class="key">var</span>: <span class="val">sandbox_tools</span>             <span class="cmt"># sets Ansible variable prefix for this entry</span>
+    <span class="key">namespace_suffix</span>: <span class="val">tools</span>       <span class="cmt"># → sandbox-&lt;guid&gt;-tools</span>
+    <span class="key">cluster_condition</span>: <span class="str">same('primary')</span>   <span class="cmt"># MUST be on the same cluster as primary</span>
+    <span class="key">cloud_selector</span>:
+      <span class="key">cloud</span>: <span class="val">cnv-dedicated-shared</span>
+      <span class="key">demo</span>: <span class="val">my-lab</span>
+      <span class="key">purpose</span>: <span class="val">prod</span>
+    <span class="key">quota</span>:
+      <span class="key">limits.cpu</span>: <span class="str">"4"</span>
+      <span class="key">requests.memory</span>: <span class="val">8Gi</span>
 
-<span class="cmt"># Sandbox API provides for the primary (first) entry:</span>
-<span class="cmt">#   sandbox_openshift_namespace       = "mylab-user-&lt;guid&gt;"</span>
-<span class="cmt">#   sandbox_username                  = "user-&lt;guid&gt;"</span>
-<span class="cmt">#   sandbox_password                  = "&lt;from RHDP vault&gt;"</span>
-<span class="cmt">#   sandbox_openshift_api_url         = "https://api.cluster-xyz..."</span>
-<span class="cmt">#   sandbox_openshift_ingress_domain  = "apps.cluster-xyz..."</span>
-<span class="cmt">#   sandbox_openshift_console_url     = "https://console-openshift-..."</span>
+<span class="cmt"># Sandbox API provides:</span>
+<span class="cmt">#   sandbox_openshift_namespace       = "sandbox-&lt;guid&gt;-user"    (primary)</span>
+<span class="cmt">#   sandbox_tools_namespace           = "sandbox-&lt;guid&gt;-tools"   (second, via var:)</span>
+<span class="cmt">#   sandbox_username / sandbox_password  — RHSSO user (keycloak: yes)</span>
+<span class="cmt">#   sandbox_openshift_api_url, sandbox_openshift_ingress_domain</span>
+<span class="cmt">#   cluster_admin_agnosticd_sa_token</span>
 <span class="cmt">#   cluster_admin_agnosticd_sa_token  = "&lt;SA token&gt;"</span>
 <span class="cmt"># For the second entry (name: tools):</span>
 <span class="cmt">#   sandbox_openshift_tools_namespace = "mylab-tools-&lt;guid&gt;"</span></code></pre>
