@@ -156,7 +156,7 @@
 
 <ul>
   <li><strong>Judd Maltin</strong> — proposed the three-layer architecture (infra / platform / tenant) and the GitOps bootstrap app-of-apps pattern that this lab is built on. The <code>ocp4_workload_gitops_bootstrap</code> role improvements (multi-app list, cascade finalizer, userinfo ConfigMap) came out of working through this together.</li>
-  <li><strong>Judd Maltin</strong> (on the cascade finalizer) — also raised the concern that on a shared cluster under concurrent destroy load, a large ArgoCD cascade delete can put pressure on etcd and impact other tenants. This is an open item — the cascade finalizer is in place for now but high-concurrency destroy behaviour at scale still needs validation.</li>
+  <li><strong>Judd Maltin</strong> (open concerns — not yet resolved) — raised two important issues with the current destroy approach that need to be addressed before this pattern is used at scale. See the open questions section below for details.</li>
   <li><strong>Wolfgang Kulhanek and Nate Stephany</strong> — both suggested that namespaces and RBAC should be pre-created by Ansible before any ArgoCD sync happens. Nate's position was clear: foundational resources (namespaces, RBAC, service accounts) should not be managed by GitOps — they should be applied deterministically by Ansible first, and ArgoCD should only manage workload resources on top of that foundation. That feedback directly shaped the operational rule we follow: Ansible owns the foundation, ArgoCD owns the workloads.</li>
   <li><strong>GC</strong> — working on the Sandbox API integration that will allow clusters ordered from demo.redhat.com to be automatically attached to the pool. Until that lands, the cluster provisioner playbook is run manually. This is the last manual step remaining before the pattern is fully automated.</li>
 </ul>
@@ -174,7 +174,8 @@
     <li><a href="#roles">6. Role-by-role conversion</a></li>
     <li><a href="#challenges">7. Challenges and fixes</a></li>
     <li><a href="#lessons">8. Lessons learned</a></li>
-    <li><a href="#links">9. All links — PRs, repos, docs</a></li>
+    <li><a href="#open-questions">9. Open questions — unresolved concerns</a></li>
+    <li><a href="#links">10. All links — PRs, repos, docs</a></li>
 
   </ol>
 </div>
@@ -1002,7 +1003,50 @@
 
 <hr>
 
-<h2 id="links">9. All Links</h2>
+<h2 id="open-questions">9. Open Questions — Unresolved Concerns</h2>
+
+<p>
+  These are concerns raised during development that are not yet resolved. They need to be addressed before this pattern is used at scale. They are documented here so the next person who works on this does not have to rediscover them.
+</p>
+
+<div class="challenge">
+  <h4>Concern 1 (raised by @Judd): Namespace termination deadlocks and etcd orphans</h4>
+  <p>
+    If we rely on namespace deletion to clean up resources, we will run into namespace termination deadlocks. When a namespace is stuck terminating and we force it by removing the finalizer, the resources inside the namespace are <strong>not deleted</strong> — they become orphans. They remain in etcd but are inaccessible. This causes two serious problems:
+  </p>
+  <ol>
+    <li><strong>Resource name conflicts on re-use.</strong> If a new order tries to create a resource with the same name as an orphaned resource, it will hit a conflict and the old orphaned data will win. New resources of the same name as orphans cannot be created cleanly.</li>
+    <li><strong>etcd fills up over time.</strong> Orphaned resources accumulate. On a long-running shared cluster with many orders, this will eventually exhaust etcd capacity.</li>
+  </ol>
+  <p>
+    The current implementation uses the ArgoCD cascade finalizer to delete managed resources before the namespace is removed. This helps when ArgoCD cleanup completes cleanly. But if ArgoCD cleanup itself gets stuck, or if there are resources not managed by ArgoCD, namespace force-deletion will still produce orphans.
+  </p>
+  <div class="fix">
+    <strong>Status: Open — needs resolution before production scale</strong>
+    The cascade finalizer is in place but does not cover all cases. A robust solution needs explicit resource deletion (not relying on namespace deletion as the primary cleanup mechanism) and validation that etcd does not accumulate orphans over repeated order cycles.
+  </div>
+</div>
+
+<div class="challenge">
+  <h4>Concern 2 (raised by @Judd): Namespaces not created by ArgoCD — portability problem</h4>
+  <p>
+    In the current pattern, namespaces are pre-created by Ansible (<code>ocp4_workload_tenant_namespace</code>) before ArgoCD syncs. ArgoCD is explicitly told <code>CreateNamespace=false</code> and does not own the namespaces.
+  </p>
+  <p>
+    This creates a portability problem: <strong>the GitOps repos cannot be used on non-OcpSandbox clusters without modification.</strong> If someone tries to use the same GitOps repo on a plain OpenShift cluster (without the Sandbox API or the Ansible tenant roles), the ArgoCD sync will fail immediately because the namespaces do not exist and ArgoCD is not allowed to create them.
+  </p>
+  <p>
+    Being good corporate citizens means our GitOps repos should be usable by customers in their own clusters, not just in RHDP. Right now they are not — they have a hidden dependency on the Ansible pre-provisioning step that is not expressed anywhere in the GitOps repo itself.
+  </p>
+  <div class="fix">
+    <strong>Status: Open — design decision needed</strong>
+    Two options to consider: (1) Have ArgoCD create the namespaces (<code>CreateNamespace=true</code>) — this makes the repo portable but means ArgoCD owns the namespace lifecycle, which has its own implications for multi-tenant shared clusters. (2) Document the dependency explicitly and provide a standalone mode where the GitOps repo includes a namespace creation step that is skipped when Ansible pre-creates them. Neither option is implemented yet.
+  </div>
+</div>
+
+<hr>
+
+<h2 id="links">10. All Links</h2>
 
 <h3>Pull Requests</h3>
 <table>
