@@ -103,6 +103,7 @@
   <h2>Contents</h2>
   <ol>
     <li><a href="#what-is-sandbox-api">What is Sandbox API?</a></li>
+    <li><a href="#why-sandbox-api">Why Sandbox API — shared clusters</a></li>
     <li><a href="#which-pattern">Which pattern should I use?</a></li>
     <li><a href="#scheduler-only-overview">Summit 2026 — Scheduler-Only Pattern</a></li>
     <li><a href="#namespace-api-overview">Full Namespace API Pattern</a></li>
@@ -133,6 +134,37 @@
   <strong>Key insight</strong>
   In both patterns your AgnosticV <code>common.yaml</code> configures what runs, in what order, and with what variables. Sandbox API just gives you a cluster and injects variables. Everything else is up to your workloads — Ansible roles, GitOps, or both.
 </div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="why-sandbox-api">Why Sandbox API — Shared Clusters</h2>
+
+<p>
+  The primary driver is <strong>Zero Touch OpenShift</strong> — the RHDP direction for customer and partner workshops where attendees get an instant, isolated OpenShift experience without waiting for a cluster to provision. The original pattern required a full dedicated CNV cluster per order, which is not compatible with that model.
+</p>
+
+<div class="callout callout-blue">
+  <strong>Zero Touch OpenShift</strong>
+  The goal is for a customer or workshop attendee to click "Order" and have a fully working OpenShift environment in minutes — not an hour. This is only possible with pre-provisioned shared clusters. The Sandbox API scheduler-only pattern is the foundation that makes this possible.
+</div>
+
+<ul>
+  <li>
+    <strong>Speed.</strong> A dedicated CNV cluster takes 45–60 minutes to provision. A shared cluster order using Sandbox API takes 2–3 minutes — the cluster is already running, we are only provisioning the per-tenant resources. For event formats like Lightning Labs or booth demos where attendees walk up and want to start immediately, waiting an hour is not an option.
+  </li>
+  <li>
+    <strong>Scale across use cases — and Lightning Labs at Summit 2026.</strong> This pattern supports multiple deployment scenarios from a single catalog item: full workshop sessions, booth demos, and on-demand ordering from demo.redhat.com. A shared cluster pool can absorb concurrent demand across all of these without provisioning a dedicated cluster for each.
+    <br><br>
+    <strong>At Summit 2026, the event team is introducing self-service labs called Lightning Labs — and this is expected to be one of the biggest attractions of the event.</strong> Lightning Labs are short, self-paced sessions that attendees can walk up and start on their own, with no instructor and no scheduled slot. For this to work, the environment must be ready in minutes. A dedicated CNV cluster per order (45–60 min) makes Lightning Labs impossible. The shared cluster + Sandbox API pattern makes them viable — an attendee orders, gets their environment in 2–3 minutes, completes the lab, and the environment is destroyed automatically. That cycle has to work at scale, concurrently, across the event floor. One dedicated cluster per order cannot do that.
+  </li>
+  <li>
+    <strong>Establishing a reusable pattern.</strong> This is the first lab in RHDP to use the shared cluster + Sandbox API scheduler-only pattern end-to-end. The goal is not just to ship this one lab — it is to prove out an approach that other labs can follow. The tenant roles (<code>ocp4_workload_tenant_keycloak_user</code>, <code>ocp4_workload_tenant_namespace</code>, <code>ocp4_workload_tenant_gitea</code>) were built to be generic and reusable, not tied to MCP. Any lab that needs to run on a shared OpenShift cluster can use the same building blocks.
+  </li>
+  <li>
+    <strong>Authentication.</strong> The original lab used HTPasswd with sequential usernames (<code>user1</code>, <code>user2</code>) because each order got its own cluster — HTPasswd made sense there. On a shared cluster that model breaks down: you cannot use sequential usernames across concurrent orders and you need a proper identity provider that can handle many users with isolated sessions. RHBK is already on the cluster; each order just adds one user to the existing realm and removes it on destroy. The auth model follows naturally from moving to shared clusters — it is not a goal in itself.
+  </li>
+</ul>
 
 <hr>
 
