@@ -237,9 +237,15 @@
   <li><strong>Operator does the heavy lifting.</strong> The Gitea operator (already on the cluster) handles the full lifecycle of each instance — deploy, configure, expose via route. The <code>tenant_gitea</code> role just creates the CR and waits for it to be ready.</li>
 </ul>
 
-<div class="callout callout-grey">
+<div class="callout callout-green">
   <strong>The pattern: shared operator, per-tenant instance</strong>
-  Install the operator once at cluster provisioning time. Create a CR per order inside the tenant's namespace. This is the recommended pattern for any stateful service (Gitea, LibreChat, databases) in a shared cluster lab. The operator is cluster-wide infrastructure; the instance is per-tenant.
+  Install the operator once at cluster provisioning time. Create a CR per order inside the tenant's namespace. This gives you:
+  <ul style="margin-top:0.5rem;">
+    <li><strong>Full isolation</strong> — each tenant's instance is a completely separate process with its own storage, network endpoint, and credentials. One tenant cannot reach or affect another's instance.</li>
+    <li><strong>Clean destroy</strong> — delete the namespace and the entire instance is gone. No orphaned data, no cleanup scripts needed.</li>
+    <li><strong>Simple debugging</strong> — every resource for one tenant is in one namespace. <code>oc get all -n gitea-mcpuser-guid</code> shows you exactly what belongs to that tenant and nothing else.</li>
+  </ul>
+  This is the recommended pattern for any stateful service (Gitea, LibreChat, databases) in a shared cluster lab.
 </div>
 
 <h3>Why does each tenant get their own LibreChat instance?</h3>
