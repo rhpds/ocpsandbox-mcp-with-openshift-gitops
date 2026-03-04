@@ -154,9 +154,9 @@
 <p>Every iteration of this migration involved feedback from the team. Some of it confirmed the approach, some of it changed it:</p>
 
 <ul>
-  <li><strong>Judd Maltin</strong> — defined the three-layer architecture (cluster provisioner / platform / tenant) and the GitOps bootstrap app-of-apps pattern that this lab is built on. The <code>ocp4_workload_gitops_bootstrap</code> role improvements (multi-app list, cascade finalizer, userinfo ConfigMap) came out of collaboration with him.</li>
-  <li><strong>Wolfgang Kulhanek</strong> — pushed back on namespace pre-creation and raised the etcd impact concern on cascade deletes at scale. Both points led to real design decisions: namespaces are always pre-created by Ansible before ArgoCD sync, and the cascade finalizer concern is an open item for high-concurrency destroy scenarios.</li>
-  <li><strong>Nate Stephany</strong> — reinforced the requirement that namespaces and RBAC must exist before any ArgoCD sync. Helped clarify the operational rule: foundational layer is Ansible, workload layer is GitOps.</li>
+  <li><strong>Judd Maltin</strong> — proposed the three-layer architecture (cluster provisioner / platform / tenant) and the GitOps bootstrap app-of-apps pattern that this lab is built on. The <code>ocp4_workload_gitops_bootstrap</code> role improvements (multi-app list, cascade finalizer, userinfo ConfigMap) came out of working through this together.</li>
+  <li><strong>Wolfgang Kulhanek</strong> — raised questions about namespace pre-creation and suggested the etcd impact concern on cascade deletes at scale. Both points led to real design decisions: namespaces are always pre-created by Ansible before ArgoCD sync, and the cascade finalizer concern is an open item for high-concurrency destroy scenarios.</li>
+  <li><strong>Nate Stephany</strong> — suggested keeping the foundational layer (namespaces, RBAC) in Ansible and limiting GitOps strictly to workload resources. That discussion helped clarify the boundary: Ansible owns the foundation, ArgoCD owns the workloads.</li>
   <li><strong>GC</strong> — working on the Sandbox API integration that will allow clusters ordered from demo.redhat.com to be automatically attached to the pool. Until that lands, the cluster provisioner playbook is run manually. This is the last manual step remaining before the pattern is fully automated.</li>
 </ul>
 
