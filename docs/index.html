@@ -156,8 +156,8 @@
 
   <!-- LAYER 1: INFRA -->
   <rect x="20" y="16" width="820" height="112" fill="#dbeafe" stroke="#2563eb" stroke-width="2" rx="8"/>
-  <text x="38" y="42" font-size="13" font-weight="700" fill="#1e3a8a">Layer 1 — Infra</text>
-  <text x="38" y="58" font-size="11" fill="#1e40af">Runs ONCE per cluster. Installed by cluster-provision.yml (AgnosticD). Never runs again per order.</text>
+  <text x="38" y="42" font-size="13" font-weight="700" fill="#1e3a8a">Layer 1 — Infra: Install Operators</text>
+  <text x="38" y="58" font-size="11" fill="#1e40af">Runs ONCE per cluster. Installs all cluster-wide operators via cluster-provision.yml. Never runs per order.</text>
   <rect x="38" y="68" width="100" height="40" fill="#3b82f6" rx="5"/>
   <text x="88" y="86" font-size="9" fill="white" text-anchor="middle">RHBK</text>
   <text x="88" y="98" font-size="8" fill="#bfdbfe" text-anchor="middle">Keycloak / SSO</text>
@@ -186,8 +186,8 @@
 
   <!-- LAYER 2: PLATFORM -->
   <rect x="20" y="154" width="820" height="90" fill="#ede9fe" stroke="#7c3aed" stroke-width="2" rx="8"/>
-  <text x="38" y="178" font-size="13" font-weight="700" fill="#4c1d95">Layer 2 — Platform</text>
-  <text x="38" y="194" font-size="11" fill="#5b21b6">Runs ONCE per cluster. Managed by ArgoCD (bootstrap-platform). Shared services for all tenants.</text>
+  <text x="38" y="178" font-size="13" font-weight="700" fill="#4c1d95">Layer 2 — Platform: Create Instances &amp; Configure</text>
+  <text x="38" y="194" font-size="11" fill="#5b21b6">Runs ONCE per cluster. Creates operator instances, configures shared cluster services via ArgoCD (bootstrap-platform).</text>
   <rect x="38" y="204" width="160" height="30" fill="#7c3aed" rx="5"/>
   <text x="118" y="224" font-size="9" fill="white" text-anchor="middle">platform-monitoring</text>
   <rect x="208" y="204" width="180" height="30" fill="#8b5cf6" rx="5"/>
@@ -200,8 +200,8 @@
 
   <!-- LAYER 3: TENANT -->
   <rect x="20" y="270" width="820" height="130" fill="#ffedd5" stroke="#ea580c" stroke-width="2" rx="8"/>
-  <text x="38" y="294" font-size="13" font-weight="700" fill="#7c2d12">Layer 3 — Tenant</text>
-  <text x="38" y="310" font-size="11" fill="#9a3412">Runs PER ORDER. Created by AgnosticD roles + gitops_bootstrap. Destroyed when order ends.</text>
+  <text x="38" y="294" font-size="13" font-weight="700" fill="#7c2d12">Layer 3 — Tenant: The User</text>
+  <text x="38" y="310" font-size="11" fill="#9a3412">Runs PER ORDER. One isolated environment per user. Created by AgnosticD roles + gitops_bootstrap. Destroyed when order ends.</text>
 
   <rect x="38" y="318" width="90" height="32" fill="#ea580c" rx="5"/>
   <text x="83" y="333" font-size="9" fill="white" text-anchor="middle">Sandbox API</text>
@@ -239,40 +239,40 @@
   <thead>
     <tr>
       <th>Layer</th>
+      <th>Responsibility</th>
       <th>Runs</th>
-      <th>Who triggers it</th>
-      <th>Destroyed when?</th>
-      <th>Key components</th>
+      <th>How triggered</th>
+      <th>MCP Lab example</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td><strong>Infra</strong></td>
+      <td><strong>Infra</strong><br><em>Install Operators</em></td>
+      <td>Install cluster-wide operators — no instances created yet, just the operators available</td>
       <td>Once per cluster</td>
-      <td><code>cluster-provision.yml</code> — run by operator when cluster is onboarded to the pool</td>
-      <td>Never (cluster is retired)</td>
-      <td>RHBK, Gitea operator, ArgoCD, Tekton, ToolHive, AppProjects</td>
+      <td><code>cluster-provision.yml</code> playbook — run manually (or via CI) when cluster is onboarded to the Sandbox API pool. See: <a href="https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift/blob/main/tests/e2e/cluster-provision.yml">cluster-provision.yml</a></td>
+      <td>Installs: RHBK operator, Gitea operator, OpenShift GitOps (ArgoCD), Tekton (Pipelines), ToolHive, CloudNativePG. Creates <code>infra</code>, <code>platform</code>, <code>tenants</code> ArgoCD AppProjects.</td>
     </tr>
     <tr>
-      <td><strong>Platform</strong></td>
-      <td>Once per cluster</td>
-      <td>ArgoCD (<code>bootstrap-platform</code>) — triggered by infra bootstrap</td>
-      <td>Never (cluster is retired)</td>
-      <td>User workload monitoring, future shared services</td>
+      <td><strong>Platform</strong><br><em>Create Instances &amp; Configure</em></td>
+      <td>Create instances from installed operators, configure shared cluster services that all tenants will use</td>
+      <td>Once per cluster — same one-time cluster provisioning as Infra</td>
+      <td>ArgoCD syncs <code>bootstrap-platform</code> Application — created by infra bootstrap as part of the same cluster provisioning run</td>
+      <td>Creates: Gitea server instance (from Gitea operator CR), enables user workload monitoring (Prometheus/Grafana for tenant namespaces). Future: shared LiteLLM instance, LDAP sync.</td>
     </tr>
     <tr>
-      <td><strong>Tenant</strong></td>
+      <td><strong>Tenant</strong><br><em>The User</em></td>
+      <td>Everything for one user's isolated environment — created fresh per order, destroyed when done</td>
       <td>Every order</td>
-      <td>AgnosticD roles via AgV <code>workloads:</code> list</td>
-      <td>Order ends — each role's <code>remove_workload.yml</code> runs</td>
-      <td>RHBK user, namespaces, Gitea instance, LibreChat, MCP servers, agent</td>
+      <td>AgnosticD runs AgV <code>workloads:</code> list via Sandbox API scheduler</td>
+      <td>Creates: one RHBK user, 6 namespaces, one Gitea instance (per-tenant, in user namespace), LiteMaaS virtual key. ArgoCD deploys: LibreChat, MCP servers (gitea + openshift), AI agent, Showroom.</td>
     </tr>
   </tbody>
 </table>
 
 <div class="callout callout-blue">
   <strong>Only the Tenant layer is in your AgV common.yaml</strong>
-  The Infra and Platform layers are set up once by the cluster operator — they are not part of your catalog item configuration. When you write a <code>workloads:</code> list in AgV, you are only configuring the Tenant layer. The shared infrastructure is already there waiting.
+  The Infra and Platform layers are set up once by the cluster operator when a cluster joins the pool — they are not part of your catalog item. When you write a <code>workloads:</code> list in AgV, you are configuring only the Tenant layer. The operators and shared services are already there waiting.
 </div>
 
 <hr>
