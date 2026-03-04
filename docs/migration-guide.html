@@ -198,7 +198,7 @@
     <strong>Scale across use cases.</strong> This pattern supports multiple deployment scenarios from a single catalog item — full workshop sessions, Lightning Labs, booth demos, and on-demand ordering from demo.redhat.com. A shared cluster pool can absorb concurrent demand across all of these without provisioning a dedicated cluster for each. One dedicated cluster per order does not scale across that range of use cases.
   </li>
   <li>
-    <strong>Alignment with RHDP direction.</strong> The shared cluster + Sandbox API scheduler-only pattern is the standard going forward for all OpenShift-based workshops. The new tenant roles (<code>ocp4_workload_tenant_keycloak_user</code>, <code>ocp4_workload_tenant_namespace</code>, <code>ocp4_workload_tenant_gitea</code>) are reusable building blocks for any lab on a shared cluster — not just MCP.
+    <strong>Establishing a reusable pattern.</strong> This is the first lab in RHDP to use the shared cluster + Sandbox API scheduler-only pattern end-to-end. The goal is not just to ship this one lab — it is to prove out an approach that other labs can follow. The tenant roles (<code>ocp4_workload_tenant_keycloak_user</code>, <code>ocp4_workload_tenant_namespace</code>, <code>ocp4_workload_tenant_gitea</code>) were built to be generic and reusable, not tied to MCP. Any lab that needs to run on a shared OpenShift cluster can use the same building blocks.
   </li>
   <li>
     <strong>Authentication alignment.</strong> HTPasswd is local to each cluster. Shared clusters use RHBK which is already installed — each order gets one user in the existing realm. Better UX for attendees and consistent with how RHDP manages identity across shared infrastructure.
