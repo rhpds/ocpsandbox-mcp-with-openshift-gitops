@@ -174,29 +174,27 @@
 <!-- ============================================================ -->
 <h2 id="why">2. Why We Changed It</h2>
 
-<p>Several factors made the original pattern unsuitable for Summit 2026 and for RHDP's long-term direction on shared infrastructure:</p>
+<p>
+  The primary driver is <strong>Zero Touch OpenShift</strong> — the RHDP direction for customer and partner workshops where attendees get an instant, isolated OpenShift experience without waiting for a cluster to provision. The original pattern required a full dedicated CNV cluster per order, which is not compatible with that model.
+</p>
+
+<div class="callout callout-blue">
+  <strong>Zero Touch OpenShift</strong>
+  The goal is for a customer or workshop attendee to click "Order" and have a fully working OpenShift environment in minutes — not an hour. This is only possible with pre-provisioned shared clusters. The Sandbox API scheduler-only pattern is the foundation that makes this possible.
+</div>
 
 <ul>
   <li>
-    <strong>Cost.</strong> Each order spun up a full CNV OCP cluster. Summit 2026 has potentially hundreds of attendees — one dedicated cluster per order is not viable at that scale. A shared cluster serves many tenants at a fraction of the cost.
+    <strong>Speed.</strong> A dedicated CNV cluster takes 45–60 minutes to provision. A shared cluster order using Sandbox API takes 2–3 minutes — the cluster is already running, we are only provisioning the per-tenant resources. This is the difference between a usable conference lab and one where attendees spend half the session waiting.
   </li>
   <li>
-    <strong>Provisioning time.</strong> A CNV cluster takes 45–60 minutes to provision. Attendees at a conference do not wait an hour for their lab environment. A shared cluster order using Sandbox API takes 2–3 minutes — the cluster is already running; we are only provisioning per-tenant resources.
+    <strong>Scale.</strong> Summit 2026 has hundreds of attendees. One dedicated cluster per order is not viable at that scale — in cost or in infrastructure capacity. A single shared cluster can serve many concurrent tenants, each isolated in their own namespaces with their own RHBK user and Gitea org.
   </li>
   <li>
-    <strong>Multi-user isolation problem.</strong> The original lab packed 2–40 users onto one cluster. A broken deployment by one user, a resource exhaustion event, or a misconfigured workload could affect every other user on that cluster. The shared cluster pattern with one tenant per order gives true isolation: each order has its own namespaces and RHBK user.
+    <strong>Alignment with RHDP direction.</strong> The shared cluster + Sandbox API scheduler-only pattern is the standard going forward for all OpenShift-based workshops. The new tenant roles (<code>ocp4_workload_tenant_keycloak_user</code>, <code>ocp4_workload_tenant_namespace</code>, <code>ocp4_workload_tenant_gitea</code>) are reusable building blocks for any lab on a shared cluster — not just MCP.
   </li>
   <li>
-    <strong>The monolithic role.</strong> <code>ocp4_workload_mcp_user</code> deployed everything for all users in one role. It was hard to test in isolation, difficult to update without touching everything, and impossible to reuse in another lab context. A role doing too much is a maintenance problem.
-  </li>
-  <li>
-    <strong>Authentication.</strong> HTPasswd authentication is local to each cluster. It does not support SSO or federation, and the <code>user1</code>, <code>user2</code> username pattern is a shared-cluster anti-pattern. RHBK provides better UX, supports OIDC federation, and is already installed on every shared cluster in the pool.
-  </li>
-  <li>
-    <strong>No destroy logic.</strong> "Delete the cluster" is not a destroy strategy when the cluster is shared. On a shared cluster, you cannot delete the cluster — each role must know how to undo exactly what it did, and only that.
-  </li>
-  <li>
-    <strong>Reusability.</strong> The original roles were tightly coupled to the MCP lab. The new tenant roles — <code>ocp4_workload_tenant_keycloak_user</code>, <code>ocp4_workload_tenant_namespace</code>, <code>ocp4_workload_tenant_gitea</code> — are generic. Any lab running on a shared cluster can use them.
+    <strong>Authentication alignment.</strong> HTPasswd is local to each cluster. Shared clusters use RHBK which is already installed — each order gets one user in the existing realm. Better UX for attendees and consistent with how RHDP manages identity across shared infrastructure.
   </li>
 </ul>
 
