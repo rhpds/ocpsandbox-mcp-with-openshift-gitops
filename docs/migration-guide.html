@@ -211,77 +211,68 @@
 <h2 id="design">3. Design Decisions — Why We Built It This Way</h2>
 
 <p>
-  When you first see this pattern, the most common question is: <em>why does every user need their own instance of X?</em> Why not share Gitea, or share LibreChat, or put everyone in one namespace? This section explains the reasoning behind each decision. These are not arbitrary — they are the result of real operational experience and they represent the approach we recommend for shared cluster labs.
+  When people first see this pattern, the most common question is: <em>why does every user need their own X?</em> This section explains the reasoning. These decisions are not arbitrary — they are the approach we recommend for shared cluster labs.
 </p>
 
-<div class="callout callout-green">
-  <strong>Our recommendation</strong>
-  For any lab running on a shared OpenShift cluster, we recommend the pattern described here: one Gitea org per tenant, one RHBK user per tenant, separate namespaces per service, ArgoCD for workload management, and explicit destroy logic in every role. The reasons are explained below.
+<div class="callout callout-grey">
+  <strong>What is shared vs what is per-tenant</strong>
+  It helps to be clear about what is shared and what is not. On the cluster: RHBK, Gitea (the server), ArgoCD, Tekton, and ToolHive are all shared — installed once by the cluster provisioner. Per tenant (per order): one Gitea org, one RHBK user, dedicated namespaces, their own LibreChat instance, their own MCP servers, and their own LiteMaaS key.
 </div>
 
-<h3>Why does each tenant get their own Gitea org and repo?</h3>
+<h3>Why does each tenant get their own Gitea org?</h3>
 
-<p>This is the most common question. The short answer: <strong>ArgoCD reads from it, and attendees push to it.</strong></p>
+<p>
+  The Gitea <strong>server</strong> is shared — one instance per cluster, installed by the cluster provisioner. What each tenant gets is their own <strong>org</strong> inside that shared Gitea. Inside that org is a mirror of the GitOps repo that belongs exclusively to them.
+</p>
+
+<p>The question then is: why not just share one repo?</p>
 
 <ul>
-  <li><strong>ArgoCD isolation.</strong> Each tenant's ArgoCD Application points to their own Gitea repo (a mirror of the GitOps repo). If all tenants shared one repo, one tenant's commit or branch could trigger a sync that affects another tenant's deployment. With per-tenant repos, each ArgoCD Application is fully isolated — changes in one repo have no effect on any other tenant.</li>
-  <li><strong>Lab exercises.</strong> In this lab, attendees push code changes as part of the exercises. If they all pushed to the same repo, they would overwrite each other's work. Each attendee needs a repo they own exclusively.</li>
-  <li><strong>Clean destroy.</strong> On destroy, the <code>tenant_gitea</code> role deletes the entire Gitea org. Everything in it — repos, webhooks, settings — is gone cleanly. No manual cleanup, no leftover data from previous tenants.</li>
-  <li><strong>Security.</strong> One tenant cannot browse another tenant's repo. Each Gitea org is private to that user.</li>
+  <li><strong>Lab exercises require it.</strong> In this lab, attendees push code and configuration changes as part of the exercises. If all tenants shared one repo, they would overwrite each other's work. Each attendee needs a repo they own exclusively.</li>
+  <li><strong>ArgoCD reads from it.</strong> Each tenant's ArgoCD Application points to their own Gitea repo. If tenants shared a repo, a commit from one tenant could trigger a sync affecting another tenant's deployment. Per-tenant repos mean each ArgoCD Application is fully isolated.</li>
+  <li><strong>Clean destroy.</strong> On destroy, the <code>tenant_gitea</code> role deletes the entire org — repos, webhooks, settings — in one call. No leftover data from previous orders.</li>
+  <li><strong>Privacy.</strong> One tenant cannot browse another tenant's repo. Each org is private to that user.</li>
 </ul>
 
 <div class="callout callout-grey">
-  <strong>Why not a shared Gitea repo with per-user branches?</strong>
-  Branches do not give you ArgoCD isolation — ArgoCD would need a separate Application per branch, and you still have the problem of one tenant's merge affecting another. Orgs are the right isolation boundary in Gitea. One org per tenant, one repo per lab, one ArgoCD Application reading from it.
+  <strong>Why not a shared repo with per-user branches?</strong>
+  Branches do not give ArgoCD isolation — ArgoCD would need a separate Application per branch, and one tenant's merge still risks affecting another. Orgs are the right isolation boundary in Gitea for this pattern.
 </div>
+
+<h3>Why does each tenant get their own LibreChat instance?</h3>
+
+<ul>
+  <li><strong>Conversation data.</strong> Each attendee's conversations, uploaded files, and API history live in their LibreChat instance. A shared LibreChat means one attendee can see another's data. Not acceptable for a workshop.</li>
+  <li><strong>MCP endpoints are per-tenant.</strong> Each LibreChat is configured to point to that specific tenant's MCP servers — their <code>mcp-gitea-mcpuser-guid</code> and <code>mcp-openshift-mcpuser-guid</code>. A shared instance cannot route MCP calls per user.</li>
+  <li><strong>LiteMaaS key.</strong> Each tenant has their own virtual key with their own budget. A shared LibreChat would pool all API usage under one key with no per-user attribution or rate limiting.</li>
+</ul>
 
 <h3>Why separate namespaces per service?</h3>
 
-<p>In the original lab, one namespace held everything for a user. In the new pattern, each service gets its own namespace (<code>librechat-mcpuser-guid</code>, <code>mcp-gitea-mcpuser-guid</code>, etc.).</p>
+<p>Each service (LibreChat, MCP-Gitea, MCP-OpenShift, agent) gets its own namespace rather than sharing one namespace per tenant.</p>
 
 <ul>
-  <li><strong>Resource isolation and quota.</strong> Each namespace has its own ResourceQuota and LimitRange. You can give LibreChat more memory without affecting the MCP server namespace. Quota violations in one namespace do not block another.</li>
-  <li><strong>RBAC clarity.</strong> Service accounts and RBAC are scoped to the namespace. A service account in <code>mcp-openshift-mcpuser-guid</code> can only access resources in that namespace — it cannot accidentally touch LibreChat or Gitea resources.</li>
-  <li><strong>Debugging.</strong> When something goes wrong, you immediately know which service is affected just from the namespace name. <code>kubectl get pods -n librechat-mcpuser-drw4x</code> shows you exactly LibreChat and nothing else.</li>
-  <li><strong>ArgoCD visibility.</strong> Each ArgoCD Application manages one namespace. The sync status for LibreChat is separate from the sync status for the MCP server. You can see exactly which component is unhealthy without digging through a large mixed namespace.</li>
+  <li><strong>Quota per service.</strong> Each namespace has its own ResourceQuota and LimitRange. LibreChat can have a higher memory limit without affecting the MCP server quota. A quota violation in one namespace does not block another.</li>
+  <li><strong>RBAC is cleaner.</strong> Service accounts are scoped to the namespace. A service account in <code>mcp-openshift-mcpuser-guid</code> cannot touch resources in <code>librechat-mcpuser-guid</code>.</li>
+  <li><strong>Easier to debug.</strong> The namespace name tells you immediately which service you are looking at. <code>kubectl get pods -n librechat-mcpuser-drw4x</code> shows only LibreChat — nothing else mixed in.</li>
 </ul>
 
-<h3>Why one RHBK user per order instead of reusing users?</h3>
+<h3>Why one RHBK user per order?</h3>
 
 <ul>
-  <li><strong>Traceability.</strong> Each order gets a unique username (<code>mcpuser-&lt;guid&gt;</code>). You can always tell which order a user belongs to just from the username. Shared usernames make audit trails impossible.</li>
-  <li><strong>Clean lifecycle.</strong> The user is created when the order is placed and deleted when the order ends. There is no leftover identity from previous lab runs.</li>
-  <li><strong>No password sharing.</strong> Each user has their own password derived from their GUID. Two attendees at the same event cannot accidentally use the same credentials.</li>
-  <li><strong>RHBK is shared, users are not.</strong> The RHBK instance is one per cluster — it is a shared service. But the users inside it are one per order. This is the right separation: shared infrastructure, isolated tenants.</li>
+  <li><strong>Clean lifecycle.</strong> The user is created when the order is placed and deleted when it ends. No leftover identity from previous runs.</li>
+  <li><strong>Traceability.</strong> The username (<code>mcpuser-&lt;guid&gt;</code>) ties directly to the order GUID. You always know which order a user belongs to.</li>
+  <li><strong>RHBK is shared, users are not.</strong> The RHBK server is one per cluster. Users inside it are one per order. This is the right separation: shared infrastructure, isolated tenants.</li>
 </ul>
 
-<h3>Why ArgoCD for workloads instead of pure Ansible?</h3>
+<h3>Why one tenant per order instead of multi-user?</h3>
+
+<p>The original lab had a <code>num_users</code> parameter (2–40 users per order, all on the same cluster). The new pattern is one tenant per order.</p>
 
 <ul>
-  <li><strong>Self-healing.</strong> If a pod crashes or a resource is accidentally deleted, ArgoCD reconciles it back to the desired state automatically. Ansible only runs at provision time — it cannot fix runtime drift.</li>
-  <li><strong>Visibility for attendees.</strong> Attendees can open the ArgoCD UI and see their own Applications, sync status, and resource tree. This is part of the learning experience in an OpenShift lab.</li>
-  <li><strong>Declarative desired state.</strong> The lab environment is defined in git. If something breaks, you know exactly what the expected state is. You can re-sync from ArgoCD without re-running Ansible.</li>
-  <li><strong>Cascade delete on destroy.</strong> The ArgoCD cascade finalizer (<code>resources-finalizer.argocd.argoproj.io</code>) means that deleting the bootstrap Application automatically cleans up every child Application and every Kubernetes resource ArgoCD manages. This replaces dozens of explicit <code>kubectl delete</code> calls in a destroy role.</li>
-  <li><strong>GitOps for updates.</strong> If a Helm chart or container image needs updating, you push to the GitOps repo and ArgoCD rolls it out to all tenants automatically. No need to re-run Ansible for every tenant.</li>
-</ul>
-
-<h3>Why not share LibreChat across all tenants?</h3>
-
-<ul>
-  <li><strong>Data isolation.</strong> Each attendee's conversations, uploaded files, and API keys are stored in their LibreChat instance. A shared LibreChat means one attendee can see another's conversations. That is not acceptable for a workshop.</li>
-  <li><strong>MCP endpoint configuration.</strong> Each LibreChat instance is configured to point to that tenant's MCP servers (their specific <code>mcp-gitea-mcpuser-guid</code> and <code>mcp-openshift-mcpuser-guid</code> endpoints). A shared LibreChat cannot be configured per-user at the MCP endpoint level.</li>
-  <li><strong>LiteMaaS key.</strong> Each tenant has their own LiteMaaS virtual key with their own budget. A shared LibreChat would pool all API usage under one key with no per-user attribution.</li>
-</ul>
-
-<h3>Why one tenant per order instead of multi-user per order?</h3>
-
-<p>The original lab had a <code>num_users</code> parameter (2–40 users per order, all on the same cluster). The new pattern is strictly one tenant per order.</p>
-
-<ul>
-  <li><strong>True isolation.</strong> With one tenant per order, one attendee's broken deployment cannot affect anyone else. With multi-user per order, one tenant's resource exhaustion affects everyone on that cluster.</li>
-  <li><strong>Simple destroy.</strong> Destroying one tenant is straightforward — delete their resources and their user. Destroying one of N users from a shared cluster while leaving the others intact is significantly more complex and error-prone.</li>
-  <li><strong>Sandbox API model.</strong> The Sandbox API scheduler-only pattern is designed around one tenant per order. The cluster is shared infrastructure; the tenant is isolated within it. This is the correct mental model.</li>
-  <li><strong>Scale.</strong> One tenant per order scales horizontally — add more clusters to the pool to support more concurrent attendees. Multi-user per order creates coordination problems and uneven resource usage across the pool.</li>
+  <li><strong>True isolation.</strong> One attendee's broken deployment cannot affect any other. With multi-user per order, resource exhaustion by one user hits everyone on that cluster.</li>
+  <li><strong>Destroy is simple.</strong> Deleting one tenant's resources is straightforward. Deleting one of N users from a shared cluster while leaving the others intact is significantly harder.</li>
+  <li><strong>Scales horizontally.</strong> More attendees = more clusters in the pool. Multi-user per order creates uneven resource usage and coordination problems across the pool.</li>
 </ul>
 
 <hr>
