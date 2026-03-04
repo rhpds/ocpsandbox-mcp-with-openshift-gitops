@@ -103,7 +103,7 @@
 <div class="toc">
   <h2>Contents</h2>
   <ol>
-    <li><a href="#how-it-works">How it works — three-layer architecture</a></li>
+    <li><a href="#how-it-works">How it works — provisioning flow</a></li>
     <li><a href="#sandbox-api-role">What Sandbox API does in this pattern</a></li>
     <li><a href="#full-common-yaml">Complete AgV common.yaml — annotated</a></li>
     <li><a href="#sandbox-variables">Variables you receive from Sandbox API</a></li>
@@ -113,10 +113,10 @@
 </div>
 
 <!-- ============================================================ -->
-<h2 id="how-it-works">How It Works — Three-Layer Architecture</h2>
+<h2 id="how-it-works">How It Works — Provisioning Flow</h2>
 
 <p>
-  The Scheduler-Only pattern uses a three-layer model. Each layer runs at a different time and has a different scope. Understanding this separation is essential to configuring AgV correctly.
+  The Scheduler-Only pattern runs in three distinct phases. Each phase has a different owner, runs at a different time, and has a different scope. Understanding this separation is essential to configuring AgV correctly.
 </p>
 
 <div class="svg-wrap">
