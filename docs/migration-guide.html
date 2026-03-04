@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Migration Guide — MCP with OpenShift Sandbox API Docs</title>
+  <style>
+    :root {
+      --red: #cc0000; --red-dark: #990000; --blue: #0066cc; --blue-light: #e8f0fb;
+      --orange: #f57c00; --orange-light: #fff3e0; --green: #2e7d32; --green-light: #e8f5e9;
+      --grey-light: #f5f5f5; --grey-border: #ddd; --code-bg: #1e1e2e; --code-fg: #cdd6f4;
+      --code-kw: #cba6f7; --code-str: #a6e3a1; --code-comment: #6c7086; --code-num: #fab387;
+      --code-key: #89b4fa; --code-val: #f38ba8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.7; color: #222; background: #fff; max-width: 1100px; margin: 0 auto; padding: 2rem 2.5rem 4rem; }
+    h1 { font-size: 2rem; color: var(--red); border-bottom: 3px solid var(--red); padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.5rem; color: var(--red); border-left: 5px solid var(--red); padding-left: 0.75rem; margin: 2.5rem 0 1rem; }
+    h3 { font-size: 1.15rem; color: #333; margin: 1.5rem 0 0.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.25rem; }
+    h4 { font-size: 1rem; color: #555; margin: 1rem 0 0.4rem; font-style: italic; }
+    p { margin: 0.6rem 0; }
+    ul, ol { margin: 0.5rem 0 0.5rem 1.5rem; }
+    li { margin: 0.25rem 0; }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .subtitle { color: #666; font-size: 0.95rem; margin-bottom: 2rem; }
+    .toc { background: #fafafa; border: 1px solid var(--grey-border); border-radius: 6px; padding: 1.25rem 1.5rem; margin: 1.5rem 0 2.5rem; }
+    .toc h2 { font-size: 1rem; margin: 0 0 0.75rem; border: none; padding: 0; color: #444; text-transform: uppercase; letter-spacing: 0.05em; }
+    .toc ol { margin-left: 1.25rem; }
+    .toc li { margin: 0.2rem 0; font-size: 0.93rem; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.9rem; }
+    thead tr { background: var(--red); color: #fff; }
+    thead th { padding: 0.6rem 0.9rem; text-align: left; font-weight: 600; }
+    tbody tr:nth-child(even) { background: #fafafa; }
+    tbody tr:hover { background: #f0f0f0; }
+    td { padding: 0.55rem 0.9rem; border-bottom: 1px solid #eee; vertical-align: top; }
+    td code, th code { background: #eee; color: #c00; padding: 0.1em 0.35em; border-radius: 3px; font-size: 0.88em; }
+    pre { background: var(--code-bg); color: var(--code-fg); border-radius: 8px; padding: 1.25rem 1.4rem; overflow-x: auto; margin: 0.75rem 0 1.25rem; font-size: 0.85rem; line-height: 1.6; border: 1px solid #333; }
+    code { font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace; }
+    pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+    .kw { color: var(--code-kw); } .str { color: var(--code-str); } .cmt { color: var(--code-comment); font-style: italic; }
+    .key { color: var(--code-key); } .val { color: #f9e2af; }
+    .callout { border-radius: 6px; padding: 0.9rem 1.2rem; margin: 1rem 0; border-left: 5px solid; font-size: 0.93rem; }
+    .callout strong { display: block; margin-bottom: 0.25rem; font-size: 1rem; }
+    .callout-blue { background: var(--blue-light); border-color: var(--blue); color: #003a80; }
+    .callout-orange { background: var(--orange-light); border-color: var(--orange); color: #7a3e00; }
+    .callout-green { background: var(--green-light); border-color: var(--green); color: #1b5e20; }
+    .callout-grey { background: var(--grey-light); border-color: #999; color: #444; }
+    .badge { display: inline-block; background: var(--red); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 0.15em 0.55em; border-radius: 3px; margin-left: 0.5rem; vertical-align: middle; text-transform: uppercase; letter-spacing: 0.05em; }
+    .badge-green { background: var(--green); }
+    .badge-orange { background: var(--orange); }
+    hr { border: none; border-top: 1px solid #e0e0e0; margin: 2rem 0; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin: 1rem 0; }
+    .col-box { background: #fafafa; border: 1px solid var(--grey-border); border-radius: 6px; padding: 1rem 1.2rem; }
+    .col-box h4 { margin-top: 0; font-style: normal; font-weight: 700; color: var(--red); }
+    .nav-bar { background: #1a1a2e; color: #aaa; padding: 0.7rem 1.2rem; border-radius: 6px; margin-bottom: 2rem; font-size: 0.88rem; display: flex; gap: 1.5rem; flex-wrap: wrap; }
+    .nav-bar a { color: #7eb8f7; }
+    .nav-bar a:hover { color: #fff; }
+    .nav-bar .active { color: #fff; font-weight: 600; }
+    .step { border: 1px solid var(--grey-border); border-radius: 8px; padding: 1.25rem 1.5rem; margin: 1.25rem 0; position: relative; }
+    .step-num { display: inline-block; background: var(--red); color: #fff; font-size: 0.8rem; font-weight: 700; padding: 0.2em 0.6em; border-radius: 3px; margin-bottom: 0.5rem; }
+    .step h3 { border: none; margin-top: 0.25rem; padding: 0; }
+    .challenge { border: 1px solid var(--orange); border-radius: 8px; padding: 1.25rem 1.5rem; margin: 1rem 0; background: var(--orange-light); }
+    .challenge h4 { color: #7a3e00; font-style: normal; font-weight: 700; margin-top: 0; }
+    .challenge .fix { background: var(--green-light); border-left: 4px solid var(--green); padding: 0.6rem 1rem; border-radius: 4px; margin-top: 0.75rem; color: #1b5e20; font-size: 0.92rem; }
+    .challenge .fix strong { display: block; margin-bottom: 0.2rem; }
+  </style>
+</head>
+<body>
+
+  <nav class="nav-bar">
+    <span style="color:#aaa; font-weight:600;">Sandbox API Guide</span>
+    <a href="index.html">Overview</a>
+    <a href="scheduler-only.html">Summit 2026 / Scheduler-Only</a>
+    <a href="namespace-api.html">Full Namespace API</a>
+    <span class="active">Migration Guide</span>
+  </nav>
+
+  <h1>Converting an Existing Lab to the Sandbox API — A Real Migration Story</h1>
+  <p class="subtitle">MCP with OpenShift: what we changed, why we changed it, and every problem we hit along the way</p>
+
+  <p>
+    The MCP with OpenShift lab was originally built on the old multi-namespace Sandbox API pattern — the one that creates OCP namespaces and users directly through the API. We migrated it to the scheduler-only pattern with the new tenant roles that install on top of a cluster-provisioned base. This page is a step-by-step account of what we actually did and every problem we encountered along the way, so you do not have to figure it all out again from scratch.
+  </p>
+
+  <div class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#old-pattern">Where we started — the old pattern</a></li>
+      <li><a href="#why">Why we migrated</a></li>
+      <li><a href="#steps">Step-by-step: what we changed</a></li>
+      <li><a href="#challenges">Challenges and how we solved them</a></li>
+      <li><a href="#lessons">Key lessons learned</a></li>
+      <li><a href="#prs">PRs and repositories</a></li>
+    </ol>
+  </div>
+
+  <hr>
+
+  <h2 id="old-pattern">1. Where We Started — The Old Pattern</h2>
+
+  <p>
+    Before the migration, this lab used the Sandbox API in multi-namespace mode. That meant the API was responsible for creating OCP namespaces and users as part of the order flow. Everything hung off that — identity, namespace naming, RHSSO user creation, Gitea deployment. Here is a side-by-side of where we came from and where we landed.
+  </p>
+
+  <div class="two-col">
+    <div class="col-box">
+      <h4>Old Pattern <span class="badge" style="background:#666;">Before</span></h4>
+      <ul>
+        <li>Sandbox API in multi-namespace mode — created namespaces and OCP users directly</li>
+        <li>Roles named <code>ocp4_workload_ocpsandbox_*</code></li>
+        <li>Namespace names generated by Sandbox API — less control over naming conventions</li>
+        <li>Keycloak user creation tied to the Sandbox API <code>keycloak: yes</code> tag, using RHSSO</li>
+        <li>Gitea: one instance per user — each order got its own full Gitea deployment (heavy)</li>
+        <li>ArgoCD access managed by <code>ocp4_workload_tenant_argocd_user</code> role per order</li>
+        <li>No explicit <code>remove_workloads</code> list — relied on reverse-order destroy</li>
+        <li>All infra (RHBK, Gitea, ArgoCD) installed per order, not shared across users</li>
+      </ul>
+    </div>
+    <div class="col-box">
+      <h4>New Pattern <span class="badge badge-green">After</span></h4>
+      <ul>
+        <li>Sandbox API in scheduler-only mode — just picks a cluster, nothing more</li>
+        <li>Roles renamed to <code>ocp4_workload_tenant_*</code></li>
+        <li>Namespaces created by Ansible with custom naming (<code>{suffix}-{username}</code>)</li>
+        <li>RHBK installed once by cluster provisioner — much newer than RHSSO and actively maintained</li>
+        <li>Gitea: one shared instance per cluster, one org per user (much lighter)</li>
+        <li>ArgoCD: shared per cluster, per-user access via <code>gitops_bootstrap</code> role</li>
+        <li>Explicit <code>remove_workloads</code> list for deterministic, ordered destroy</li>
+        <li>Three-layer architecture: cluster provisioner / platform / tenant</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-grey">
+    <strong>How big was the change?</strong>
+    This was not a small refactor. We rewrote the AgV <code>common.yaml</code>, created three new Ansible roles from scratch, restructured the entire GitOps repository, and built a cluster provisioner playbook. The core logic for what the lab <em>does</em> stayed the same — the architecture around it changed completely.
+  </div>
+
+  <hr>
+
+  <h2 id="why">2. Why We Migrated</h2>
+
+  <p>
+    The old pattern worked, but it was hitting its limits. Several things pushed us to migrate:
+  </p>
+
+  <ul>
+    <li><strong>RHSSO vs RHBK.</strong> The old pattern used RHSSO through the Sandbox API <code>keycloak: yes</code> tag. RHSSO is the older product — RHBK is the actively maintained successor. The lab needed RHBK features, and staying on RHSSO meant we were carrying technical debt from day one.</li>
+    <li><strong>Tight coupling.</strong> The <code>ocp4_workload_ocpsandbox_*</code> roles were built specifically for the Sandbox API namespace mode. You could not run them on an arbitrary cluster, and you could not reuse pieces of them elsewhere. The new tenant roles are cluster-agnostic.</li>
+    <li><strong>No control over namespace names.</strong> The Sandbox API generated namespace names in its own format. We needed names like <code>agent-mcpuser-guid</code> — specific, human-readable, and consistent. You cannot get that from the API in namespace mode without a lot of workarounds.</li>
+    <li><strong>One Gitea per user was unsustainable.</strong> Each order spinning up a full Gitea deployment was eating cluster resources fast. A single shared Gitea instance with per-user organizations is both lighter and easier to maintain.</li>
+    <li><strong>GitOps bootstrap gives us auditable workload management.</strong> With the ArgoCD app-of-apps pattern (<code>gitops_bootstrap</code>), every tenant workload is declared in Git and synced by ArgoCD. Destroy is reliable. The state of any order is visible in the ArgoCD UI.</li>
+    <li><strong>This is the standard going forward.</strong> The three-layer architecture (cluster provisioner + platform + tenant) is what Judd's team is standardising on for Summit 2026. Migrating now means we are building to the right pattern rather than retrofitting later.</li>
+    <li><strong>Shared infra = faster orders.</strong> When RHBK, Gitea, ArgoCD, and Tekton are already installed on the cluster by the provisioner, each individual order only needs to create the per-user layer. Order time drops significantly.</li>
+  </ul>
+
+  <hr>
+
+  <h2 id="steps">3. Step-by-Step — What We Changed</h2>
+
+  <p>These are the actual steps we took, in the order we took them. Each step is discrete enough that you could do them independently, but the dependencies flow top to bottom.</p>
+
+  <div class="step">
+    <div class="step-num">Step 1</div>
+    <h3>Create the new tenant roles</h3>
+    <p>
+      We created three new roles in <code>agnosticd/namespaced_workloads</code> on the <code>tenant-roles</code> branch. These replaced the old <code>ocp4_workload_ocpsandbox_*</code> roles entirely.
+    </p>
+    <ul>
+      <li><code>ocp4_workload_tenant_keycloak_user</code> — creates one RHBK user per order in the existing realm. Does not install RHBK — that is the cluster provisioner's job. Just calls the RHBK API to create the user with the right password and roles.</li>
+      <li><code>ocp4_workload_tenant_namespace</code> — creates all per-user OCP namespaces with a <code>LimitRange</code> applied. Namespaces follow the <code>{suffix}-{username}</code> convention. Also creates <code>RoleBinding</code> entries so the tenant user has admin access in their namespaces.</li>
+      <li><code>ocp4_workload_tenant_gitea</code> — creates a Gitea organization for the user, mirrors the GitOps repository into it, and exports the mirrored repo URL as a fact for downstream roles to consume.</li>
+    </ul>
+    <p>
+      Every role has both a <code>workload.yml</code> and a <code>remove_workload.yml</code>. The <code>remove_workload.yml</code> files mirror the creation logic in reverse — delete the RHBK user, delete the namespaces (with <code>wait: true</code>), delete the Gitea org.
+    </p>
+    <p>
+      The central username variable is <code>ocp4_workload_tenant_keycloak_username</code>. All three roles reference this one variable (aliased into their own <code>_username</code> var internally). There is one source of truth for who the user is.
+    </p>
+    <p>
+      We explicitly removed the old <code>ocp4_workload_ocpsandbox_*</code> roles from the branch rather than keeping them as dead code.
+    </p>
+  </div>
+
+  <div class="step">
+    <div class="step-num">Step 2</div>
+    <h3>Set up the GitOps repository structure</h3>
+    <p>
+      The <code>ocpsandbox-mcp-with-openshift-gitops</code> repository got a full restructure. Previously it was a flat collection of Helm charts. We reorganised it into three top-level directories that map directly to the three architectural layers:
+    </p>
+    <pre><code><span class="cmt"># Top-level directory structure after restructure</span>
+infra/
+  bootstrap/          <span class="cmt"># Helm chart: creates platform/infra/tenants AppProjects in ArgoCD</span>
+
+platform/
+  bootstrap/          <span class="cmt"># Helm chart: app-of-apps for shared cluster services (monitoring, etc.)</span>
+
+tenant/
+  bootstrap/          <span class="cmt"># Helm chart: per-user app-of-apps (one per order)</span>
+  agent-src/          <span class="cmt"># AI agent source code — built by Tekton pipeline</span>
+  agent/              <span class="cmt"># Helm chart: deploys the agent container</span>
+  librechat/          <span class="cmt"># Helm chart: LibreChat secrets, routes, user creation job</span>
+  mcp-gitea/          <span class="cmt"># Helm chart: Gitea MCP server</span>
+  mcp-openshift/      <span class="cmt"># Helm chart: OpenShift MCP server</span></code></pre>
+    <p>
+      The key principle: each layer has its own bootstrap <code>Application</code> in ArgoCD, and the layers are independent. The <code>infra/bootstrap</code> and <code>platform/bootstrap</code> Applications are created by the cluster provisioner (run once per cluster). The <code>tenant/bootstrap</code> Application is created per order by the <code>gitops_bootstrap</code> Ansible role.
+    </p>
+    <p>
+      The <code>infra/bootstrap</code> chart is responsible for creating the ArgoCD <code>AppProject</code> resources (<code>infra</code>, <code>platform</code>, <code>tenants</code>) and the RBAC that controls what each project is allowed to do and which namespaces it can deploy into.
+    </p>
+  </div>
+
+  <div class="step">
+    <div class="step-num">Step 3</div>
+    <h3>Build the cluster provisioner</h3>
+    <p>
+      We created <code>cluster-provision.yml</code> — a playbook that runs once per cluster, not once per order. This is the key separation that makes the new pattern work. Everything in this playbook is cluster-wide infrastructure that will be shared across all orders.
+    </p>
+    <p>The provisioner installs:</p>
+    <ul>
+      <li>RHBK (Red Hat Build of Keycloak) via the RHBK Operator — configured with the lab realm, OAuth integration with OCP, and admin credentials</li>
+      <li>Gitea via the Gitea Operator — one shared instance, admin account pre-created</li>
+      <li>Tekton (OpenShift Pipelines) — for the agent image build pipeline</li>
+      <li>ArgoCD (OpenShift GitOps) — configured with the <code>AppProject</code> structure the lab expects</li>
+      <li>ToolHive — MCP proxy infrastructure</li>
+      <li>CloudNativePG — PostgreSQL operator for LibreChat's database</li>
+    </ul>
+    <p>
+      The provisioner calls <code>ocp4_workload_gitops_bootstrap</code> twice: once for <code>infra/bootstrap</code> and once for <code>platform/bootstrap</code>. This was also when we extended the <code>gitops_bootstrap</code> role to support an <code>ocp4_workload_gitops_bootstrap_applications</code> list — so a single role invocation can create multiple ArgoCD Applications in one shot.
+    </p>
+    <p>
+      We also added RBAC and <code>AppProject</code> creation to the infra bootstrap layer so that when the <code>tenant/bootstrap</code> Application is created later (per order), it is already operating inside a project that has appropriate permissions.
+    </p>
+    <div class="callout callout-grey">
+      <strong>When does the provisioner run?</strong>
+      The cluster provisioner runs once, manually, on each assigned sandbox cluster before it is made available for orders. For this lab we provisioned <code>cnv-us-east-ocp-3</code> and validated the full stack before placing test orders.
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">Step 4</div>
+    <h3>Rewrite AgV common.yaml</h3>
+    <p>
+      This was the most visible part of the migration — the AgV <code>common.yaml</code> for the MCP with OpenShift catalog item changed substantially. Here is what changed and why.
+    </p>
+    <p><strong>Sandbox entry — from multi-namespace to scheduler-only:</strong></p>
+    <pre><code><span class="cmt"># Old pattern — multi-namespace mode</span>
+<span class="key">sandbox_api:</span>
+  <span class="key">namespaces:</span>
+    <span class="key">- namespace_suffix:</span> <span class="val">agent</span>
+    <span class="key">- namespace_suffix:</span> <span class="val">librechat</span>
+    <span class="key">- namespace_suffix:</span> <span class="val">mcp</span>
+  <span class="key">keycloak:</span> <span class="val">yes</span>
+
+<span class="cmt"># New pattern — scheduler-only mode</span>
+<span class="key">sandbox_api:</span>
+  <span class="key">- kind:</span> <span class="val">OcpSandbox</span>
+    <span class="key">alias:</span> <span class="val">cluster</span>
+    <span class="key">cloud_selector:</span>
+      <span class="key">mcp_ready:</span> <span class="val">true</span></code></pre>
+    <p><strong>Workloads list — replaced old roles with new tenant roles:</strong></p>
+    <pre><code><span class="key">workloads:</span>
+  <span class="key">- ocp4_workload_tenant_keycloak_user</span>
+  <span class="key">- ocp4_workload_tenant_namespace</span>
+  <span class="key">- ocp4_workload_tenant_gitea</span>
+  <span class="key">- ocp4_workload_gitops_bootstrap</span>
+
+<span class="key">remove_workloads:</span>
+  <span class="key">- ocp4_workload_gitops_bootstrap</span>
+  <span class="key">- ocp4_workload_tenant_gitea</span>
+  <span class="key">- ocp4_workload_tenant_namespace</span>
+  <span class="key">- ocp4_workload_tenant_keycloak_user</span></code></pre>
+    <p><strong>Key variables added:</strong></p>
+    <pre><code><span class="cmt"># Deterministic password derived from guid — same GUID always gets the same password</span>
+<span class="key">common_password:</span> <span class="str">"Mcp{{ (guid | hash('sha256'))[:8] }}!"</span>
+
+<span class="cmt"># Central username — all roles and the bootstrap chart reference this one variable</span>
+<span class="key">ocp4_workload_tenant_keycloak_username:</span> <span class="str">"mcpuser-{{ guid }}"</span>
+
+<span class="cmt"># Namespace username alias — tenant_namespace role reads this</span>
+<span class="key">ocp4_workload_tenant_namespace_username:</span> <span class="str">"{{ ocp4_workload_tenant_keycloak_username }}"</span></code></pre>
+    <p>
+      We also added the <code>cloud_selector</code> tags to restrict which clusters get assigned. Only clusters labelled <code>mcp_ready: true</code> in the Sandbox API inventory are eligible — those are the ones with the cluster provisioner already run on them.
+    </p>
+  </div>
+
+  <div class="step">
+    <div class="step-num">Step 5</div>
+    <h3>Wire the GitOps bootstrap Helm values</h3>
+    <p>
+      The <code>gitops_bootstrap</code> role does more than create an ArgoCD <code>Application</code>. It also passes Helm values into the <code>tenant/bootstrap/</code> chart. Those values flow through the bootstrap chart into every individual tenant ArgoCD Application (LibreChat, agent, MCP servers, etc.).
+    </p>
+    <p>Getting this data flow right was the most time-consuming part of the whole migration. The key values that needed to pass through:</p>
+    <ul>
+      <li><code>tenant.username</code> — the RHBK / OCP username (<code>mcpuser-{{ guid }}</code>)</li>
+      <li><code>tenant.password</code> — the <code>common_password</code> value</li>
+      <li><code>deployer.domain</code> — the cluster's base domain (e.g. <code>apps.cnv-us-east-ocp-3.example.com</code>)</li>
+      <li><code>litemaas.url</code>, <code>litemaas.key</code>, <code>litemaas.models</code> — LiteMaaS endpoint and credentials</li>
+    </ul>
+    <p>
+      LiteMaaS credentials in particular follow a long chain: AgV sets them as AgnosticD variables, the <code>gitops_bootstrap</code> role picks them up via <code>ocp4_workload_gitops_bootstrap_helm_values</code>, they are written into the bootstrap Application's Helm values, and the <code>tenant/bootstrap/</code> chart templates them out as parameters into each child Application's Helm values.
+    </p>
+    <p>
+      If any link in that chain is broken — a typo in a variable name, a missing <code>| quote</code> in a template, a YAML list rendered as a string — the downstream application will either fail to sync or start with the wrong configuration.
+    </p>
+  </div>
+
+  <div class="step">
+    <div class="step-num">Step 6</div>
+    <h3>Add cascade finalizer and remove_workload to gitops_bootstrap</h3>
+    <p>
+      Destroy was an afterthought in the old pattern. In the new pattern, we designed it explicitly. The mechanism is ArgoCD's cascade finalizer.
+    </p>
+    <p>
+      When we create the <code>tenant/bootstrap</code> Application, we add the <code>resources-finalizer.argocd.argoproj.io</code> finalizer to its metadata. This tells ArgoCD: when this Application is deleted, cascade-delete all child Applications and all resources they manage before completing the deletion.
+    </p>
+    <pre><code><span class="cmt"># In the bootstrap Application template</span>
+<span class="key">metadata:</span>
+  <span class="key">name:</span> <span class="str">"tenant-bootstrap-{{ guid }}"</span>
+  <span class="key">namespace:</span> <span class="val">openshift-gitops</span>
+  <span class="key">finalizers:</span>
+    <span class="key">- resources-finalizer.argocd.argoproj.io</span></code></pre>
+    <p>
+      When <code>gitops_bootstrap</code>'s <code>remove_workload.yml</code> runs, it deletes the bootstrap Application. ArgoCD picks up the deletion, sees the cascade finalizer, and works down the tree: deletes each child Application, which triggers deletion of all Kubernetes resources in each child Application, which eventually results in all tenant workloads being gone.
+    </p>
+    <p>
+      The namespace is deleted only after ArgoCD confirms the cascade is complete. This avoids the stuck-terminating-namespace problem that plagued the old pattern, where namespaces would get stuck because resources inside them still had finalizers.
+    </p>
+  </div>
+
+  <div class="step">
+    <div class="step-num">Step 7</div>
+    <h3>Validate end-to-end</h3>
+    <p>
+      Once all the pieces were in place, we ran end-to-end validation on the assigned cluster (<code>cnv-us-east-ocp-3</code>). We placed five test orders and validated each one:
+    </p>
+    <ul>
+      <li>GUIDs used: <code>drw4x</code>, <code>9b87v</code>, <code>lvs9k</code>, <code>7gb7l</code>, <code>d7tjs</code></li>
+      <li>RHBK login — confirmed user could authenticate and OCP SSO worked</li>
+      <li>LibreChat — confirmed app loaded, user could log in with <code>common_password</code>, models listed correctly from LiteMaaS</li>
+      <li>Showroom — confirmed lab guide rendered</li>
+      <li>MCP servers — confirmed ToolHive proxied both Gitea and OpenShift MCP servers</li>
+      <li>ArgoCD sync — confirmed all Applications showed <code>Synced / Healthy</code></li>
+      <li>Destroy — ran destroy for each GUID and confirmed namespaces cleaned up, RHBK user deleted, Gitea org removed</li>
+    </ul>
+    <p>
+      Not all of these passed on the first attempt. The next section covers every failure we hit.
+    </p>
+  </div>
+
+  <hr>
+
+  <h2 id="challenges">4. Challenges and How We Solved Them</h2>
+
+  <p>
+    These are the actual problems we hit, in roughly the order we encountered them. Each one cost us real time — hopefully reading about them costs you less.
+  </p>
+
+  <div class="challenge">
+    <h4>Challenge 1: <code>$password</code> undefined in Helm bootstrap template</h4>
+    <p>
+      <strong>Symptom:</strong> LibreChat's user creation job was running, but it was using <code>user1@example.com</code> as the email and a placeholder string as the password. Users could not log in.
+    </p>
+    <p>
+      <strong>Root cause:</strong> The <code>$password</code> variable was never defined in the Helm template. The <code>tenant/bootstrap/templates/applications.yaml</code> template was passing <code>default_user</code> values into the LibreChat Application's Helm parameters, but it was constructing them from hardcoded strings rather than reading <code>tenant.password</code> from the values file. The variable reference simply did not exist.
+    </p>
+    <div class="fix">
+      <strong>Fix:</strong>
+      Added a variable definition at the top of <code>tenant/bootstrap/templates/applications.yaml</code>:
+      <pre><code><span class="kw">{{-</span> <span class="key">$username</span> := .Values.tenant.username | default <span class="str">""</span> <span class="kw">}}</span>
+<span class="kw">{{-</span> <span class="key">$password</span> := .Values.tenant.password | default <span class="str">""</span> <span class="kw">}}</span></code></pre>
+      Then referenced them in the LibreChat Application's Helm parameters:
+      <pre><code><span class="key">- name:</span> <span class="str">default_user.email</span>
+  <span class="key">value:</span> <span class="str">"{{ $username }}@example.com"</span>
+<span class="key">- name:</span> <span class="str">default_user.password</span>
+  <span class="key">value:</span> <span class="str">"{{ $password }}"</span></code></pre>
+    </div>
+  </div>
+
+  <div class="challenge">
+    <h4>Challenge 2: LibreChat secrets showing "FROM SECRETS" placeholders</h4>
+    <p>
+      <strong>Symptom:</strong> LibreChat would not start. The pod logs showed it trying to read <code>creds_key</code>, <code>jwt_secret</code>, and <code>meili_master_key</code> from environment variables, but those variables were set to literal placeholder strings like <code>FROM_SECRETS</code>. The app refused to boot with placeholder values.
+    </p>
+    <p>
+      <strong>Root cause:</strong> The LibreChat Helm chart expected these secrets to exist in a Kubernetes <code>Secret</code> resource that would be pre-created. The bootstrap template was generating the Application but not generating actual values for these secrets. They ended up as placeholders because nothing had created the Secret with real values.
+    </p>
+    <div class="fix">
+      <strong>Fix:</strong>
+      We used Helm's <code>sha256sum</code> function to generate deterministic secret values from the username. This means the same username always generates the same secrets — consistent across re-provisions:
+      <pre><code><span class="key">creds_key:</span> <span class="kw">{{</span> sha256sum $username | quote <span class="kw">}}</span>
+<span class="key">jwt_secret:</span> <span class="kw">{{</span> sha256sum (printf <span class="str">"%s-jwt"</span> $username) | quote <span class="kw">}}</span>
+<span class="key">meili_master_key:</span> <span class="kw">{{</span> sha256sum (printf <span class="str">"%s-meili"</span> $username) | trunc 16 | quote <span class="kw">}}</span></code></pre>
+      <code>meili_master_key</code> has a 16-character minimum and maximum in MeiliSearch — hence the <code>trunc 16</code>. These values are written directly into the bootstrap chart's output, which becomes a <code>Secret</code> applied by ArgoCD.
+    </div>
+  </div>
+
+  <div class="challenge">
+    <h4>Challenge 3: OCP login "Invalid client credentials" after cluster re-provision</h4>
+    <p>
+      <strong>Symptom:</strong> After we re-ran the cluster provisioner on <code>cnv-us-east-ocp-3</code> to fix a configuration issue, existing and new users could no longer log in to OCP via RHBK. The browser showed "Invalid client credentials" at the OAuth callback.
+    </p>
+    <p>
+      <strong>Root cause:</strong> The cluster provisioner regenerated the OAuth client secret for the RHBK identity provider in OCP's OAuth configuration. The <code>oauth-openshift</code> pods in the <code>openshift-authentication</code> namespace load OAuth configuration at startup — they do not hot-reload it. So the pods were still using the old client secret from the previous provisioner run, while RHBK was now expecting the new one.
+    </p>
+    <div class="fix">
+      <strong>Fix:</strong>
+      Restart the <code>oauth-openshift</code> pods after any cluster provisioner run that touches OAuth configuration:
+      <pre><code><span class="cmt"># Force a rolling restart of the oauth pods</span>
+oc rollout restart deployment/oauth-openshift -n openshift-authentication
+oc rollout status deployment/oauth-openshift -n openshift-authentication</code></pre>
+      This is documented OCP behavior — any time the <code>OAuth</code> custom resource changes (including the IdP client secret), the pods must be restarted to pick up the new config. We added this as a task at the end of <code>cluster-provision.yml</code> so it happens automatically.
+    </div>
+  </div>
+
+  <div class="challenge">
+    <h4>Challenge 4: <code>git_url</code> undefined when gitops_bootstrap ran</h4>
+    <p>
+      <strong>Symptom:</strong> The <code>ocp4_workload_gitops_bootstrap</code> role failed with a variable undefined error for <code>ocp4_workload_gitops_bootstrap_repo_url</code>. The role could not create the ArgoCD Application because it did not know which repo URL to point it at.
+    </p>
+    <p>
+      <strong>Root cause:</strong> The repo URL is supposed to come from the <code>ocp4_workload_tenant_gitea</code> role, which mirrors the GitOps repo into the tenant's Gitea organization and knows the resulting URL. But the variable name that <code>tenant_gitea</code> was setting as a fact did not match what <code>gitops_bootstrap</code> was looking for. The fact was being set but under a different name, so it was effectively invisible to the consuming role.
+    </p>
+    <div class="fix">
+      <strong>Fix:</strong>
+      Updated <code>ocp4_workload_tenant_gitea</code>'s <code>workload.yml</code> to explicitly set the fact using the exact variable name that <code>gitops_bootstrap</code> expects:
+      <pre><code><span class="key">- name:</span> <span class="str">Set GitOps repo URL fact for downstream roles</span>
+  <span class="key">ansible.builtin.set_fact:</span>
+    <span class="key">ocp4_workload_gitops_bootstrap_repo_url:</span>
+      <span class="str">"https://gitea.{{ ocp4_workload_tenant_gitea_domain }}/{{ ocp4_workload_tenant_gitea_username }}/mcp.git"</span></code></pre>
+      AgV no longer needs to set <code>ocp4_workload_gitops_bootstrap_repo_url</code> manually. It flows automatically from <code>tenant_gitea</code> to <code>gitops_bootstrap</code> as a runtime fact. This is cleaner and means AgV does not need to know how Gitea constructs URLs.
+    </div>
+  </div>
+
+  <div class="challenge">
+    <h4>Challenge 5: Namespace role failing with undefined username</h4>
+    <p>
+      <strong>Symptom:</strong> <code>ocp4_workload_tenant_namespace</code> failed early in the run with a task-level undefined variable error. The role could not determine what username to use when naming namespaces or creating <code>RoleBinding</code> resources.
+    </p>
+    <p>
+      <strong>Root cause:</strong> The role was internally looking for a variable called <code>ocp4_workload_tenant_username</code>. AgV was setting <code>ocp4_workload_tenant_keycloak_username</code>. These are different names. The role never found the variable because the names did not match, and there was no default or alias defined.
+    </p>
+    <div class="fix">
+      <strong>Fix:</strong>
+      Renamed the role's internal variable to the role-namespaced form <code>ocp4_workload_tenant_namespace_username</code> (following the convention that role variables are prefixed with the role name). Then mapped it in AgV:
+      <pre><code><span class="cmt"># In AgV common.yaml</span>
+<span class="key">ocp4_workload_tenant_keycloak_username:</span> <span class="str">"mcpuser-{{ guid }}"</span>
+<span class="key">ocp4_workload_tenant_namespace_username:</span> <span class="str">"{{ ocp4_workload_tenant_keycloak_username }}"</span></code></pre>
+      This explicit mapping in AgV makes the dependency clear. The namespace role does not reach outside its own variable namespace, and AgV is the place that says "these two things refer to the same user."
+    </div>
+  </div>
+
+  <div class="challenge">
+    <h4>Challenge 6: LibreChat models list rendered as a comma string, not a YAML list</h4>
+    <p>
+      <strong>Symptom:</strong> LibreChat started but the model selector showed nothing — or showed one item that was a single comma-separated string like <code>mistral-7b,llama3-8b,mixtral-8x7b</code> instead of three separate models. LibreChat's config parser rejected the malformed list.
+    </p>
+    <p>
+      <strong>Root cause:</strong> LiteMaaS model names are stored in AgV as a single comma-separated string: <code>litemaas_models: "mistral-7b,llama3-8b,mixtral-8x7b"</code>. The bootstrap template was passing this string directly into the LibreChat <code>configYaml</code> block without splitting it. Helm rendered it as a scalar string, not a YAML list. LibreChat's config parser could not use it.
+    </p>
+    <div class="fix">
+      <strong>Fix:</strong>
+      Used Helm's <code>splitList</code> function in the bootstrap template to split the comma-separated string and render each model as a YAML list item:
+      <pre><code><span class="kw">{{-</span> $models := .Values.litemaas.models | default <span class="str">""</span> <span class="kw">}}</span>
+<span class="key">models:</span>
+  <span class="key">default:</span>
+<span class="kw">{{-</span> range splitList <span class="str">","</span> $models <span class="kw">}}</span>
+    - <span class="kw">{{</span> . | trim | quote <span class="kw">}}</span>
+<span class="kw">{{-</span> end <span class="kw">}}</span></code></pre>
+      The <code>trim</code> call handles any whitespace around model names in the comma-separated value. LibreChat now receives a properly formatted YAML list.
+    </div>
+  </div>
+
+  <div class="challenge">
+    <h4>Challenge 7: LibreChat crashing with permission error on log directory</h4>
+    <p>
+      <strong>Symptom:</strong> The LibreChat pod entered <code>CrashLoopBackOff</code> immediately on startup. The container logs showed: <code>mkdir /app/logs/: permission denied</code> and the same for <code>/app/api/logs</code>.
+    </p>
+    <p>
+      <strong>Root cause:</strong> The LibreChat container image tries to create log directories at <code>/app/api/logs</code> and <code>/app/logs</code> during startup. OpenShift's default Security Context Constraints prevent containers from writing to arbitrary filesystem paths — the container image was built assuming it would run with write access to <code>/app</code>, but OpenShift's SCC does not allow that.
+    </p>
+    <div class="fix">
+      <strong>Fix:</strong>
+      Added <code>emptyDir</code> volume mounts for both log paths in the LibreChat Helm values passed through the bootstrap chart. An <code>emptyDir</code> is always writable, satisfies the container's need to create log files, and is ephemeral — logs go away when the pod restarts, which is acceptable for this lab:
+      <pre><code><span class="key">volumes:</span>
+  <span class="key">- name:</span> <span class="val">logs</span>
+    <span class="key">emptyDir:</span> <span class="val">{}</span>
+  <span class="key">- name:</span> <span class="val">logs-root</span>
+    <span class="key">emptyDir:</span> <span class="val">{}</span>
+<span class="key">volumeMounts:</span>
+  <span class="key">- name:</span> <span class="val">logs</span>
+    <span class="key">mountPath:</span> <span class="val">/app/api/logs</span>
+  <span class="key">- name:</span> <span class="val">logs-root</span>
+    <span class="key">mountPath:</span> <span class="val">/app/logs</span></code></pre>
+    </div>
+  </div>
+
+  <div class="challenge">
+    <h4>Challenge 8: GitOps repo URL hardcoded vs dynamic</h4>
+    <p>
+      <strong>Symptom:</strong> ArgoCD Applications were syncing correctly, but from the wrong source. Inspection of the tenant Application in the ArgoCD UI showed it was pointing to <code>github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops</code> — the public GitHub repo — instead of the tenant's private Gitea mirror. This meant ArgoCD was not reading from the user's isolated copy.
+    </p>
+    <p>
+      <strong>Root cause:</strong> Early versions of the <code>tenant/bootstrap/</code> chart template had the repo URL hardcoded to the GitHub origin. When we added Gitea mirroring, we updated the <code>tenant_gitea</code> role but forgot to update the bootstrap chart template to use the dynamic Gitea URL. The chart was still referencing the old static value.
+    </p>
+    <div class="fix">
+      <strong>Fix:</strong>
+      The bootstrap template now derives the repo URL from <code>tenant.username</code> and <code>deployer.domain</code>, which are both passed in as Helm values:
+      <pre><code><span class="kw">{{-</span> $username := .Values.tenant.username <span class="kw">}}</span>
+<span class="kw">{{-</span> $domain := .Values.deployer.domain <span class="kw">}}</span>
+<span class="cmt"># Repo URL used in each Application's source:</span>
+<span class="key">repoURL:</span> <span class="str">"https://gitea-gitea-{{ $username }}.{{ $domain }}/{{ $username }}/mcp.git"</span></code></pre>
+      Every tenant's ArgoCD Applications now point to that tenant's specific Gitea-hosted mirror of the GitOps repo. Changes to the bootstrap chart are deployed to tenants only after they are reflected in the mirror — which is the intended isolation model.
+    </div>
+  </div>
+
+  <div class="challenge">
+    <h4>Challenge 9: Namespace format changed mid-migration</h4>
+    <p>
+      <strong>Symptom:</strong> Namespace names were inconsistent between test orders. Some namespaces were named <code>agent-mcpuser-drw4x</code> (suffix-first), others were <code>mcpuser-9b87v-agent</code> (username-first). ArgoCD <code>AppProject</code> namespace restrictions were not matching both patterns, causing sync failures on some orders.
+    </p>
+    <p>
+      <strong>Root cause:</strong> The naming convention changed during development. The initial version of <code>ocp4_workload_tenant_namespace</code> used <code>{username}-{suffix}</code> ordering (username-first). During a refactor, we switched to <code>{suffix}-{username}</code> (suffix-first) because it made namespaces easier to read when sorted in <code>oc get ns</code>. But we did not update all role variables and ArgoCD configuration at the same time.
+    </p>
+    <div class="fix">
+      <strong>Fix:</strong>
+      Standardised on <code>{suffix}-{username}</code> format across all roles and all Helm chart references. Updated the ArgoCD <code>AppProject</code> for the tenants project to use a wildcard <code>*</code> in the namespace field instead of a specific pattern:
+      <pre><code><span class="key">destinations:</span>
+  <span class="key">- server:</span> <span class="str">'https://kubernetes.default.svc'</span>
+    <span class="key">namespace:</span> <span class="str">'*'</span>  <span class="cmt"># Accept any namespace — project RBAC controls actual access</span></code></pre>
+      Using <code>*</code> for the tenants AppProject is intentional: we control access through namespace <code>RoleBinding</code> resources applied by the <code>tenant_namespace</code> role, not through AppProject destination restrictions.
+    </div>
+  </div>
+
+  <hr>
+
+  <h2 id="lessons">5. Key Lessons Learned</h2>
+
+  <ol>
+    <li>
+      <strong>Define the username variable once and reference it everywhere.</strong>
+      We lost time because different roles expected different variable names for what was the same concept: the user's identity. The fix was <code>ocp4_workload_tenant_keycloak_username</code> as the single source of truth in AgV, with each role aliasing it into its own <code>_username</code> variable internally. Any time you find yourself copy-pasting a username value into multiple role variables, stop and make one variable that all the others derive from.
+    </li>
+    <li>
+      <strong>Use a deterministic password formula from the start.</strong>
+      Generating <code>common_password</code> from <code>sha256(guid)[:8]</code> means you can re-provision the same GUID and always get the same password. This was invaluable during testing — we re-ran provisioner steps many times on the same test GUIDs and never had to track down what password was currently set. If your password is truly random per run, you will spend a lot of time resetting it during debugging.
+    </li>
+    <li>
+      <strong>Separate cluster provisioner from per-order provisioning early.</strong>
+      Mixing cluster-wide setup (RHBK, Gitea, ArgoCD) with per-order tenant logic creates a situation where everything depends on everything else and nothing is clearly owned. Once we put cluster-wide infra into <code>cluster-provision.yml</code> and per-order logic into the tenant roles, the design became much cleaner. Each piece had a clear owner, a clear input, and a clear output.
+    </li>
+    <li>
+      <strong>Test destroy as often as you test provision.</strong>
+      We found most cleanup bugs only when we ran destroy for the first time against a fully working environment. Namespaces stuck in <code>Terminating</code>, Gitea orgs not deleted, RHBK users left behind — all of these showed up in destroy runs, not provision runs. After the first full cycle, run destroy immediately. Fix what breaks. Then provision again. Treat destroy as a first-class test case, not an afterthought.
+    </li>
+    <li>
+      <strong>ArgoCD namespace must pre-exist.</strong>
+      ArgoCD on a shared cluster will not create a namespace for you as part of a sync. If the Application's <code>destination.namespace</code> does not exist, the sync fails. Ansible creates the namespace and applies RBAC first; ArgoCD then syncs workloads into the already-existing namespace. If you reverse this order, the sync fails with permission errors that can be confusing to diagnose because the error message does not always say "namespace does not exist."
+    </li>
+    <li>
+      <strong>The bootstrap chart is the glue layer — get it right first.</strong>
+      The <code>tenant/bootstrap/</code> Helm chart is what connects AgV variables (via <code>gitops_bootstrap</code> Helm values) to all the individual tenant ArgoCD Applications. It is the most important single piece of the new architecture. Every variable that needs to flow to LibreChat, the agent, or an MCP server goes through this chart. Getting the template logic right — especially secret generation, list rendering, and value passing — took more iteration than any other single component. Plan to spend time here.
+    </li>
+    <li>
+      <strong>OCP OAuth pod restart is required after IdP changes.</strong>
+      Any time the cluster provisioner changes the OCP OAuth configuration — registering a new RHBK client, changing the client secret, adding a new identity provider — the <code>oauth-openshift</code> pods in <code>openshift-authentication</code> must be restarted manually (or via an Ansible task at the end of the provisioner). OCP does not hot-reload OAuth config. Build this restart into your provisioner as a standard final step.
+    </li>
+    <li>
+      <strong>Pin collection branches during development.</strong>
+      Using <code>version: main</code> for all AgnosticD collections means any unrelated role change on <code>main</code> can break your lab silently. During active development, pin to a specific branch. Once the lab is stable and merged, agree on a tagging strategy so you know exactly what version of each collection your lab is running against.
+    </li>
+  </ol>
+
+  <hr>
+
+  <h2 id="prs">6. PRs and Repositories</h2>
+
+  <p>These are the actual PRs that landed as part of this migration. If you are tracing back what changed and why, start here.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Repository</th>
+        <th>PR / Branch</th>
+        <th>What changed</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>agnosticd/namespaced_workloads</code></td>
+        <td>PR #12 — <code>tenant-roles</code> branch</td>
+        <td>New <code>ocp4_workload_tenant_keycloak_user</code>, <code>ocp4_workload_tenant_namespace</code>, and <code>ocp4_workload_tenant_gitea</code> roles, each with a full <code>workload.yml</code> and <code>remove_workload.yml</code></td>
+      </tr>
+      <tr>
+        <td><code>agnosticd/core_workloads</code></td>
+        <td>PR #62 — <code>gitops-bootstrap-userinfo</code> branch</td>
+        <td>Added multi-app list support (<code>ocp4_workload_gitops_bootstrap_applications</code>), ArgoCD cascade finalizer on bootstrap Application, <code>remove_workload.yml</code>, and userinfo ConfigMap output</td>
+      </tr>
+      <tr>
+        <td><code>agnosticd/agnosticd-v2</code></td>
+        <td>PR #123 — <code>tenant-roles-support</code> branch</td>
+        <td>Added explicit <code>remove_workloads</code> list support — roles run in the order listed, not in reverse order of <code>workloads</code></td>
+      </tr>
+      <tr>
+        <td><code>rhpds/agnosticv</code></td>
+        <td>PR #25180 — <code>tenant-namespace-roles</code> branch</td>
+        <td>Full <code>common.yaml</code> rewrite for MCP with OpenShift: scheduler-only sandbox entry, new tenant roles in <code>workloads</code> and <code>remove_workloads</code>, <code>common_password</code> derivation, <code>ocp4_workload_tenant_keycloak_username</code>, LiteMaaS values wired into <code>gitops_bootstrap</code> Helm values</td>
+      </tr>
+      <tr>
+        <td><code>rhpds/ocpsandbox-mcp-with-openshift-gitops</code></td>
+        <td><code>main</code></td>
+        <td>Full GitOps repo restructure into <code>infra/</code>, <code>platform/</code>, <code>tenant/</code> directories; all bootstrap charts rewritten; LibreChat, agent, MCP server, and Gitea MCP Helm charts migrated to new structure; cascade finalizer support; dynamic secret generation</td>
+      </tr>
+      <tr>
+        <td><code>rhpds/rhpds.ocpsandbox_mcp_with_openshift</code></td>
+        <td><code>main</code></td>
+        <td>Updated catalog item to reference new AgV structure; <code>cluster-provision.yml</code> playbook added for manual bootstrap validation of assigned sandbox clusters</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr>
+
+  <div class="callout callout-blue">
+    This guide covers the MCP with OpenShift migration specifically. For the general pattern reference, see the <a href="scheduler-only.html">Scheduler-Only guide</a> and the <a href="index.html">overview page</a>.
+  </div>
+
+</body>
+</html>
