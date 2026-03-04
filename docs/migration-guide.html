@@ -216,27 +216,30 @@
 
 <div class="callout callout-grey">
   <strong>What is shared vs what is per-tenant</strong>
-  It helps to be clear about what is shared and what is not. On the cluster: RHBK, Gitea (the server), ArgoCD, Tekton, and ToolHive are all shared — installed once by the cluster provisioner. Per tenant (per order): one Gitea org, one RHBK user, dedicated namespaces, their own LibreChat instance, their own MCP servers, and their own LiteMaaS key.
+  On the cluster: RHBK, ArgoCD, Tekton, ToolHive, and the <strong>Gitea operator</strong> are all shared — installed once by the cluster provisioner. Per tenant (per order): a full <strong>Gitea instance</strong> (via operator CR), a full <strong>LibreChat instance</strong>, dedicated namespaces per service, one RHBK user, their own MCP servers, and their own LiteMaaS key.
 </div>
 
-<h3>Why does each tenant get their own Gitea org?</h3>
+<div class="callout callout-green">
+  <strong>Our recommendation: namespace-scoped instances per tenant</strong>
+  We recommend deploying a full instance of each service per tenant, inside that tenant's own namespace. The operator is shared and installed once — but every order creates its own CR (instance) within an isolated namespace. This gives you clean destroy (delete the namespace and everything goes), complete isolation between tenants, and simple debugging. This is the pattern we used for Gitea and LibreChat in this lab.
+</div>
+
+<h3>Why does each tenant get their own Gitea instance?</h3>
 
 <p>
-  The Gitea <strong>server</strong> is shared — one instance per cluster, installed by the cluster provisioner. What each tenant gets is their own <strong>org</strong> inside that shared Gitea. Inside that org is a mirror of the GitOps repo that belongs exclusively to them.
+  The <strong>Gitea operator</strong> is installed once on the cluster by the cluster provisioner. Each order then creates a <strong>new Gitea instance</strong> (a <code>Gitea</code> CR) inside the tenant's own namespace. The tenant gets a fully isolated Gitea server — with its own PostgreSQL, its own route, its own admin user, and its own repos.
 </p>
 
-<p>The question then is: why not just share one repo?</p>
-
 <ul>
-  <li><strong>Lab exercises require it.</strong> In this lab, attendees push code and configuration changes as part of the exercises. If all tenants shared one repo, they would overwrite each other's work. Each attendee needs a repo they own exclusively.</li>
-  <li><strong>ArgoCD reads from it.</strong> Each tenant's ArgoCD Application points to their own Gitea repo. If tenants shared a repo, a commit from one tenant could trigger a sync affecting another tenant's deployment. Per-tenant repos mean each ArgoCD Application is fully isolated.</li>
-  <li><strong>Clean destroy.</strong> On destroy, the <code>tenant_gitea</code> role deletes the entire org — repos, webhooks, settings — in one call. No leftover data from previous orders.</li>
-  <li><strong>Privacy.</strong> One tenant cannot browse another tenant's repo. Each org is private to that user.</li>
+  <li><strong>Complete isolation.</strong> Each tenant's Gitea is a separate server. One tenant cannot see another tenant's repositories at all — they are not just in different orgs on the same server, they are on entirely different Gitea instances with different URLs.</li>
+  <li><strong>Lab exercises require it.</strong> Attendees push code and configuration changes as part of the exercises. With a per-tenant instance, there is no risk of one attendee's push affecting another's server.</li>
+  <li><strong>Clean destroy.</strong> Deleting the tenant's namespace deletes the entire Gitea instance — the CR, the pods, the PostgreSQL database, the persistent volumes, the route. No cleanup role needed beyond namespace deletion.</li>
+  <li><strong>Operator does the heavy lifting.</strong> The Gitea operator (already on the cluster) handles the full lifecycle of each instance — deploy, configure, expose via route. The <code>tenant_gitea</code> role just creates the CR and waits for it to be ready.</li>
 </ul>
 
 <div class="callout callout-grey">
-  <strong>Why not a shared repo with per-user branches?</strong>
-  Branches do not give ArgoCD isolation — ArgoCD would need a separate Application per branch, and one tenant's merge still risks affecting another. Orgs are the right isolation boundary in Gitea for this pattern.
+  <strong>The pattern: shared operator, per-tenant instance</strong>
+  Install the operator once at cluster provisioning time. Create a CR per order inside the tenant's namespace. This is the recommended pattern for any stateful service (Gitea, LibreChat, databases) in a shared cluster lab. The operator is cluster-wide infrastructure; the instance is per-tenant.
 </div>
 
 <h3>Why does each tenant get their own LibreChat instance?</h3>
