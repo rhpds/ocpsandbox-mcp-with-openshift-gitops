@@ -112,6 +112,56 @@
   This is a personal account of how I did this migration — not an official step-by-step playbook. I used Claude Code extensively throughout to help build roles, templates, and debug issues. Every lab is different and you will hit edge cases that are not covered here. The challenges listed are the ones I ran into with this specific lab. Your lab will have its own. Use this as a reference for the approach and the thinking, not as a guaranteed recipe.
 </div>
 
+<h2 style="margin-top:1.5rem;">Three Approaches, One Direction</h2>
+
+<p>
+  The shared cluster + Sandbox API pattern is being developed across the team in parallel, with different labs taking different approaches. This guide covers one of them. The others are coming and each will have its own example you can learn from.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Approach</th>
+      <th>Who</th>
+      <th>Status</th>
+      <th>What to learn from it</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>MCP with OpenShift</strong> — this guide</td>
+      <td>Prakhar Srivastava</td>
+      <td><span class="badge badge-green">Done</span></td>
+      <td>Scheduler-only pattern end-to-end: tenant roles, GitOps bootstrap, per-tenant Gitea and LibreChat instances, explicit destroy</td>
+    </tr>
+    <tr>
+      <td><strong>Complex GitOps example</strong></td>
+      <td>Judd Maltin</td>
+      <td><span class="badge badge-orange">Coming</span></td>
+      <td>A more advanced GitOps-driven pattern showing how to go further with ApplicationSets, multi-app bootstrapping, and Keycloak integration from ArgoCD</td>
+    </tr>
+    <tr>
+      <td><strong>Full Namespace API</strong></td>
+      <td>Multiple</td>
+      <td><span class="badge">Reference</span></td>
+      <td>Simpler pattern where Sandbox API creates namespaces and RHSSO users — fewer roles, less setup, good starting point for basic labs</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 style="border:none; margin-top:1.25rem;">People and feedback that shaped this</h3>
+
+<p>Every iteration of this migration involved feedback from the team. Some of it confirmed the approach, some of it changed it:</p>
+
+<ul>
+  <li><strong>Judd Maltin</strong> — defined the three-layer architecture (cluster provisioner / platform / tenant) and the GitOps bootstrap app-of-apps pattern that this lab is built on. The <code>ocp4_workload_gitops_bootstrap</code> role improvements (multi-app list, cascade finalizer, userinfo ConfigMap) came out of collaboration with him.</li>
+  <li><strong>Wolfgang Kulhanek</strong> — pushed back on namespace pre-creation and raised the etcd impact concern on cascade deletes at scale. Both points led to real design decisions: namespaces are always pre-created by Ansible before ArgoCD sync, and the cascade finalizer concern is an open item for high-concurrency destroy scenarios.</li>
+  <li><strong>Nate Stephany</strong> — reinforced the requirement that namespaces and RBAC must exist before any ArgoCD sync. Helped clarify the operational rule: foundational layer is Ansible, workload layer is GitOps.</li>
+  <li><strong>GC</strong> — working on the Sandbox API integration that will allow clusters ordered from demo.redhat.com to be automatically attached to the pool. Until that lands, the cluster provisioner playbook is run manually. This is the last manual step remaining before the pattern is fully automated.</li>
+</ul>
+
+<hr style="margin-top:1.5rem;">
+
 <div class="toc">
   <h2>Contents</h2>
   <ol>
