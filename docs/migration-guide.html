@@ -192,10 +192,10 @@
 
 <ul>
   <li>
-    <strong>Speed.</strong> A dedicated CNV cluster takes 45–60 minutes to provision. A shared cluster order using Sandbox API takes 2–3 minutes — the cluster is already running, we are only provisioning the per-tenant resources. This is the difference between a usable conference lab and one where attendees spend half the session waiting.
+    <strong>Speed.</strong> A dedicated CNV cluster takes 45–60 minutes to provision. A shared cluster order using Sandbox API takes 2–3 minutes — the cluster is already running, we are only provisioning the per-tenant resources. For event formats like Lightning Labs (late-night sessions at Summit) or booth demos where attendees walk up and want to start immediately, waiting an hour is not an option.
   </li>
   <li>
-    <strong>Scale.</strong> Summit 2026 has hundreds of attendees. One dedicated cluster per order is not viable at that scale — in cost or in infrastructure capacity. A single shared cluster can serve many concurrent tenants, each isolated in their own namespaces with their own RHBK user and Gitea org.
+    <strong>Scale across use cases.</strong> This pattern supports multiple deployment scenarios from a single catalog item — full workshop sessions, Lightning Labs, booth demos, and on-demand ordering from demo.redhat.com. A shared cluster pool can absorb concurrent demand across all of these without provisioning a dedicated cluster for each. One dedicated cluster per order does not scale across that range of use cases.
   </li>
   <li>
     <strong>Alignment with RHDP direction.</strong> The shared cluster + Sandbox API scheduler-only pattern is the standard going forward for all OpenShift-based workshops. The new tenant roles (<code>ocp4_workload_tenant_keycloak_user</code>, <code>ocp4_workload_tenant_namespace</code>, <code>ocp4_workload_tenant_gitea</code>) are reusable building blocks for any lab on a shared cluster — not just MCP.
