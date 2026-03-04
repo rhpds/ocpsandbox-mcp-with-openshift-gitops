@@ -251,7 +251,7 @@
     <strong>Establishing a reusable pattern.</strong> This is the first lab in RHDP to use the shared cluster + Sandbox API scheduler-only pattern end-to-end. The goal is not just to ship this one lab — it is to prove out an approach that other labs can follow. The tenant roles (<code>ocp4_workload_tenant_keycloak_user</code>, <code>ocp4_workload_tenant_namespace</code>, <code>ocp4_workload_tenant_gitea</code>) were built to be generic and reusable, not tied to MCP. Any lab that needs to run on a shared OpenShift cluster can use the same building blocks.
   </li>
   <li>
-    <strong>Authentication alignment.</strong> HTPasswd is local to each cluster. Shared clusters use RHBK which is already installed — each order gets one user in the existing realm. Better UX for attendees and consistent with how RHDP manages identity across shared infrastructure.
+    <strong>Authentication.</strong> The original lab used HTPasswd with sequential usernames (<code>user1</code>, <code>user2</code>) because each order got its own cluster — HTPasswd made sense there. On a shared cluster that model breaks down: you cannot use sequential usernames across concurrent orders and you need a proper identity provider that can handle many users with isolated sessions. RHBK is already on the cluster; each order just adds one user to the existing realm and removes it on destroy. The auth model follows naturally from moving to shared clusters — it is not a goal in itself.
   </li>
 </ul>
 
