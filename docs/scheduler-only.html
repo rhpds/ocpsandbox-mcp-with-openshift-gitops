@@ -94,6 +94,7 @@
   <span class="active">Summit 2026 / Scheduler-Only</span>
   <a href="namespace-api.html">Full Namespace API</a>
   <a href="migration-guide.html">Migration Guide</a>
+  <a href="gitops-pattern.html">GitOps Pattern</a>
 </nav>
 
 <h1>Scheduler-Only Pattern <span class="badge badge-blue">Summit 2026</span></h1>
@@ -485,7 +486,7 @@
   <tbody>
     <tr>
       <td><strong>1. sandboxes</strong></td>
-      <td><code>sandboxes[0].name: openshift</code></td>
+      <td><code>kind: OcpSandbox, alias: cluster</code></td>
       <td>Single entry, no <code>namespace_suffix</code>. Tells Sandbox API this is a scheduler-only request — just give me a cluster. No namespaces are created by Sandbox API.</td>
     </tr>
     <tr>

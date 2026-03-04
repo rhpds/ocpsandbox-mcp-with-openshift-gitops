@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitOps Pattern — Sandbox API Docs</title>
+  <style>
+  :root {
+    --red: #cc0000;
+    --red-dark: #990000;
+    --blue: #0066cc;
+    --blue-light: #e8f0fb;
+    --orange: #f57c00;
+    --orange-light: #fff3e0;
+    --green: #2e7d32;
+    --green-light: #e8f5e9;
+    --grey-light: #f5f5f5;
+    --grey-border: #ddd;
+    --code-bg: #1e1e2e;
+    --code-fg: #cdd6f4;
+    --code-kw: #cba6f7;
+    --code-str: #a6e3a1;
+    --code-comment: #6c7086;
+    --code-num: #fab387;
+    --code-key: #89b4fa;
+    --code-val: #f38ba8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.7; color: #222; background: #fff; max-width: 1100px; margin: 0 auto; padding: 2rem 2.5rem 4rem; }
+  h1 { font-size: 2rem; color: var(--red); border-bottom: 3px solid var(--red); padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
+  h2 { font-size: 1.5rem; color: var(--red); border-left: 5px solid var(--red); padding-left: 0.75rem; margin: 2.5rem 0 1rem; }
+  h3 { font-size: 1.15rem; color: #333; margin: 1.5rem 0 0.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.25rem; }
+  h4 { font-size: 1rem; color: #555; margin: 1rem 0 0.4rem; font-style: italic; }
+  p { margin: 0.6rem 0; }
+  ul, ol { margin: 0.5rem 0 0.5rem 1.5rem; }
+  li { margin: 0.25rem 0; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .subtitle { color: #666; font-size: 0.95rem; margin-bottom: 2rem; }
+  .toc { background: #fafafa; border: 1px solid var(--grey-border); border-radius: 6px; padding: 1.25rem 1.5rem; margin: 1.5rem 0 2.5rem; }
+  .toc h2 { font-size: 1rem; margin: 0 0 0.75rem; border: none; padding: 0; color: #444; text-transform: uppercase; letter-spacing: 0.05em; }
+  .toc ol { margin-left: 1.25rem; }
+  .toc li { margin: 0.2rem 0; font-size: 0.93rem; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.9rem; }
+  thead tr { background: var(--red); color: #fff; }
+  thead th { padding: 0.6rem 0.9rem; text-align: left; font-weight: 600; }
+  tbody tr:nth-child(even) { background: #fafafa; }
+  tbody tr:hover { background: #f0f0f0; }
+  td { padding: 0.55rem 0.9rem; border-bottom: 1px solid #eee; vertical-align: top; }
+  td code, th code { background: #eee; color: #c00; padding: 0.1em 0.35em; border-radius: 3px; font-size: 0.88em; }
+  pre { background: var(--code-bg); color: var(--code-fg); border-radius: 8px; padding: 1.25rem 1.4rem; overflow-x: auto; margin: 0.75rem 0 1.25rem; font-size: 0.85rem; line-height: 1.6; border: 1px solid #333; }
+  code { font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace; }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  .kw  { color: var(--code-kw); }
+  .str { color: var(--code-str); }
+  .cmt { color: var(--code-comment); font-style: italic; }
+  .num { color: var(--code-num); }
+  .key { color: var(--code-key); }
+  .val { color: #f9e2af; }
+  .callout { border-radius: 6px; padding: 0.9rem 1.2rem; margin: 1rem 0; border-left: 5px solid; font-size: 0.93rem; }
+  .callout strong { display: block; margin-bottom: 0.25rem; font-size: 1rem; }
+  .callout-blue { background: var(--blue-light); border-color: var(--blue); color: #003a80; }
+  .callout-orange { background: var(--orange-light); border-color: var(--orange); color: #7a3e00; }
+  .callout-green { background: var(--green-light); border-color: var(--green); color: #1b5e20; }
+  .callout-grey { background: var(--grey-light); border-color: #999; color: #444; }
+  .badge { display: inline-block; background: var(--red); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 0.15em 0.55em; border-radius: 3px; margin-left: 0.5rem; vertical-align: middle; text-transform: uppercase; letter-spacing: 0.05em; }
+  .badge-green { background: var(--green); }
+  .badge-blue { background: var(--blue); }
+  .svg-wrap { overflow-x: auto; margin: 1rem 0 1.5rem; }
+  svg { max-width: 100%; height: auto; display: block; }
+  hr { border: none; border-top: 1px solid #e0e0e0; margin: 2rem 0; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin: 1rem 0; }
+  .col-box { background: #fafafa; border: 1px solid var(--grey-border); border-radius: 6px; padding: 1rem 1.2rem; }
+  .col-box h4 { margin-top: 0; font-style: normal; font-weight: 700; color: var(--red); }
+  .nav-bar { background: #1a1a2e; color: #aaa; padding: 0.7rem 1.2rem; border-radius: 6px; margin-bottom: 2rem; font-size: 0.88rem; display: flex; gap: 1.5rem; flex-wrap: wrap; }
+  .nav-bar a { color: #7eb8f7; }
+  .nav-bar a:hover { color: #fff; }
+  .nav-bar .active { color: #fff; font-weight: 600; }
+  .pattern-card { border: 2px solid var(--grey-border); border-radius: 8px; padding: 1.25rem 1.5rem; margin: 1rem 0; }
+  .pattern-card.blue { border-color: #2563eb; background: #eff6ff; }
+  .pattern-card.orange { border-color: #ea580c; background: #fff7ed; }
+  .pattern-card h3 { border: none; margin-top: 0; }
+  .pattern-card.blue h3 { color: #1e3a8a; }
+  .pattern-card.orange h3 { color: #7c2d12; }
+  .section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #888; margin-bottom: 0.2rem; }
+  </style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <span style="color:#fff;font-weight:700;">Sandbox API Docs</span>
+  <a href="index.html">Overview</a>
+  <a href="scheduler-only.html">Summit 2026 / Scheduler-Only</a>
+  <a href="namespace-api.html">Full Namespace API</a>
+  <a href="migration-guide.html">Migration Guide</a>
+  <span class="active">GitOps Pattern</span>
+</nav>
+
+<h1>Three-Layer GitOps Architecture for Shared Cluster Labs</h1>
+<p class="subtitle">Infra / Platform / Tenant &mdash; a general pattern for any lab running on a shared OpenShift cluster</p>
+
+<p>
+  This pattern is not specific to the Sandbox API. It applies to any shared cluster lab where multiple tenants coexist on one cluster. The three-layer separation gives you clear ownership boundaries, predictable lifecycle, and clean destroy behavior.
+</p>
+
+<h2 id="three-layers">Three-Layer Architecture: Infra / Platform / Tenant</h2>
+
+<p>
+  Each layer has a clear owner, runs at a different frequency, and has a different lifecycle. Understanding this separation is essential before writing any AgV configuration or cluster provisioner playbook.
+</p>
+
+<div class="svg-wrap">
+<svg viewBox="0 0 860 440" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#555"/>
+    </marker>
+  </defs>
+  <rect width="860" height="440" fill="#f9fafb" rx="8"/>
+
+  <!-- LAYER 1: INFRA -->
+  <rect x="20" y="16" width="820" height="112" fill="#dbeafe" stroke="#2563eb" stroke-width="2" rx="8"/>
+  <text x="38" y="42" font-size="13" font-weight="700" fill="#1e3a8a">Layer 1 — Infra: Install Operators</text>
+  <text x="38" y="58" font-size="11" fill="#1e40af">Runs ONCE per cluster. Installs all cluster-wide operators via cluster-provision.yml. Never runs per order.</text>
+  <rect x="38" y="68" width="100" height="40" fill="#3b82f6" rx="5"/>
+  <text x="88" y="86" font-size="9" fill="white" text-anchor="middle">RHBK</text>
+  <text x="88" y="98" font-size="8" fill="#bfdbfe" text-anchor="middle">Keycloak / SSO</text>
+  <rect x="148" y="68" width="100" height="40" fill="#3b82f6" rx="5"/>
+  <text x="198" y="86" font-size="9" fill="white" text-anchor="middle">Gitea Operator</text>
+  <text x="198" y="98" font-size="8" fill="#bfdbfe" text-anchor="middle">shared instance</text>
+  <rect x="258" y="68" width="100" height="40" fill="#3b82f6" rx="5"/>
+  <text x="308" y="86" font-size="9" fill="white" text-anchor="middle">ArgoCD</text>
+  <text x="308" y="98" font-size="8" fill="#bfdbfe" text-anchor="middle">OpenShift GitOps</text>
+  <rect x="368" y="68" width="100" height="40" fill="#3b82f6" rx="5"/>
+  <text x="418" y="86" font-size="9" fill="white" text-anchor="middle">Tekton</text>
+  <text x="418" y="98" font-size="8" fill="#bfdbfe" text-anchor="middle">Pipelines</text>
+  <rect x="478" y="68" width="100" height="40" fill="#3b82f6" rx="5"/>
+  <text x="528" y="86" font-size="9" fill="white" text-anchor="middle">ToolHive</text>
+  <text x="528" y="98" font-size="8" fill="#bfdbfe" text-anchor="middle">MCP proxy</text>
+  <rect x="588" y="68" width="110" height="40" fill="#1d4ed8" rx="5"/>
+  <text x="643" y="86" font-size="9" fill="white" text-anchor="middle">gitops_bootstrap</text>
+  <text x="643" y="98" font-size="8" fill="#bfdbfe" text-anchor="middle">infra AppProjects</text>
+  <rect x="708" y="68" width="110" height="40" fill="#1d4ed8" rx="5"/>
+  <text x="763" y="86" font-size="9" fill="white" text-anchor="middle">gitops_bootstrap</text>
+  <text x="763" y="98" font-size="8" fill="#bfdbfe" text-anchor="middle">platform bootstrap</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="430" y1="130" x2="430" y2="152" stroke="#555" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="440" y="145" font-size="10" fill="#555">cluster ready</text>
+
+  <!-- LAYER 2: PLATFORM -->
+  <rect x="20" y="154" width="820" height="90" fill="#ede9fe" stroke="#7c3aed" stroke-width="2" rx="8"/>
+  <text x="38" y="178" font-size="13" font-weight="700" fill="#4c1d95">Layer 2 — Platform: Create Instances &amp; Configure</text>
+  <text x="38" y="194" font-size="11" fill="#5b21b6">Runs ONCE per cluster. Creates operator instances, configures shared cluster services via ArgoCD (bootstrap-platform).</text>
+  <rect x="38" y="204" width="160" height="30" fill="#7c3aed" rx="5"/>
+  <text x="118" y="224" font-size="9" fill="white" text-anchor="middle">platform-monitoring</text>
+  <rect x="208" y="204" width="180" height="30" fill="#8b5cf6" rx="5"/>
+  <text x="298" y="218" font-size="9" fill="white" text-anchor="middle">future shared services</text>
+  <text x="298" y="229" font-size="8" fill="#ddd6fe" text-anchor="middle">(shared LiteLLM, LDAP sync...)</text>
+
+  <!-- Arrow 2→3 -->
+  <line x1="430" y1="246" x2="430" y2="268" stroke="#555" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="440" y="261" font-size="10" fill="#555">per order</text>
+
+  <!-- LAYER 3: TENANT -->
+  <rect x="20" y="270" width="820" height="130" fill="#ffedd5" stroke="#ea580c" stroke-width="2" rx="8"/>
+  <text x="38" y="294" font-size="13" font-weight="700" fill="#7c2d12">Layer 3 — Tenant: The User</text>
+  <text x="38" y="310" font-size="11" fill="#9a3412">Runs PER ORDER. One isolated environment per user. Created by AgnosticD roles + gitops_bootstrap. Destroyed when order ends.</text>
+
+  <rect x="38" y="318" width="90" height="32" fill="#ea580c" rx="5"/>
+  <text x="83" y="333" font-size="9" fill="white" text-anchor="middle">Sandbox API</text>
+  <text x="83" y="344" font-size="8" fill="#fed7aa" text-anchor="middle">schedules cluster</text>
+
+  <line x1="130" y1="334" x2="148" y2="334" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="150" y="310" width="175" height="66" fill="#fed7aa" stroke="#ea580c" stroke-width="1" rx="5"/>
+  <text x="237" y="326" font-size="9" font-weight="700" fill="#7c2d12" text-anchor="middle">Ansible Roles (AgnosticD)</text>
+  <text x="237" y="340" font-size="8" fill="#431407" text-anchor="middle">tenant_keycloak_user</text>
+  <text x="237" y="352" font-size="8" fill="#431407" text-anchor="middle">tenant_namespace</text>
+  <text x="237" y="364" font-size="8" fill="#431407" text-anchor="middle">tenant_gitea  |  litellm_virtual_keys</text>
+
+  <line x1="327" y1="343" x2="345" y2="343" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="347" y="318" width="130" height="32" fill="#ea580c" rx="5"/>
+  <text x="412" y="333" font-size="9" fill="white" text-anchor="middle">gitops_bootstrap</text>
+  <text x="412" y="344" font-size="8" fill="#fed7aa" text-anchor="middle">bootstrap-tenant ArgoCD</text>
+
+  <line x1="479" y1="334" x2="497" y2="334" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="499" y="310" width="326" height="66" fill="#fed7aa" stroke="#ea580c" stroke-width="1" rx="5"/>
+  <text x="662" y="326" font-size="9" font-weight="700" fill="#7c2d12" text-anchor="middle">ArgoCD Apps (GitOps)</text>
+  <text x="662" y="340" font-size="8" fill="#431407" text-anchor="middle">agent  |  librechat  |  librechat-config</text>
+  <text x="662" y="352" font-size="8" fill="#431407" text-anchor="middle">mcp-gitea  |  mcp-openshift</text>
+  <text x="662" y="364" font-size="8" fill="#431407" text-anchor="middle">showroom</text>
+
+  <!-- Destroy row -->
+  <rect x="20" y="410" width="820" height="22" fill="#fee2e2" stroke="#cc0000" stroke-width="1.5" stroke-dasharray="5,3" rx="5"/>
+  <text x="38" y="426" font-size="10" fill="#991b1b" font-weight="600">Destroy (per order): litellm key → gitops_bootstrap (ArgoCD cascade) → tenant_gitea → tenant_namespace → tenant_keycloak_user</text>
+</svg>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Layer</th>
+      <th>Responsibility</th>
+      <th>Runs</th>
+      <th>How triggered</th>
+      <th>MCP Lab example</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Infra</strong><br><em>Install Operators</em></td>
+      <td>Install cluster-wide operators — no instances created yet, just the operators available</td>
+      <td>Once per cluster</td>
+      <td><code>cluster-provision.yml</code> playbook — run manually (or via CI) when cluster is onboarded to the Sandbox API pool. See: <a href="https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift/blob/main/tests/e2e/cluster-provision.yml">cluster-provision.yml</a></td>
+      <td>Installs: RHBK operator, Gitea operator, OpenShift GitOps (ArgoCD), Tekton (Pipelines), ToolHive, CloudNativePG. Creates <code>infra</code>, <code>platform</code>, <code>tenants</code> ArgoCD AppProjects.</td>
+    </tr>
+    <tr>
+      <td><strong>Platform</strong><br><em>Create Instances &amp; Configure</em></td>
+      <td>Create instances from installed operators, configure shared cluster services that all tenants will use</td>
+      <td>Once per cluster — same one-time cluster provisioning as Infra</td>
+      <td>ArgoCD syncs <code>bootstrap-platform</code> Application — created by infra bootstrap as part of the same cluster provisioning run</td>
+      <td>Creates: Gitea server instance (from Gitea operator CR), enables user workload monitoring (Prometheus/Grafana for tenant namespaces). Future: shared LiteLLM instance, LDAP sync.</td>
+    </tr>
+    <tr>
+      <td><strong>Tenant</strong><br><em>The User</em></td>
+      <td>Everything for one user's isolated environment — created fresh per order, destroyed when done</td>
+      <td>Every order</td>
+      <td>AgnosticD runs AgV <code>workloads:</code> list via Sandbox API scheduler</td>
+      <td>Creates: one RHBK user, 6 namespaces, one Gitea instance (per-tenant, in user namespace), LiteMaaS virtual key. ArgoCD deploys: LibreChat, MCP servers (gitea + openshift), AI agent, Showroom.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-blue">
+  <strong>Only the Tenant layer is in your AgV common.yaml</strong>
+  The Infra and Platform layers are set up once by the cluster operator when a cluster joins the pool — they are not part of your catalog item. When you write a <code>workloads:</code> list in AgV, you are configuring only the Tenant layer. The operators and shared services are already there waiting.
+</div>
+
+
+
+<hr>
+
+<h2 id="sandbox-api">How This Connects to the Sandbox API</h2>
+
+<p>
+  The three-layer pattern maps directly onto the two main Sandbox API integration patterns:
+</p>
+
+<ul>
+  <li>
+    <strong>The Sandbox API scheduler-only pattern maps directly to the Tenant layer.</strong> The Sandbox API does one thing: schedule a cluster and return a token and domain. Everything in the Tenant layer is done by your AgnosticD roles. See the <a href="scheduler-only.html">Scheduler-Only guide</a>.
+  </li>
+  <li>
+    <strong>Cluster Provisioner sets up the Infra and Platform layers once.</strong> A <code>cluster-provision.yml</code> playbook (separate from AgV) runs once per cluster when it joins the Sandbox API pool, installing all shared services (RHBK, Gitea, ArgoCD). After that, every order only touches the Tenant layer.
+  </li>
+</ul>
+
+<div class="callout callout-blue">
+  <strong>Real example: what went in each layer for the MCP lab</strong>
+  See the <a href="migration-guide.html#layers-mcp">Migration Guide &rarr; What we put in each layer (MCP lab)</a> for a concrete breakdown of what roles and ArgoCD apps landed in each layer during the MCP lab migration.
+</div>
+
+<p style="color:#888;font-size:0.85rem;margin-top:3rem;">Red Hat Demo Platform (RHDP) &mdash; Internal developer reference &mdash; <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops">GitHub</a></p>
+
+</body>
+</html>
