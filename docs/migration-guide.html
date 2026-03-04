@@ -173,6 +173,7 @@
     <li><a href="#roles">Role-by-role conversion</a></li>
     <li><a href="#challenges">Challenges and fixes</a></li>
     <li><a href="#lessons">Lessons learned</a></li>
+    <li><a href="#links">All links — PRs, repos, docs</a></li>
 
   </ol>
 </div>
@@ -1000,11 +1001,105 @@
 
 <hr>
 
-<div class="callout callout-blue">
-  <strong>Related pages</strong>
-  For the complete AgV reference for the new shared cluster pattern, see the <a href="scheduler-only.html">Summit 2026 / Scheduler-Only guide</a>.
-  For the original workshop repository, see <a href="https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift">rhpds.ocpsandbox_mcp_with_openshift</a>.
-</div>
+<h2 id="links">10. All Links</h2>
+
+<h3>Pull Requests</h3>
+<table>
+  <thead>
+    <tr><th>Repository</th><th>PR</th><th>Title</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>agnosticd/agnosticd-v2</td>
+      <td><a href="https://github.com/agnosticd/agnosticd-v2/pull/123" target="_blank">PR #123</a></td>
+      <td>config/namespace: support explicit <code>remove_workloads</code> list on destroy</td>
+      <td><span class="badge badge-green">Merged</span></td>
+    </tr>
+    <tr>
+      <td>agnosticd/namespaced_workloads</td>
+      <td><a href="https://github.com/agnosticd/namespaced_workloads/pull/12" target="_blank">PR #12</a></td>
+      <td>feat: add tenant roles for shared cluster labs (keycloak_user, namespace, gitea)</td>
+      <td><span class="badge badge-orange">Open</span></td>
+    </tr>
+    <tr>
+      <td>agnosticd/core_workloads</td>
+      <td><a href="https://github.com/agnosticd/core_workloads/pull/62" target="_blank">PR #62</a></td>
+      <td>gitops_bootstrap: userinfo ConfigMap discovery + cascade cleanup on destroy</td>
+      <td><span class="badge badge-orange">Open</span></td>
+    </tr>
+    <tr>
+      <td>rhpds/agnosticv</td>
+      <td><a href="https://github.com/rhpds/agnosticv/pull/25180" target="_blank">PR #25180</a></td>
+      <td>MCP Sandbox: tenant roles pattern, scheduler-only sandbox, gitops_bootstrap</td>
+      <td><span class="badge badge-orange">Open</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Repositories</h3>
+<table>
+  <thead>
+    <tr><th>Repo</th><th>Branch / path</th><th>What it contains</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="https://github.com/agnosticd/namespaced_workloads" target="_blank">agnosticd/namespaced_workloads</a></td>
+      <td><code>tenant-roles</code></td>
+      <td>New tenant roles: <a href="https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_keycloak_user" target="_blank">tenant_keycloak_user</a>, <a href="https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_namespace" target="_blank">tenant_namespace</a>, <a href="https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_gitea" target="_blank">tenant_gitea</a></td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/agnosticd/core_workloads" target="_blank">agnosticd/core_workloads</a></td>
+      <td><code>gitops-bootstrap-userinfo</code></td>
+      <td><a href="https://github.com/agnosticd/core_workloads/tree/gitops-bootstrap-userinfo/roles/ocp4_workload_gitops_bootstrap" target="_blank">ocp4_workload_gitops_bootstrap</a> — cascade finalizer, remove_workload, multi-app list, userinfo ConfigMap</td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/agnosticd/agnosticd-v2" target="_blank">agnosticd/agnosticd-v2</a></td>
+      <td><code>tenant-roles-support</code></td>
+      <td>AgnosticD v2 deployer with explicit <code>remove_workloads</code> list support</td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/rhpds/agnosticv" target="_blank">rhpds/agnosticv</a></td>
+      <td><code>tenant-namespace-roles</code></td>
+      <td>AgV catalog item: <a href="https://github.com/rhpds/agnosticv/blob/tenant-namespace-roles/agd_v2/mcp-with-openshift-sandbox/common.yaml" target="_blank">mcp-with-openshift-sandbox/common.yaml</a></td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops" target="_blank">rhpds/ocpsandbox-mcp-with-openshift-gitops</a></td>
+      <td><code>main</code></td>
+      <td>GitOps repo: <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/infra/bootstrap" target="_blank">infra/bootstrap</a> · <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/platform/bootstrap" target="_blank">platform/bootstrap</a> · <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/tenant/bootstrap" target="_blank">tenant/bootstrap</a> · <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/tenant/librechat" target="_blank">tenant/librechat</a> · <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/tenant/mcp-gitea" target="_blank">mcp-gitea</a> · <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/tenant/mcp-openshift" target="_blank">mcp-openshift</a> · <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/tenant/agent" target="_blank">agent</a></td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift" target="_blank">rhpds/rhpds.ocpsandbox_mcp_with_openshift</a></td>
+      <td><code>main</code></td>
+      <td>Cluster provisioner: <a href="https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift/blob/main/tests/e2e/cluster-provision.yml" target="_blank">cluster-provision.yml</a> (Infra + Platform bootstrap)</td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift" target="_blank">rhpds/rhpds.ocpsandbox_mcp_with_openshift</a></td>
+      <td><code>main</code></td>
+      <td>Original workshop (before migration): <a href="https://github.com/rhpds/agnosticv/blob/master/agd_v2/mcp-with-openshift/common.yaml" target="_blank">mcp-with-openshift/common.yaml</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Documentation</h3>
+<table>
+  <thead>
+    <tr><th>Page</th><th>What it covers</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="index.html">Overview</a></td>
+      <td>What is Sandbox API, three-layer architecture, both patterns compared, variables reference</td>
+    </tr>
+    <tr>
+      <td><a href="scheduler-only.html">Summit 2026 / Scheduler-Only</a></td>
+      <td>Complete annotated AgV common.yaml for the scheduler-only pattern</td>
+    </tr>
+    <tr>
+      <td><a href="namespace-api.html">Full Namespace API</a></td>
+      <td>Complete annotated AgV common.yaml for the full namespace API pattern</td>
+    </tr>
+  </tbody>
+</table>
 
 </body>
 </html>
