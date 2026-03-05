@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Full Namespace API Pattern — Sandbox API Docs</title>
+  <title>OCP Sandbox API Pattern — Sandbox API Docs</title>
   <style>
   :root {
     --red: #cc0000;
@@ -91,12 +91,12 @@
   <span style="color:#fff;font-weight:700;">Sandbox API Docs</span>
   <a href="index.html">Overview</a>
   <a href="scheduler-only.html">Summit 2026 / Scheduler-Only</a>
-  <span class="active">Full Namespace API</span>
+  <span class="active">OCP Sandbox API</span>
   <a href="migration-guide.html">Migration Guide</a>
   <a href="gitops-pattern.html">GitOps Pattern</a>
 </nav>
 
-<h1>Full Namespace API Pattern</h1>
+<h1>OCP Sandbox API Pattern</h1>
 <p class="subtitle">Complete developer reference — Sandbox API manages namespaces and RHSSO users per order</p>
 
 <div class="toc">
@@ -116,7 +116,7 @@
 <h2 id="how-it-works">How It Works</h2>
 
 <p>
-  In the Full Namespace API pattern, Sandbox API takes on more responsibility than in the Scheduler-Only pattern. For every order, Sandbox API:
+  In the OCP Sandbox API pattern, Sandbox API takes on more responsibility than in the Scheduler-Only pattern. For every order, Sandbox API:
 </p>
 
 <ol>
@@ -181,7 +181,7 @@
 <!-- ============================================================ -->
 <h2 id="when-to-use">When to Use This Pattern</h2>
 
-<p>Choose the Full Namespace API pattern when your lab meets most of these criteria:</p>
+<p>Choose the OCP Sandbox API pattern when your lab meets most of these criteria:</p>
 
 <div class="two-col">
   <div class="col-box">
@@ -212,7 +212,7 @@
 
 <div class="callout callout-green">
   <strong>Simpler operation, less flexibility</strong>
-  The Full Namespace API pattern requires fewer Ansible roles and less AgV configuration. The tradeoff is that you get what Sandbox API creates — RHSSO users (not RHBK), standard namespace names, and basic quota. If you need RHBK or custom namespace topology, use Scheduler-Only instead.
+  The OCP Sandbox API pattern requires fewer Ansible roles and less AgV configuration. The tradeoff is that you get what Sandbox API creates — RHSSO users (not RHBK), standard namespace names, and basic quota. If you need RHBK or custom namespace topology, use Scheduler-Only instead.
 </div>
 
 <hr>
@@ -228,7 +228,7 @@
 <h2 id="full-common-yaml">Complete AgV common.yaml — Annotated</h2>
 
 <p>
-  The following is a complete, production-ready <code>common.yaml</code> for the Full Namespace API pattern. It shows a two-namespace setup (primary user namespace + secondary tools namespace) with Showroom. Adapt the role names and variables for your specific catalog item.
+  The following is a complete, production-ready <code>common.yaml</code> for the OCP Sandbox API pattern. It shows a two-namespace setup (primary user namespace + secondary tools namespace) with Showroom. Adapt the role names and variables for your specific catalog item.
 </p>
 
 <div class="callout callout-grey">
@@ -239,7 +239,7 @@
 <pre><code><span class="cmt">---</span>
 <span class="cmt"># ============================================================</span>
 <span class="cmt"># AgnosticV — common.yaml</span>
-<span class="cmt"># Pattern: Full Namespace API</span>
+<span class="cmt"># Pattern: OCP Sandbox API</span>
 <span class="cmt"># Sandbox API creates namespaces AND an RHSSO user per order.</span>
 <span class="cmt"># Simpler for labs that deploy into sandbox-managed namespaces.</span>
 <span class="cmt"># ============================================================</span>
@@ -611,7 +611,7 @@
   <thead>
     <tr>
       <th>Dimension</th>
-      <th>Full Namespace API</th>
+      <th>OCP Sandbox API</th>
       <th>Scheduler-Only</th>
     </tr>
   </thead>
@@ -691,7 +691,7 @@
 
 <div class="callout callout-blue">
   <strong>Decision rule of thumb</strong>
-  If your lab needs an RHSSO user and one or two namespaces with simple deployment, use Full Namespace API. If your lab needs RHBK, per-tenant Gitea repos, ArgoCD GitOps, or multiple custom namespaces, use Scheduler-Only.
+  If your lab needs an RHSSO user and one or two namespaces with simple deployment, use OCP Sandbox API. If your lab needs RHBK, per-tenant Gitea repos, ArgoCD GitOps, or multiple custom namespaces, use Scheduler-Only.
 </div>
 
 <hr>

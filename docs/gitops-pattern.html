@@ -91,7 +91,7 @@
   <span style="color:#fff;font-weight:700;">Sandbox API Docs</span>
   <a href="index.html">Overview</a>
   <a href="scheduler-only.html">Summit 2026 / Scheduler-Only</a>
-  <a href="namespace-api.html">Full Namespace API</a>
+  <a href="namespace-api.html">OCP Sandbox API</a>
   <a href="migration-guide.html">Migration Guide</a>
   <span class="active">GitOps Pattern</span>
 </nav>
@@ -107,7 +107,7 @@
   <h2>Contents</h2>
   <ol>
     <li><a href="#three-layers">Three-layer architecture: Infra / Platform / Tenant</a></li>
-    <li><a href="#namespace-targeting">How ArgoCD picks up pre-created namespaces</a></li>
+    <li><a href="#namespace-targeting">How OCP Sandbox API and ArgoCD pick up namespaces</a></li>
     <li><a href="#sandbox-api">How this connects to the Sandbox API</a></li>
   </ol>
 </div>
@@ -252,63 +252,133 @@
 
 <hr>
 
-<h2 id="namespace-targeting">How ArgoCD Picks Up Pre-Created Namespaces</h2>
+<h2 id="namespace-targeting">How OCP Sandbox API and ArgoCD Pick Up Namespaces</h2>
 
 <p>
-  This is one of the most common questions when first looking at this pattern: the GitOps repo has no namespace creation in it, yet everything deploys into the right namespaces. Here is exactly how it works — there is no magic.
+  One of the most common questions: the GitOps repo has no namespace creation in it, yet everything deploys into the right namespaces. Here is exactly how it works — no magic.
 </p>
 
-<h3>The convention: <code>{suffix}-{username}</code></h3>
+<h3>Two ways namespaces are created</h3>
 
-<p>Both Ansible and the bootstrap Helm chart derive namespace names from the same formula. They do this independently — the only shared input is <code>tenant.username</code>.</p>
+<div class="two-col">
+  <div class="col-box">
+    <h4>Option A — OCP Sandbox API creates them</h4>
+    <p>Each entry in <code>__meta__.sandboxes</code> causes OCP Sandbox API to create one namespace before AgnosticD runs. Each entry gets its own <code>quota:</code> and <code>limit_range:</code>.</p>
+    <p>Use this when you want OCP Sandbox API to own the namespace lifecycle and you need per-namespace quota control.</p>
+    <p><strong>Example:</strong> <a href="https://github.com/rhpds/agnosticv/blob/tenant-namespace-roles/agd_v2/mcp-with-openshift-sandbox/common.yaml" target="_blank">mcp-with-openshift-sandbox/common.yaml</a></p>
+  </div>
+  <div class="col-box">
+    <h4>Option B — Ansible role creates them</h4>
+    <p>The <code>ocp4_workload_tenant_namespace</code> role creates all namespaces listed in <code>ocp4_workload_tenant_namespace_suffixes</code>. All get the same quota and limit_range. For different limits per namespace, call the role multiple times.</p>
+    <p>Use this when you need full control over naming and per-namespace RBAC before ArgoCD runs.</p>
+    <p><strong>Role:</strong> <a href="https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_namespace" target="_blank">ocp4_workload_tenant_namespace</a></p>
+  </div>
+</div>
+
+<h3>How ArgoCD finds the right namespace — the naming contract</h3>
+
+<p>
+  Both options follow the same convention: <code>{suffix}-{username}</code>. The bootstrap Helm chart constructs namespace names using this formula. As long as Ansible creates namespaces with the same formula, ArgoCD will find them.
+</p>
 
 <table>
   <thead>
-    <tr>
-      <th>Layer</th>
-      <th>Code</th>
-      <th>Result (username = mcpuser-drw4x)</th>
-    </tr>
+    <tr><th>Layer</th><th>Code</th><th>Result (username = mcpuser-drw4x)</th></tr>
   </thead>
   <tbody>
     <tr>
-      <td><strong>Ansible</strong><br><code>ocp4_workload_tenant_namespace</code></td>
-      <td><code>ocp4_workload_tenant_namespace_suffixes: [librechat, mcp-gitea, ...]</code><br>prefix = <code>ocp4_workload_tenant_keycloak_username</code></td>
-      <td><code>librechat-mcpuser-drw4x</code><br><code>mcp-gitea-mcpuser-drw4x</code></td>
+      <td><strong>Ansible</strong> creates namespace</td>
+      <td><code>suffix: librechat</code> + <code>prefix: mcpuser-drw4x</code></td>
+      <td><code>librechat-mcpuser-drw4x</code></td>
     </tr>
     <tr>
-      <td><strong>ArgoCD Helm</strong><br><code>tenant/bootstrap/templates/applications.yaml</code></td>
-      <td><code>printf "librechat-%s" $username</code><br><code>printf "mcp-gitea-%s" $username</code></td>
-      <td><code>librechat-mcpuser-drw4x</code><br><code>mcp-gitea-mcpuser-drw4x</code></td>
+      <td><strong>ArgoCD Helm</strong> targets namespace</td>
+      <td><code>printf "librechat-%s" $username</code> in <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/blob/main/tenant/bootstrap/templates/applications.yaml" target="_blank">applications.yaml</a></td>
+      <td><code>librechat-mcpuser-drw4x</code></td>
     </tr>
   </tbody>
 </table>
 
+<p><code>CreateNamespace=false</code> in every ArgoCD Application (see <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/blob/main/tenant/bootstrap/templates/applications.yaml" target="_blank">applications.yaml line 160</a>) tells ArgoCD to deploy into the existing namespace. If the namespace does not exist, ArgoCD fails — enforcing that Ansible runs first.</p>
+
+<h3>Real example — MCP lab: OCP Sandbox API creates namespaces with per-entry quota</h3>
+
+<p>Each namespace gets its own quota because each is a separate OCP Sandbox API entry. <a href="https://github.com/rhpds/agnosticv/blob/tenant-namespace-roles/agd_v2/mcp-with-openshift-sandbox/common.yaml" target="_blank">Full file →</a></p>
+
+<pre><code><span class="cmt"># Each sandboxes: entry creates one namespace with its own quota.
+# OCP Sandbox API creates these BEFORE AgnosticD runs.</span>
+<span class="key">__meta__</span>:
+  <span class="key">sandboxes</span>:
+  <span class="cmt"># Primary — also schedules the cluster</span>
+  - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
+    <span class="key">namespace_suffix</span>: <span class="val">user</span>
+    <span class="key">cloud_selector</span>: { <span class="key">cloud</span>: <span class="val">cnv-dedicated-shared</span>, <span class="key">demo</span>: <span class="val">mcp-with-openshift</span>, <span class="key">purpose</span>: <span class="val">prod</span> }
+    <span class="key">quota</span>:
+      <span class="key">limits.cpu</span>: <span class="str">"2"</span>
+      <span class="key">limits.memory</span>: <span class="val">4Gi</span>
+  <span class="cmt"># LibreChat needs more memory</span>
+  - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
+    <span class="key">namespace_suffix</span>: <span class="val">librechat</span>
+    <span class="key">cluster_condition</span>: <span class="str">same('primary')</span>
+    <span class="key">quota</span>:
+      <span class="key">limits.cpu</span>: <span class="str">"4"</span>
+      <span class="key">limits.memory</span>: <span class="val">8Gi</span>       <span class="cmt"># more memory for LibreChat + MongoDB + Meilisearch</span>
+  <span class="cmt"># MCP servers need less</span>
+  - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
+    <span class="key">namespace_suffix</span>: <span class="val">mcp-gitea</span>
+    <span class="key">cluster_condition</span>: <span class="str">same('primary')</span>
+    <span class="key">quota</span>:
+      <span class="key">limits.cpu</span>: <span class="str">"1"</span>
+      <span class="key">limits.memory</span>: <span class="val">2Gi</span>       <span class="cmt"># lightweight MCP proxy</span></code></pre>
+
+<h3>Real example — Scheduler-Only: Ansible role creates namespaces, same quota for all</h3>
+
+<p>All namespaces get the same quota in a single role call. <a href="https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_namespace" target="_blank">Role source →</a></p>
+
+<pre><code><span class="cmt"># All these namespaces get the same quota and limit_range</span>
+<span class="key">ocp4_workload_tenant_namespace_prefix</span>: <span class="str">"{{ ocp4_workload_tenant_keycloak_username }}"</span>
+<span class="key">ocp4_workload_tenant_namespace_suffixes</span>:
+- <span class="val">agent</span>
+- <span class="val">librechat</span>
+- <span class="val">mcp-gitea</span>
+- <span class="val">mcp-openshift</span>
+<span class="key">ocp4_workload_tenant_namespace_limit_range</span>:
+  <span class="key">default</span>:
+    <span class="key">cpu</span>: <span class="val">500m</span>
+    <span class="key">memory</span>: <span class="val">512Mi</span>
+  <span class="key">defaultRequest</span>:
+    <span class="key">cpu</span>: <span class="val">50m</span>
+    <span class="key">memory</span>: <span class="val">128Mi</span></code></pre>
+
+<h3>Different limits per namespace — Scheduler-Only pattern</h3>
+
 <p>
-  The names always match because both sides use the same formula on the same input. <code>tenant.username</code> is the only contract — you pass it once in AgV via <code>ocp4_workload_gitops_bootstrap_helm_values</code> and both layers produce identical namespace names.
+  The <code>ocp4_workload_tenant_namespace</code> role applies one quota/limit to all namespaces in the list. To give different namespaces different limits, split them into separate calls using <code>ocp4_workload_tenant_namespace_suffixes</code> with different quota values. Each role call creates a group of namespaces with shared limits.
 </p>
 
-<h3><code>CreateNamespace=false</code></h3>
+<pre><code><span class="cmt"># First call — heavy namespaces (LibreChat needs more)</span>
+<span class="key">workloads</span>:
+- <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_namespace</span>
 
-<p>
-  Every ArgoCD Application in the bootstrap template has:
-</p>
-<pre><code>syncOptions:
-- CreateNamespace=false</code></pre>
-<p>
-  This tells ArgoCD: <strong>deploy resources into the namespace that already exists — do not try to create it.</strong> If the namespace does not exist ArgoCD will fail, which is intentional — it enforces the rule that Ansible must run before ArgoCD syncs.
-</p>
+<span class="cmt"># In AgV, set vars for the first group:</span>
+<span class="key">ocp4_workload_tenant_namespace_suffixes</span>:
+- <span class="val">librechat</span>
+<span class="key">ocp4_workload_tenant_namespace_quota</span>:
+  <span class="key">limits.cpu</span>: <span class="str">"4"</span>
+  <span class="key">limits.memory</span>: <span class="val">8Gi</span>
 
-<h3>Why this design</h3>
-<ul>
-  <li><strong>Ansible owns the foundation.</strong> Namespaces, RBAC, and LimitRanges are applied deterministically before ArgoCD touches anything. No drift, no race conditions.</li>
-  <li><strong>ArgoCD owns the workloads.</strong> It reconciles Deployments, Services, Routes, Secrets — everything inside the namespace. It does not touch the namespace object itself.</li>
-  <li><strong>No namespace names in AgV.</strong> You never hardcode namespace names. Any lab using this pattern just passes <code>tenant.username</code> and both layers derive everything from it.</li>
-</ul>
+<span class="cmt"># NOTE: The role must support a loop or be called via include_role with vars
+# for multiple groups. Alternatively, use the OCP Sandbox API pattern (Option A)
+# which natively supports per-namespace quota via separate sandboxes: entries.</span></code></pre>
 
 <div class="callout callout-blue">
-  <strong>This is the example to follow</strong>
-  The MCP with OpenShift lab (<a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops">ocpsandbox-mcp-with-openshift-gitops</a>) is the reference implementation of this pattern. If you are building a new shared cluster lab, use it as your starting point. The namespace convention, <code>CreateNamespace=false</code>, and the bootstrap chart structure are all reusable as-is.
+  <strong>Recommended: use OCP Sandbox API entries for per-namespace quota control</strong>
+  If you need different resource limits in different namespaces, the cleanest approach is to use separate <code>sandboxes:</code> entries — each entry gets its own <code>quota:</code> block. This is what the MCP lab does and it is shown above.
+</div>
+
+<div class="callout callout-blue">
+  <strong>This is the reference implementation</strong>
+  The MCP with OpenShift lab is the reference for this pattern. All files referenced above are live code — not examples. Start from the <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops" target="_blank">GitOps repo</a> and the <a href="https://github.com/rhpds/agnosticv/blob/tenant-namespace-roles/agd_v2/mcp-with-openshift-sandbox/common.yaml" target="_blank">AgV common.yaml</a>.
 </div>
 
 <hr>

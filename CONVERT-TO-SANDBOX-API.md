@@ -384,7 +384,7 @@ Every role must have `remove_workload.yml`. Test destroy early — do not wait u
 |---|---|
 | Full docs | https://rhpds.github.io/ocpsandbox-mcp-with-openshift-gitops/ |
 | Scheduler-Only complete AgV | https://rhpds.github.io/ocpsandbox-mcp-with-openshift-gitops/scheduler-only.html |
-| Full Namespace API guide | https://rhpds.github.io/ocpsandbox-mcp-with-openshift-gitops/namespace-api.html |
+| OCP Sandbox API guide | https://rhpds.github.io/ocpsandbox-mcp-with-openshift-gitops/namespace-api.html |
 | Migration story (MCP lab) | https://rhpds.github.io/ocpsandbox-mcp-with-openshift-gitops/migration-guide.html |
 | GitOps architecture | https://rhpds.github.io/ocpsandbox-mcp-with-openshift-gitops/gitops-pattern.html |
 | tenant_keycloak_user role | https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_keycloak_user |

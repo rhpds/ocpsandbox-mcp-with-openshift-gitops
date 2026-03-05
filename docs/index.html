@@ -91,7 +91,7 @@
   <span style="color:#fff;font-weight:700;">Sandbox API Docs</span>
   <span class="active">Overview</span>
   <a href="scheduler-only.html">Summit 2026 / Scheduler-Only</a>
-  <a href="namespace-api.html">Full Namespace API</a>
+  <a href="namespace-api.html">OCP Sandbox API</a>
   <a href="migration-guide.html">Migration Guide</a>
   <a href="gitops-pattern.html">GitOps Pattern</a>
 </nav>
@@ -107,7 +107,7 @@
     <li><a href="#cluster-selection">How cluster selection works — cloud_selector</a></li>
     <li><a href="#which-pattern">Which pattern should I use?</a></li>
     <li><a href="#scheduler-only-overview">Summit 2026 — Scheduler-Only Pattern</a></li>
-    <li><a href="#namespace-api-overview">Full Namespace API Pattern</a></li>
+    <li><a href="#namespace-api-overview">OCP Sandbox API Pattern</a></li>
   </ol>
 </div>
 
@@ -123,7 +123,7 @@
   <li>Picks an available OpenShift cluster from the resource pool</li>
   <li>Creates a service account with cluster-admin privileges for AgnosticD to use</li>
   <li>Injects a set of well-known variables into your AgnosticD run (API URL, ingress domain, console URL, SA token)</li>
-  <li>Optionally creates namespaces and OCP user accounts (Full Namespace API pattern only)</li>
+  <li>Optionally creates namespaces and OCP user accounts (OCP Sandbox API pattern only)</li>
   <li>Reclaims the cluster when the order is destroyed or expired</li>
 </ul>
 
@@ -285,7 +285,7 @@
     <p style="margin-top:0.75rem;"><a href="scheduler-only.html">Full guide &rarr;</a></p>
   </div>
   <div class="pattern-card orange">
-    <h3>Full Namespace API</h3>
+    <h3>OCP Sandbox API</h3>
     <p class="section-label">Use when</p>
     <ul>
       <li>Each order gets its own isolated namespace(s)</li>
@@ -307,7 +307,7 @@
     <tr>
       <th>Question</th>
       <th>Scheduler-Only</th>
-      <th>Full Namespace API</th>
+      <th>OCP Sandbox API</th>
     </tr>
   </thead>
   <tbody>
@@ -380,7 +380,7 @@
 <hr>
 
 <!-- ============================================================ -->
-<h2 id="namespace-api-overview">Full Namespace API Pattern</h2>
+<h2 id="namespace-api-overview">OCP Sandbox API Pattern</h2>
 
 <p>
   Sandbox API creates the namespaces and an RHSSO user for each order. Your workloads deploy lab content into the ready-made namespaces. Simpler setup — no cluster provisioner, no Keycloak role, no Gitea role. Less flexibility.
