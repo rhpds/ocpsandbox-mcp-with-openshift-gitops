@@ -1,7 +1,8 @@
 ---
-# PostSync hook — waits until LibreChat is actually responding before
-# ArgoCD marks the librechat Application as Healthy.
-# Runs after all resources sync. Deleted automatically on success.
+# PostSync hook — waits until the LibreChat Route is up and responding.
+# Step 1: wait for the Route object to have a host assigned.
+# Step 2: wait for /api/health to return 200.
+# ArgoCD keeps the librechat Application in Progressing until this Job succeeds.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -11,21 +12,38 @@ metadata:
     argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/hook-delete-policy: HookSucceeded
 spec:
-  backoffLimit: 10
+  backoffLimit: 20
   template:
     spec:
       restartPolicy: OnFailure
+      serviceAccountName: default
       containers:
       - name: check
-        image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+        image: registry.redhat.io/openshift4/ose-cli:latest
         command:
         - /bin/sh
         - -c
         - |
-          echo "Waiting for LibreChat to be ready..."
-          until curl -sf --max-time 5 \
-            https://librechat-{{ .Values.namespace }}.{{ .Values.domain }}/api/health; do
-            echo "LibreChat not ready yet, retrying in 15s..."
+          set -e
+          NAMESPACE="{{ .Values.namespace }}"
+          ROUTE_NAME="librechat"
+
+          echo "Step 1: Waiting for Route to have a host assigned..."
+          until oc get route "$ROUTE_NAME" -n "$NAMESPACE" \
+            -o jsonpath='{.spec.host}' 2>/dev/null | grep -q '.'; do
+            echo "  Route not ready yet, retrying in 10s..."
+            sleep 10
+          done
+
+          ROUTE_HOST=$(oc get route "$ROUTE_NAME" -n "$NAMESPACE" \
+            -o jsonpath='{.spec.host}')
+          echo "  Route host: $ROUTE_HOST"
+
+          echo "Step 2: Waiting for LibreChat /api/health to respond..."
+          until curl -sf --max-time 10 --insecure \
+            "https://${ROUTE_HOST}/api/health"; do
+            echo "  LibreChat not ready yet, retrying in 15s..."
             sleep 15
           done
-          echo "LibreChat is ready."
+
+          echo "LibreChat is ready at https://${ROUTE_HOST}"
