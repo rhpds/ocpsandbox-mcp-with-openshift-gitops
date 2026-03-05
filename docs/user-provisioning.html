@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Provisioning — Sandbox API Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="product">Sandbox API Docs</div>
+    <div class="version">Red Hat Demo Platform</div>
+  </div>
+
+  <div class="sidebar-section-label">Getting Started</div>
+  <a href="index.html" class="page-link ">Overview</a>
+
+  <div class="sidebar-section-label">Cluster Setup (Once)</div>
+  <a href="cluster-provisioning.html" class="page-link ">Cluster Provisioning</a>
+  <a href="cluster-provisioning.html#infra" class="sub-link ">&#8627; Infra &mdash; install operators</a>
+  <a href="cluster-provisioning.html#platform" class="sub-link ">&#8627; Platform &mdash; create instances</a>
+  <a href="cluster-provisioning.html#today" class="sub-link ">&#8627; Running today</a>
+  <a href="cluster-provisioning.html#future" class="sub-link ">&#8627; Future with AgV</a>
+
+  <div class="sidebar-section-label">User Provisioning (Per Order)</div>
+  <a href="user-provisioning.html" class="page-link active">User Provisioning</a>
+  <a href="user-provisioning.html#scheduler-only" class="sub-link active">&#8627; Approach A: Scheduler-Only</a>
+  <a href="user-provisioning.html#ocp-sandbox-api" class="sub-link active">&#8627; Approach B: OCP Sandbox API</a>
+  <a href="user-provisioning.html#namespaces" class="sub-link active">&#8627; Namespace quotas</a>
+  <a href="user-provisioning.html#variables" class="sub-link active">&#8627; Variables reference</a>
+
+  <div class="sidebar-section-label">Deep Dives</div>
+  <a href="gitops-pattern.html" class="page-link ">GitOps Architecture</a>
+  <a href="gitops-pattern.html#three-layers" class="sub-link ">&#8627; Three layers</a>
+  <a href="gitops-pattern.html#namespace-targeting" class="sub-link ">&#8627; Namespace contract</a>
+  <a href="migration-guide.html" class="page-link ">Migration Guide</a>
+  <a href="migration-guide.html#original" class="sub-link ">&#8627; Original lab</a>
+  <a href="migration-guide.html#roles" class="sub-link ">&#8627; Role conversions</a>
+  <a href="migration-guide.html#challenges" class="sub-link ">&#8627; Challenges</a>
+
+  <div class="sidebar-section-label">AgV Reference</div>
+  <a href="scheduler-only.html" class="page-link ">Scheduler-Only common.yaml</a>
+  <a href="namespace-api.html" class="page-link ">OCP Sandbox API common.yaml</a>
+</nav>
+<div class="main">
+
+<h1>User Provisioning</h1>
+<p class="subtitle">Per-order setup &mdash; runs every time someone orders the lab</p>
+<p class="audience">For: Lab developers writing AgV common.yaml and AgnosticD workload roles</p>
+
+<div class="page-toc">
+  <strong>On this page</strong>
+  <ol>
+    <li><a href="#what">What is user provisioning?</a></li>
+    <li><a href="#scheduler-only">Approach A: Scheduler-Only</a></li>
+    <li><a href="#ocp-sandbox-api">Approach B: OCP Sandbox API</a></li>
+    <li><a href="#namespaces">Namespace configuration and quotas</a></li>
+    <li><a href="#variables">Variables from Sandbox API</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="what">What is User Provisioning?</h2>
+
+<p>
+  User provisioning is everything that happens <strong>when a lab order is placed</strong>. Sandbox API selects a cluster, injects variables, and your AgnosticD workload roles run to create a tenant environment for that specific attendee. When the order expires or is returned, a destroy playbook removes all the per-tenant resources.
+</p>
+
+<p>
+  User provisioning runs in full isolation per order &mdash; it does not touch other tenants on the same cluster. The per-order resources include:
+</p>
+
+<ul>
+  <li>One RHBK (Keycloak) user in the shared realm</li>
+  <li>One or more OpenShift namespaces with resource quotas</li>
+  <li>One Gitea organization with mirrored lab repositories</li>
+  <li>One ArgoCD Application (or ApplicationSet) for GitOps deployment</li>
+  <li>One LiteMaaS virtual API key scoped to this tenant</li>
+  <li>One Showroom deployment with lab-specific URLs</li>
+</ul>
+
+<div class="callout callout-info">
+  <strong>Order lifecycle: provision &rarr; running &rarr; destroy</strong>
+  Every RHDP order goes through three phases: <strong>provision</strong> (create resources), <strong>running</strong> (attendee works), <strong>destroy</strong> (remove resources). User provisioning covers both provision and destroy. The destroy playbook must mirror the provision playbook exactly &mdash; every resource created on provision must be deleted on destroy, or you will leak resources on the shared cluster.
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="scheduler-only">Approach A: Scheduler-Only <span class="badge badge-blue">Summit 2026</span></h2>
+
+<p>
+  In the Scheduler-Only pattern, Sandbox API does exactly one thing: it selects a cluster from the pool and injects credentials. Your Ansible roles do <em>everything else</em> &mdash; creating the RHBK user, namespaces, Gitea org, ArgoCD App, LiteMaaS key, and Showroom deployment.
+</p>
+
+<p>
+  This gives you full control over the tenant lifecycle and allows complex multi-namespace topologies. The trade-off is more Ansible role complexity and a cluster provisioner prerequisite.
+</p>
+
+<h3>The AgV common.yaml (Scheduler-Only)</h3>
+
+<p>
+  Here is the complete, annotated AgV <code>common.yaml</code> for the MCP with OpenShift GitOps lab using the Scheduler-Only pattern. Every field is explained.
+</p>
+
+<pre><code><span class="cmt"># ============================================================
+# AgnosticV common.yaml — MCP with OpenShift GitOps Lab
+# Pattern: Scheduler-Only (Summit 2026)
+# ============================================================</span>
+
+<span class="cmt"># ── Deployer config ───────────────────────────────────────────</span>
+<span class="key">__meta__</span>:
+  <span class="key">deployer</span>:
+    <span class="key">type</span>: <span class="val">agnosticd</span>             <span class="cmt"># use AgnosticD as the provisioning engine</span>
+
+  <span class="cmt"># Sandbox: one OcpSandbox entry — scheduler-only mode.
+  # Sandbox API picks a cluster matching these tags and injects
+  # credentials. It does NOT create namespaces or users.</span>
+  <span class="key">sandboxes</span>:
+  - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
+    <span class="key">alias</span>: <span class="val">cluster</span>            <span class="cmt"># logical name; variables are prefixed sandbox_{alias}_</span>
+    <span class="key">cloud_selector</span>:
+      <span class="key">cloud</span>: <span class="val">cnv-dedicated-shared</span>
+      <span class="key">demo</span>: <span class="val">mcp-with-openshift</span>
+      <span class="key">purpose</span>: <span class="val">prod</span>
+      <span class="key">keycloak</span>: <span class="str">"yes"</span>          <span class="cmt"># only clusters with RHBK pre-installed</span>
+    <span class="key">quota</span>:
+      <span class="key">cpu</span>: <span class="val">"16"</span>               <span class="cmt"># total CPU request across all tenant namespaces</span>
+      <span class="key">memory</span>: <span class="val">"32Gi"</span>          <span class="cmt"># total memory request across all tenant namespaces</span>
+      <span class="key">pods</span>: <span class="val">"50"</span>              <span class="cmt"># total pod count across all tenant namespaces</span>
+
+<span class="cmt"># ── Variables ─────────────────────────────────────────────────</span>
+
+<span class="cmt"># Namespace naming: always use guid as a prefix so concurrent
+# orders on the same cluster never collide.</span>
+<span class="key">tenant_namespace</span>: <span class="str">"sandbox-{{ guid }}-user"</span>
+<span class="key">tenant_tools_namespace</span>: <span class="str">"sandbox-{{ guid }}-tools"</span>
+
+<span class="cmt"># Keycloak realm where users will be created.
+# This realm must already exist (created by cluster provisioner).</span>
+<span class="key">rhbk_realm_name</span>: <span class="val">mcp-lab</span>
+<span class="key">rhbk_namespace</span>: <span class="val">keycloak</span>
+
+<span class="cmt"># Gitea: the shared instance URL and admin user.
+# Admin credentials come from a cluster Secret (set during provisioning).</span>
+<span class="key">gitea_hostname</span>: <span class="str">"gitea.{{ sandbox_openshift_ingress_domain }}"</span>
+<span class="key">gitea_admin_user</span>: <span class="val">gitea-admin</span>
+
+<span class="cmt"># Lab repos to mirror into the per-tenant Gitea org.
+# Each repo gets mirrored under: gitea/{tenant_username}/{repo_name}</span>
+<span class="key">gitea_repos_to_mirror</span>:
+- <span class="key">name</span>: <span class="val">mcp-lab-gitops</span>
+  <span class="key">upstream</span>: <span class="str">"https://github.com/rhpds/mcp-lab-gitops.git"</span>
+- <span class="key">name</span>: <span class="val">mcp-lab-apps</span>
+  <span class="key">upstream</span>: <span class="str">"https://github.com/rhpds/mcp-lab-apps.git"</span>
+
+<span class="cmt"># LiteMaaS: model API endpoint for the lab.
+# Virtual keys are scoped to this model and rate-limited per tenant.</span>
+<span class="key">litemaas_model</span>: <span class="val">granite-3.3-8b-instruct</span>
+<span class="key">litemaas_api_url</span>: <span class="str">"https://litemaas.example.com"</span>
+<span class="key">litemaas_key_prefix</span>: <span class="str">"mcp-lab-{{ guid }}"</span>
+<span class="key">litemaas_tokens_per_minute</span>: <span class="val">100000</span>
+
+<span class="cmt"># ArgoCD: the shared ArgoCD instance that manages tenant GitOps apps.
+# The bootstrap role creates an AppProject + Application for this tenant.</span>
+<span class="key">argocd_namespace</span>: <span class="val">openshift-gitops</span>
+<span class="key">argocd_app_name</span>: <span class="str">"mcp-lab-{{ guid }}"</span>
+<span class="key">argocd_gitops_repo</span>: <span class="str">"https://{{ gitea_hostname }}/{{ guid }}/mcp-lab-gitops.git"</span>
+<span class="key">argocd_gitops_path</span>: <span class="val">bootstrap/</span>
+
+<span class="cmt"># Showroom: lab guide and user-facing URLs.
+# All URLs use sandbox_openshift_ingress_domain (injected by Sandbox API).</span>
+<span class="key">showroom_namespace</span>: <span class="str">"sandbox-{{ guid }}-showroom"</span>
+<span class="key">showroom_git_repo</span>: <span class="str">"https://github.com/rhpds/showroom-mcp-with-openshift-gitops"</span>
+<span class="key">showroom_extra_vars</span>:
+  <span class="key">console_url</span>: <span class="str">"{{ sandbox_openshift_console_url }}"</span>
+  <span class="key">keycloak_url</span>: <span class="str">"https://keycloak.{{ sandbox_openshift_ingress_domain }}/realms/mcp-lab"</span>
+  <span class="key">gitea_url</span>: <span class="str">"https://{{ gitea_hostname }}"</span>
+  <span class="key">argocd_url</span>: <span class="str">"https://openshift-gitops-server-openshift-gitops.{{ sandbox_openshift_ingress_domain }}"</span>
+  <span class="key">username</span>: <span class="str">"{{ guid }}"</span>
+  <span class="key">password</span>: <span class="str">"{{ tenant_password }}"</span>
+
+<span class="cmt"># ── Workload roles ─────────────────────────────────────────────
+# Roles run in order. Each role does one job.
+# All roles receive sandbox_ variables automatically from Sandbox API.</span>
+<span class="key">agnosticd_roles</span>:
+
+<span class="cmt"># 1. Create the RHBK user in the mcp-lab realm.
+#    Sets: tenant_username, tenant_password (generated), tenant_email</span>
+- <span class="key">role</span>: <span class="val">ocp4_workload_tenant_keycloak_user</span>
+  <span class="key">vars</span>:
+    <span class="key">tenant_keycloak_user_realm</span>: <span class="str">"{{ rhbk_realm_name }}"</span>
+    <span class="key">tenant_keycloak_user_namespace</span>: <span class="str">"{{ rhbk_namespace }}"</span>
+    <span class="key">tenant_keycloak_user_username</span>: <span class="str">"{{ guid }}"</span>
+
+<span class="cmt"># 2. Create per-tenant namespaces with ResourceQuota and LimitRange.
+#    Creates: sandbox-{guid}-user, sandbox-{guid}-tools
+#    Also creates the ServiceAccount the ArgoCD app deploys as.</span>
+- <span class="key">role</span>: <span class="val">ocp4_workload_tenant_namespace</span>
+  <span class="key">vars</span>:
+    <span class="key">tenant_namespace_namespaces</span>:
+    - <span class="key">name</span>: <span class="str">"{{ tenant_namespace }}"</span>
+      <span class="key">display_name</span>: <span class="str">"MCP Lab &mdash; {{ guid }}"</span>
+      <span class="key">quota_cpu_requests</span>: <span class="str">"8"</span>
+      <span class="key">quota_memory_requests</span>: <span class="str">"16Gi"</span>
+      <span class="key">quota_pods</span>: <span class="str">"30"</span>
+    - <span class="key">name</span>: <span class="str">"{{ tenant_tools_namespace }}"</span>
+      <span class="key">display_name</span>: <span class="str">"MCP Lab Tools &mdash; {{ guid }}"</span>
+      <span class="key">quota_cpu_requests</span>: <span class="str">"4"</span>
+      <span class="key">quota_memory_requests</span>: <span class="str">"8Gi"</span>
+      <span class="key">quota_pods</span>: <span class="str">"20"</span>
+
+<span class="cmt"># 3. Create Gitea org and mirror repos.
+#    Creates org named after guid, mirrors upstream repos into it.
+#    Sets: gitea_user_token (for ArgoCD to pull from)</span>
+- <span class="key">role</span>: <span class="val">ocp4_workload_tenant_gitea</span>
+  <span class="key">vars</span>:
+    <span class="key">tenant_gitea_hostname</span>: <span class="str">"{{ gitea_hostname }}"</span>
+    <span class="key">tenant_gitea_org</span>: <span class="str">"{{ guid }}"</span>
+    <span class="key">tenant_gitea_repos</span>: <span class="str">"{{ gitea_repos_to_mirror }}"</span>
+
+<span class="cmt"># 4. Create LiteMaaS virtual key for this tenant.
+#    Sets: litemaas_virtual_key (API key for the attendee to use)</span>
+- <span class="key">role</span>: <span class="val">ocp4_workload_litellm_virtual_keys</span>
+  <span class="key">vars</span>:
+    <span class="key">litellm_virtual_keys_api_url</span>: <span class="str">"{{ litemaas_api_url }}"</span>
+    <span class="key">litellm_virtual_keys_key_name</span>: <span class="str">"{{ litemaas_key_prefix }}"</span>
+    <span class="key">litellm_virtual_keys_model</span>: <span class="str">"{{ litemaas_model }}"</span>
+    <span class="key">litellm_virtual_keys_tpm</span>: <span class="str">"{{ litemaas_tokens_per_minute }}"</span>
+
+<span class="cmt"># 5. Bootstrap ArgoCD: create AppProject + Application.
+#    The Application points at the tenant's Gitea repo (bootstrap/ path).
+#    ArgoCD syncs lab content into the tenant namespaces automatically.</span>
+- <span class="key">role</span>: <span class="val">ocp4_workload_gitops_bootstrap</span>
+  <span class="key">vars</span>:
+    <span class="key">gitops_bootstrap_argocd_namespace</span>: <span class="str">"{{ argocd_namespace }}"</span>
+    <span class="key">gitops_bootstrap_app_name</span>: <span class="str">"{{ argocd_app_name }}"</span>
+    <span class="key">gitops_bootstrap_repo_url</span>: <span class="str">"{{ argocd_gitops_repo }}"</span>
+    <span class="key">gitops_bootstrap_path</span>: <span class="str">"{{ argocd_gitops_path }}"</span>
+    <span class="key">gitops_bootstrap_target_namespace</span>: <span class="str">"{{ tenant_namespace }}"</span>
+
+<span class="cmt"># 6. Deploy Showroom with all per-tenant URLs injected.
+#    Showroom renders the lab guide and passes user credentials.</span>
+- <span class="key">role</span>: <span class="val">ocp4_workload_showroom</span>
+  <span class="key">vars</span>:
+    <span class="key">showroom_namespace</span>: <span class="str">"{{ showroom_namespace }}"</span>
+    <span class="key">showroom_git_repo</span>: <span class="str">"{{ showroom_git_repo }}"</span>
+    <span class="key">showroom_extra_vars</span>: <span class="str">"{{ showroom_extra_vars | combine({'litemaas_api_key': litemaas_virtual_key}) }}"</span></code></pre>
+
+<div class="callout callout-info">
+  <strong>Role ordering is deliberate</strong>
+  Keycloak user must be created first (it generates <code>tenant_password</code>). Gitea must be created before ArgoCD bootstrap (ArgoCD pulls from the tenant Gitea repo). LiteMaaS key must be created before Showroom (Showroom injects the key into the lab guide). If you change the order, later roles will fail with undefined variables.
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="ocp-sandbox-api">Approach B: OCP Sandbox API</h2>
+
+<p>
+  In the OCP Sandbox API pattern, you declare the namespaces you want directly in the AgV <code>__meta__.sandboxes</code> list. Sandbox API creates these namespaces, applies the quota you specify, creates an OCP local user, and optionally creates an RHSSO user if <code>keycloak: "yes"</code> is set. Your workload roles then deploy lab content into the ready-made namespaces.
+</p>
+
+<p>
+  This pattern is simpler &mdash; no cluster provisioner, no Keycloak role, no Gitea role. Use it for labs that do not need shared services or complex multi-namespace topologies.
+</p>
+
+<h3>The AgV common.yaml (OCP Sandbox API)</h3>
+
+<pre><code><span class="cmt"># ============================================================
+# AgnosticV common.yaml — Simple Lab Example
+# Pattern: OCP Sandbox API
+# ============================================================</span>
+
+<span class="key">__meta__</span>:
+  <span class="key">deployer</span>:
+    <span class="key">type</span>: <span class="val">agnosticd</span>
+
+  <span class="cmt"># Sandbox API creates each namespace listed here.
+  # All entries with the same alias land on the same cluster
+  # (use cluster_condition: same('alias') for multiple namespaces).</span>
+  <span class="key">sandboxes</span>:
+  - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
+    <span class="key">alias</span>: <span class="val">sandbox</span>             <span class="cmt"># logical name for this sandbox</span>
+    <span class="key">namespace_suffix</span>: <span class="val">user</span>    <span class="cmt"># created namespace: sandbox-{guid}-user</span>
+    <span class="key">cloud_selector</span>:
+      <span class="key">cloud</span>: <span class="val">aws-us-east-1</span>
+      <span class="key">purpose</span>: <span class="val">prod</span>
+    <span class="key">quota</span>:
+      <span class="key">cpu</span>: <span class="val">"8"</span>
+      <span class="key">memory</span>: <span class="val">"16Gi"</span>
+      <span class="key">pods</span>: <span class="val">"30"</span>
+    <span class="cmt"># Optional: create RHSSO user (only on clusters with Keycloak)</span>
+    <span class="key">keycloak</span>: <span class="str">"yes"</span>
+
+  <span class="cmt"># Second namespace on the SAME cluster (note cluster_condition)</span>
+  - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
+    <span class="key">alias</span>: <span class="val">sandbox</span>
+    <span class="key">namespace_suffix</span>: <span class="val">tools</span>   <span class="cmt"># created namespace: sandbox-{guid}-tools</span>
+    <span class="key">cluster_condition</span>: <span class="str">"same('alias')"</span>  <span class="cmt"># MUST use same cluster as above</span>
+    <span class="key">quota</span>:
+      <span class="key">cpu</span>: <span class="val">"4"</span>
+      <span class="key">memory</span>: <span class="val">"8Gi"</span>
+      <span class="key">pods</span>: <span class="val">"20"</span>
+
+<span class="cmt"># Variables injected by Sandbox API (use directly in roles):</span>
+<span class="cmt"># sandbox_openshift_api_url     — cluster API URL</span>
+<span class="cmt"># sandbox_openshift_ingress_domain — apps domain for building routes</span>
+<span class="cmt"># sandbox_openshift_console_url — web console URL</span>
+<span class="cmt"># sandbox_openshift_namespace   — primary namespace (sandbox-{guid}-user)</span>
+<span class="cmt"># cluster_admin_agnosticd_sa_token — cluster-admin token</span>
+<span class="cmt"># sandbox_username / sandbox_password — RHSSO user (if keycloak: yes)</span>
+
+<span class="cmt"># ── Workload roles ─────────────────────────────────────────────</span>
+<span class="key">agnosticd_roles</span>:
+
+<span class="cmt"># Deploy lab application into the sandbox namespace
+# (namespace already created by Sandbox API)</span>
+- <span class="key">role</span>: <span class="val">ocp4_workload_my_lab_app</span>
+  <span class="key">vars</span>:
+    <span class="key">app_namespace</span>: <span class="str">"{{ sandbox_openshift_namespace }}"</span>
+    <span class="key">app_image</span>: <span class="val">registry.access.redhat.com/ubi9/ubi-minimal:latest</span>
+
+<span class="cmt"># Deploy Showroom with Sandbox API injected variables</span>
+- <span class="key">role</span>: <span class="val">ocp4_workload_showroom</span>
+  <span class="key">vars</span>:
+    <span class="key">showroom_namespace</span>: <span class="str">"{{ sandbox_openshift_namespace }}"</span>
+    <span class="key">showroom_git_repo</span>: <span class="str">"https://github.com/rhpds/showroom-my-lab"</span>
+    <span class="key">showroom_extra_vars</span>:
+      <span class="key">console_url</span>: <span class="str">"{{ sandbox_openshift_console_url }}"</span>
+      <span class="key">username</span>: <span class="str">"{{ sandbox_username }}"</span>
+      <span class="key">password</span>: <span class="str">"{{ sandbox_password }}"</span></code></pre>
+
+<h3>What Sandbox API does vs what you do</h3>
+
+<table>
+  <thead>
+    <tr><th>Task</th><th>Sandbox API (OCP pattern)</th><th>Your roles</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Select cluster</td><td>Yes &mdash; based on <code>cloud_selector</code></td><td>&mdash;</td></tr>
+    <tr><td>Create namespaces</td><td>Yes &mdash; from <code>namespace_suffix</code> entries</td><td>&mdash;</td></tr>
+    <tr><td>Apply ResourceQuota</td><td>Yes &mdash; from <code>quota:</code> in each sandbox entry</td><td>&mdash;</td></tr>
+    <tr><td>Create OCP local user</td><td>Yes &mdash; automatically</td><td>&mdash;</td></tr>
+    <tr><td>Create RHSSO user</td><td>Yes &mdash; if <code>keycloak: "yes"</code></td><td>&mdash;</td></tr>
+    <tr><td>Deploy lab application</td><td>&mdash;</td><td>Yes &mdash; via workload roles</td></tr>
+    <tr><td>Deploy Showroom</td><td>&mdash;</td><td>Yes &mdash; via <code>ocp4_workload_showroom</code></td></tr>
+    <tr><td>Create Gitea repos</td><td>&mdash;</td><td>Yes &mdash; if needed</td></tr>
+    <tr><td>Destroy namespaces</td><td>Yes &mdash; automatically on order destroy</td><td>&mdash;</td></tr>
+  </tbody>
+</table>
+
+<div class="callout callout-warning">
+  <strong>Destroy with OCP Sandbox API</strong>
+  Sandbox API deletes the namespaces it created on destroy. You do not need a destroy role for namespace cleanup. However, any resources you created <em>outside</em> those namespaces (cluster-level resources, RHBK users, Gitea orgs) will not be cleaned up automatically &mdash; you must handle those in your destroy roles.
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="namespaces">Namespace Configuration and Quotas</h2>
+
+<p>
+  Namespace quotas prevent any single tenant from consuming too many cluster resources. In the Scheduler-Only pattern, quotas are enforced by <code>ocp4_workload_tenant_namespace</code> via <code>ResourceQuota</code> and <code>LimitRange</code> objects. In the OCP Sandbox API pattern, quotas are set in the <code>__meta__.sandboxes</code> quota block.
+</p>
+
+<h3>ResourceQuota created by ocp4_workload_tenant_namespace</h3>
+
+<pre><code><span class="cmt"># ResourceQuota applied to each tenant namespace</span>
+<span class="key">apiVersion</span>: <span class="val">v1</span>
+<span class="key">kind</span>: <span class="val">ResourceQuota</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="val">tenant-quota</span>
+  <span class="key">namespace</span>: <span class="str">"sandbox-{{ guid }}-user"</span>
+<span class="key">spec</span>:
+  <span class="key">hard</span>:
+    <span class="key">requests.cpu</span>: <span class="str">"{{ quota_cpu_requests }}"</span>
+    <span class="key">requests.memory</span>: <span class="str">"{{ quota_memory_requests }}"</span>
+    <span class="key">limits.cpu</span>: <span class="str">"{{ quota_cpu_limits | default(quota_cpu_requests) }}"</span>
+    <span class="key">limits.memory</span>: <span class="str">"{{ quota_memory_limits | default(quota_memory_requests) }}"</span>
+    <span class="key">pods</span>: <span class="str">"{{ quota_pods }}"</span>
+    <span class="key">persistentvolumeclaims</span>: <span class="str">"{{ quota_pvcs | default('10') }}"</span>
+    <span class="key">services.loadbalancers</span>: <span class="str">"0"</span>   <span class="cmt"># no LoadBalancer services on shared clusters</span>
+    <span class="key">services.nodeports</span>: <span class="str">"0"</span>       <span class="cmt"># no NodePort services on shared clusters</span></code></pre>
+
+<h3>LimitRange created per namespace</h3>
+
+<pre><code><span class="cmt"># LimitRange sets default resource requests/limits for containers
+# that do not specify their own. Prevents unbounded containers.</span>
+<span class="key">apiVersion</span>: <span class="val">v1</span>
+<span class="key">kind</span>: <span class="val">LimitRange</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="val">tenant-limits</span>
+  <span class="key">namespace</span>: <span class="str">"sandbox-{{ guid }}-user"</span>
+<span class="key">spec</span>:
+  <span class="key">limits</span>:
+  - <span class="key">type</span>: <span class="val">Container</span>
+    <span class="key">default</span>:
+      <span class="key">cpu</span>: <span class="val">500m</span>
+      <span class="key">memory</span>: <span class="val">512Mi</span>
+    <span class="key">defaultRequest</span>:
+      <span class="key">cpu</span>: <span class="val">100m</span>
+      <span class="key">memory</span>: <span class="val">128Mi</span>
+    <span class="key">max</span>:
+      <span class="key">cpu</span>: <span class="val">"4"</span>       <span class="cmt"># no single container can request more than 4 CPU</span>
+      <span class="key">memory</span>: <span class="val">8Gi</span></code></pre>
+
+<h3>Recommended quota values for MCP lab</h3>
+
+<table>
+  <thead>
+    <tr><th>Namespace</th><th>CPU Requests</th><th>Memory Requests</th><th>Pods</th><th>Rationale</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>sandbox-{guid}-user</code></td>
+      <td>8 cores</td>
+      <td>16 Gi</td>
+      <td>30</td>
+      <td>Main workload namespace; MCP server + application pods</td>
+    </tr>
+    <tr>
+      <td><code>sandbox-{guid}-tools</code></td>
+      <td>4 cores</td>
+      <td>8 Gi</td>
+      <td>20</td>
+      <td>ToolHive MCP servers (each is a separate pod)</td>
+    </tr>
+    <tr>
+      <td><code>sandbox-{guid}-showroom</code></td>
+      <td>500m</td>
+      <td>1 Gi</td>
+      <td>5</td>
+      <td>Showroom lab guide &mdash; lightweight Nginx + content</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-warning">
+  <strong>NodePort and LoadBalancer services are blocked</strong>
+  On shared clusters, <code>services.loadbalancers: "0"</code> and <code>services.nodeports: "0"</code> are always set. All external access must go through OpenShift Routes (<code>kind: Route</code>). If your lab content tries to create a LoadBalancer service, it will fail. Use Routes instead.
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="variables">Variables from Sandbox API</h2>
+
+<p>
+  These variables are automatically injected into every AgnosticD role invocation. You do not need to declare them &mdash; just use them. They are available from the moment the first role runs.
+</p>
+
+<table>
+  <thead>
+    <tr><th>Variable</th><th>Pattern</th><th>Description</th><th>Example</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>sandbox_openshift_api_url</code></td>
+      <td>Both</td>
+      <td>Cluster API server URL. Pass to <code>k8s_auth</code> or <code>oc login</code></td>
+      <td><code>https://api.cluster-xyz.example.com:6443</code></td>
+    </tr>
+    <tr>
+      <td><code>sandbox_openshift_ingress_domain</code></td>
+      <td>Both</td>
+      <td><strong>Most important.</strong> Wildcard apps domain. Build all Route hostnames from this</td>
+      <td><code>apps.cluster-xyz.example.com</code></td>
+    </tr>
+    <tr>
+      <td><code>sandbox_openshift_console_url</code></td>
+      <td>Both</td>
+      <td>OpenShift web console URL. Pass to Showroom for the console tab</td>
+      <td><code>https://console-openshift-console.apps.cluster-xyz...</code></td>
+    </tr>
+    <tr>
+      <td><code>cluster_admin_agnosticd_sa_token</code></td>
+      <td>Both</td>
+      <td>Cluster-admin ServiceAccount token. Used by all roles to auth. <strong>Never log or commit.</strong></td>
+      <td><code>eyJ...</code> (JWT, long string)</td>
+    </tr>
+    <tr>
+      <td><code>sandbox_openshift_namespace</code></td>
+      <td>OCP only</td>
+      <td>Primary namespace created by Sandbox API. Format: <code>sandbox-{guid}-{suffix}</code></td>
+      <td><code>sandbox-abc12-user</code></td>
+    </tr>
+    <tr>
+      <td><code>sandbox_username</code></td>
+      <td>OCP + keycloak:yes</td>
+      <td>RHSSO username created by Sandbox API</td>
+      <td><code>sandbox-abc12</code></td>
+    </tr>
+    <tr>
+      <td><code>sandbox_password</code></td>
+      <td>OCP + keycloak:yes</td>
+      <td>RHSSO user password (generated). <strong>Never log or commit.</strong></td>
+      <td><em>generated string</em></td>
+    </tr>
+    <tr>
+      <td><code>guid</code></td>
+      <td>Both</td>
+      <td>Globally unique order identifier. Use as prefix for all per-tenant resource names</td>
+      <td><code>abc12</code></td>
+    </tr>
+    <tr>
+      <td><code>sandbox_name</code></td>
+      <td>Both</td>
+      <td>Full sandbox name in the pool. Useful for debugging</td>
+      <td><code>sandbox-abc12</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>How to use ingress_domain in a role</h3>
+
+<pre><code><span class="cmt"># Building a Route hostname from sandbox_openshift_ingress_domain</span>
+<span class="op">---</span>
+<span class="kw">- name</span>: <span class="str">Create Route for MCP server</span>
+  <span class="kw">kubernetes.core.k8s</span>:
+    <span class="kw">state</span>: <span class="val">present</span>
+    <span class="kw">definition</span>:
+      <span class="kw">apiVersion</span>: <span class="val">route.openshift.io/v1</span>
+      <span class="kw">kind</span>: <span class="val">Route</span>
+      <span class="kw">metadata</span>:
+        <span class="kw">name</span>: <span class="val">mcp-server</span>
+        <span class="kw">namespace</span>: <span class="str">"{{ tenant_namespace }}"</span>
+      <span class="kw">spec</span>:
+        <span class="kw">host</span>: <span class="str">"mcp-server-{{ tenant_namespace }}.{{ sandbox_openshift_ingress_domain }}"</span>
+        <span class="kw">to</span>:
+          <span class="kw">kind</span>: <span class="val">Service</span>
+          <span class="kw">name</span>: <span class="val">mcp-server</span>
+        <span class="kw">tls</span>:
+          <span class="kw">termination</span>: <span class="val">edge</span>
+          <span class="kw">insecureEdgeTerminationPolicy</span>: <span class="val">Redirect</span></code></pre>
+
+<div class="callout callout-success">
+  <strong>Pattern: always include namespace in Route hostname</strong>
+  On a shared cluster, multiple tenants have routes in the same wildcard domain. Always include the namespace (which is guid-scoped) in the Route hostname to prevent collisions: <code>mcp-server-sandbox-{guid}-user.apps.cluster.example.com</code>
+</div>
+
+<h3>How roles authenticate to the cluster</h3>
+
+<pre><code><span class="cmt"># All AgnosticD roles authenticate using the injected SA token.
+# This is handled automatically if you use the standard k8s_auth pattern.</span>
+<span class="op">---</span>
+<span class="kw">- name</span>: <span class="str">Set cluster credentials fact</span>
+  <span class="kw">ansible.builtin.set_fact</span>:
+    <span class="kw">k8s_auth_api_key</span>: <span class="str">"{{ cluster_admin_agnosticd_sa_token }}"</span>
+    <span class="kw">k8s_auth_host</span>: <span class="str">"{{ sandbox_openshift_api_url }}"</span>
+    <span class="kw">k8s_auth_verify_ssl</span>: <span class="val">false</span>
+
+<span class="kw">- name</span>: <span class="str">Create namespace</span>
+  <span class="kw">kubernetes.core.k8s</span>:
+    <span class="kw">api_key</span>: <span class="str">"{{ k8s_auth_api_key }}"</span>
+    <span class="kw">host</span>: <span class="str">"{{ k8s_auth_host }}"</span>
+    <span class="kw">validate_certs</span>: <span class="val">false</span>
+    <span class="kw">state</span>: <span class="val">present</span>
+    <span class="kw">definition</span>:
+      <span class="kw">apiVersion</span>: <span class="val">v1</span>
+      <span class="kw">kind</span>: <span class="val">Namespace</span>
+      <span class="kw">metadata</span>:
+        <span class="kw">name</span>: <span class="str">"{{ tenant_namespace }}"</span></code></pre>
+
+<hr>
+<p style="color:#888;font-size:0.85rem;">Red Hat Demo Platform (RHDP) &mdash; Internal developer reference &mdash; <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops">GitHub</a></p>
+
+</div>
+</body>
+</html>

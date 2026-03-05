@@ -4,97 +4,46 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OCP Sandbox API Pattern — Sandbox API Docs</title>
-  <style>
-  :root {
-    --red: #cc0000;
-    --red-dark: #990000;
-    --blue: #0066cc;
-    --blue-light: #e8f0fb;
-    --orange: #f57c00;
-    --orange-light: #fff3e0;
-    --green: #2e7d32;
-    --green-light: #e8f5e9;
-    --grey-light: #f5f5f5;
-    --grey-border: #ddd;
-    --code-bg: #1e1e2e;
-    --code-fg: #cdd6f4;
-    --code-kw: #cba6f7;
-    --code-str: #a6e3a1;
-    --code-comment: #6c7086;
-    --code-num: #fab387;
-    --code-key: #89b4fa;
-    --code-val: #f38ba8;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.7; color: #222; background: #fff; max-width: 1100px; margin: 0 auto; padding: 2rem 2.5rem 4rem; }
-  h1 { font-size: 2rem; color: var(--red); border-bottom: 3px solid var(--red); padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
-  h2 { font-size: 1.5rem; color: var(--red); border-left: 5px solid var(--red); padding-left: 0.75rem; margin: 2.5rem 0 1rem; }
-  h3 { font-size: 1.15rem; color: #333; margin: 1.5rem 0 0.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.25rem; }
-  h4 { font-size: 1rem; color: #555; margin: 1rem 0 0.4rem; font-style: italic; }
-  p { margin: 0.6rem 0; }
-  ul, ol { margin: 0.5rem 0 0.5rem 1.5rem; }
-  li { margin: 0.25rem 0; }
-  a { color: var(--blue); text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  .subtitle { color: #666; font-size: 0.95rem; margin-bottom: 2rem; }
-  .toc { background: #fafafa; border: 1px solid var(--grey-border); border-radius: 6px; padding: 1.25rem 1.5rem; margin: 1.5rem 0 2.5rem; }
-  .toc h2 { font-size: 1rem; margin: 0 0 0.75rem; border: none; padding: 0; color: #444; text-transform: uppercase; letter-spacing: 0.05em; }
-  .toc ol { margin-left: 1.25rem; }
-  .toc li { margin: 0.2rem 0; font-size: 0.93rem; }
-  table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.9rem; }
-  thead tr { background: var(--red); color: #fff; }
-  thead th { padding: 0.6rem 0.9rem; text-align: left; font-weight: 600; }
-  tbody tr:nth-child(even) { background: #fafafa; }
-  tbody tr:hover { background: #f0f0f0; }
-  td { padding: 0.55rem 0.9rem; border-bottom: 1px solid #eee; vertical-align: top; }
-  td code, th code { background: #eee; color: #c00; padding: 0.1em 0.35em; border-radius: 3px; font-size: 0.88em; }
-  pre { background: var(--code-bg); color: var(--code-fg); border-radius: 8px; padding: 1.25rem 1.4rem; overflow-x: auto; margin: 0.75rem 0 1.25rem; font-size: 0.85rem; line-height: 1.6; border: 1px solid #333; }
-  code { font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace; }
-  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
-  .kw  { color: var(--code-kw); }
-  .str { color: var(--code-str); }
-  .cmt { color: var(--code-comment); font-style: italic; }
-  .num { color: var(--code-num); }
-  .key { color: var(--code-key); }
-  .val { color: #f9e2af; }
-  .callout { border-radius: 6px; padding: 0.9rem 1.2rem; margin: 1rem 0; border-left: 5px solid; font-size: 0.93rem; }
-  .callout strong { display: block; margin-bottom: 0.25rem; font-size: 1rem; }
-  .callout-blue { background: var(--blue-light); border-color: var(--blue); color: #003a80; }
-  .callout-orange { background: var(--orange-light); border-color: var(--orange); color: #7a3e00; }
-  .callout-green { background: var(--green-light); border-color: var(--green); color: #1b5e20; }
-  .callout-grey { background: var(--grey-light); border-color: #999; color: #444; }
-  .badge { display: inline-block; background: var(--red); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 0.15em 0.55em; border-radius: 3px; margin-left: 0.5rem; vertical-align: middle; text-transform: uppercase; letter-spacing: 0.05em; }
-  .badge-green { background: var(--green); }
-  .badge-blue { background: var(--blue); }
-  .svg-wrap { overflow-x: auto; margin: 1rem 0 1.5rem; }
-  svg { max-width: 100%; height: auto; display: block; }
-  hr { border: none; border-top: 1px solid #e0e0e0; margin: 2rem 0; }
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin: 1rem 0; }
-  .col-box { background: #fafafa; border: 1px solid var(--grey-border); border-radius: 6px; padding: 1rem 1.2rem; }
-  .col-box h4 { margin-top: 0; font-style: normal; font-weight: 700; color: var(--red); }
-  .nav-bar { background: #1a1a2e; color: #aaa; padding: 0.7rem 1.2rem; border-radius: 6px; margin-bottom: 2rem; font-size: 0.88rem; display: flex; gap: 1.5rem; flex-wrap: wrap; }
-  .nav-bar a { color: #7eb8f7; }
-  .nav-bar a:hover { color: #fff; }
-  .nav-bar .active { color: #fff; font-weight: 600; }
-  .pattern-card { border: 2px solid var(--grey-border); border-radius: 8px; padding: 1.25rem 1.5rem; margin: 1rem 0; }
-  .pattern-card.blue { border-color: #2563eb; background: #eff6ff; }
-  .pattern-card.orange { border-color: #ea580c; background: #fff7ed; }
-  .pattern-card h3 { border: none; margin-top: 0; }
-  .pattern-card.blue h3 { color: #1e3a8a; }
-  .pattern-card.orange h3 { color: #7c2d12; }
-  .section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #888; margin-bottom: 0.2rem; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="product">Sandbox API Docs</div>
+    <div class="version">Red Hat Demo Platform</div>
+  </div>
 
-<nav class="nav-bar">
-  <span style="color:#fff;font-weight:700;">Sandbox API Docs</span>
-  <a href="index.html">Overview</a>
-  <a href="scheduler-only.html">Summit 2026 / Scheduler-Only</a>
-  <span class="active">OCP Sandbox API</span>
-  <a href="migration-guide.html">Migration Guide</a>
-  <a href="gitops-pattern.html">GitOps Pattern</a>
+  <div class="sidebar-section-label">Getting Started</div>
+  <a href="index.html" class="page-link ">Overview</a>
+
+  <div class="sidebar-section-label">Cluster Setup (Once)</div>
+  <a href="cluster-provisioning.html" class="page-link ">Cluster Provisioning</a>
+  <a href="cluster-provisioning.html#infra" class="sub-link ">&#8627; Infra &mdash; install operators</a>
+  <a href="cluster-provisioning.html#platform" class="sub-link ">&#8627; Platform &mdash; create instances</a>
+  <a href="cluster-provisioning.html#today" class="sub-link ">&#8627; Running today</a>
+  <a href="cluster-provisioning.html#future" class="sub-link ">&#8627; Future with AgV</a>
+
+  <div class="sidebar-section-label">User Provisioning (Per Order)</div>
+  <a href="user-provisioning.html" class="page-link ">User Provisioning</a>
+  <a href="user-provisioning.html#scheduler-only" class="sub-link ">&#8627; Approach A: Scheduler-Only</a>
+  <a href="user-provisioning.html#ocp-sandbox-api" class="sub-link ">&#8627; Approach B: OCP Sandbox API</a>
+  <a href="user-provisioning.html#namespaces" class="sub-link ">&#8627; Namespace quotas</a>
+  <a href="user-provisioning.html#variables" class="sub-link ">&#8627; Variables reference</a>
+
+  <div class="sidebar-section-label">Deep Dives</div>
+  <a href="gitops-pattern.html" class="page-link ">GitOps Architecture</a>
+  <a href="gitops-pattern.html#three-layers" class="sub-link ">&#8627; Three layers</a>
+  <a href="gitops-pattern.html#namespace-targeting" class="sub-link ">&#8627; Namespace contract</a>
+  <a href="migration-guide.html" class="page-link ">Migration Guide</a>
+  <a href="migration-guide.html#original" class="sub-link ">&#8627; Original lab</a>
+  <a href="migration-guide.html#roles" class="sub-link ">&#8627; Role conversions</a>
+  <a href="migration-guide.html#challenges" class="sub-link ">&#8627; Challenges</a>
+
+  <div class="sidebar-section-label">AgV Reference</div>
+  <a href="scheduler-only.html" class="page-link ">Scheduler-Only common.yaml</a>
+  <a href="namespace-api.html" class="page-link active">OCP Sandbox API common.yaml</a>
 </nav>
+<div class="main">
 
 <h1>OCP Sandbox API Pattern</h1>
 <p class="subtitle">Complete developer reference — Sandbox API manages namespaces and RHSSO users per order</p>
@@ -777,5 +726,6 @@
 <hr>
 <p style="color:#888;font-size:0.85rem;">Red Hat Demo Platform (RHDP) &mdash; Internal developer reference &mdash; <a href="index.html">Back to overview</a> &mdash; <a href="scheduler-only.html">Scheduler-Only pattern</a> &mdash; <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops">GitHub</a></p>
 
+</div>
 </body>
 </html>

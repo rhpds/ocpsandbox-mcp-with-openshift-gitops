@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cluster Provisioning — Sandbox API Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="product">Sandbox API Docs</div>
+    <div class="version">Red Hat Demo Platform</div>
+  </div>
+
+  <div class="sidebar-section-label">Getting Started</div>
+  <a href="index.html" class="page-link ">Overview</a>
+
+  <div class="sidebar-section-label">Cluster Setup (Once)</div>
+  <a href="cluster-provisioning.html" class="page-link active">Cluster Provisioning</a>
+  <a href="cluster-provisioning.html#infra" class="sub-link active">&#8627; Infra &mdash; install operators</a>
+  <a href="cluster-provisioning.html#platform" class="sub-link active">&#8627; Platform &mdash; create instances</a>
+  <a href="cluster-provisioning.html#today" class="sub-link active">&#8627; Running today</a>
+  <a href="cluster-provisioning.html#future" class="sub-link active">&#8627; Future with AgV</a>
+
+  <div class="sidebar-section-label">User Provisioning (Per Order)</div>
+  <a href="user-provisioning.html" class="page-link ">User Provisioning</a>
+  <a href="user-provisioning.html#scheduler-only" class="sub-link ">&#8627; Approach A: Scheduler-Only</a>
+  <a href="user-provisioning.html#ocp-sandbox-api" class="sub-link ">&#8627; Approach B: OCP Sandbox API</a>
+  <a href="user-provisioning.html#namespaces" class="sub-link ">&#8627; Namespace quotas</a>
+  <a href="user-provisioning.html#variables" class="sub-link ">&#8627; Variables reference</a>
+
+  <div class="sidebar-section-label">Deep Dives</div>
+  <a href="gitops-pattern.html" class="page-link ">GitOps Architecture</a>
+  <a href="gitops-pattern.html#three-layers" class="sub-link ">&#8627; Three layers</a>
+  <a href="gitops-pattern.html#namespace-targeting" class="sub-link ">&#8627; Namespace contract</a>
+  <a href="migration-guide.html" class="page-link ">Migration Guide</a>
+  <a href="migration-guide.html#original" class="sub-link ">&#8627; Original lab</a>
+  <a href="migration-guide.html#roles" class="sub-link ">&#8627; Role conversions</a>
+  <a href="migration-guide.html#challenges" class="sub-link ">&#8627; Challenges</a>
+
+  <div class="sidebar-section-label">AgV Reference</div>
+  <a href="scheduler-only.html" class="page-link ">Scheduler-Only common.yaml</a>
+  <a href="namespace-api.html" class="page-link ">OCP Sandbox API common.yaml</a>
+</nav>
+<div class="main">
+
+<h1>Cluster Provisioning</h1>
+<p class="subtitle">One-time setup &mdash; before any lab orders can run</p>
+<p class="audience">For: Lab developers onboarding a new shared cluster</p>
+
+<div class="page-toc">
+  <strong>On this page</strong>
+  <ol>
+    <li><a href="#what">What is cluster provisioning?</a></li>
+    <li><a href="#infra">Infra layer &mdash; installing operators</a></li>
+    <li><a href="#platform">Platform layer &mdash; creating instances</a></li>
+    <li><a href="#today">How to run it today</a></li>
+    <li><a href="#future">Future: AgV catalog item</a></li>
+    <li><a href="#after">What you get after provisioning</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="what">What is Cluster Provisioning?</h2>
+
+<p>
+  Cluster provisioning is the <strong>one-time setup</strong> that turns a bare OpenShift cluster into a platform ready to accept lab orders. It installs and configures the shared services that every tenant depends on: RHBK (Keycloak), Gitea, OpenShift GitOps (ArgoCD), and ToolHive.
+</p>
+
+<p>
+  This is separate from <a href="user-provisioning.html">user provisioning</a>, which happens per-order (every time someone orders the lab). Cluster provisioning runs once per cluster, typically performed by a lab developer or platform engineer when a new cluster is added to the Sandbox API pool.
+</p>
+
+<div class="card-grid">
+  <div class="card blue">
+    <h3>Cluster Provisioning (Once)</h3>
+    <ul>
+      <li>Install RHBK operator &amp; create Keycloak instance</li>
+      <li>Install Gitea operator &amp; create Gitea instance</li>
+      <li>Install OpenShift GitOps (ArgoCD)</li>
+      <li>Install ToolHive for MCP server management</li>
+      <li>Configure ingress, TLS, OAuth integration</li>
+      <li>Register cluster in Sandbox API pool with tags</li>
+    </ul>
+  </div>
+  <div class="card orange">
+    <h3>User Provisioning (Per Order)</h3>
+    <ul>
+      <li>Create RHBK user for this attendee</li>
+      <li>Create namespace(s) for this attendee</li>
+      <li>Create Gitea org + mirror repos</li>
+      <li>Bootstrap ArgoCD Application for tenant</li>
+      <li>Generate LiteMaaS API key</li>
+      <li>Deploy Showroom with lab URLs</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout callout-info">
+  <strong>Think of it like a hotel</strong>
+  Cluster provisioning is building the hotel and furnishing the lobby. User provisioning is checking a guest in and handing them a room key. The hotel only needs to be built once; guests check in and out continuously.
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="infra">Infra Layer &mdash; Installing Operators</h2>
+
+<p>
+  The <strong>infra layer</strong> installs cluster-wide operators via OLM (Operator Lifecycle Manager). These operators provide the CRDs and controllers that the platform layer uses to create instances. The infra layer playbook is idempotent &mdash; safe to re-run if a cluster needs to be re-provisioned or upgraded.
+</p>
+
+<h3>Operators installed by the infra layer</h3>
+
+<table>
+  <thead>
+    <tr><th>Operator</th><th>Namespace</th><th>Provides</th><th>Version</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>rhbk-operator</code></td>
+      <td><code>rhbk-operator</code></td>
+      <td>Keycloak CRD &mdash; <code>Keycloak</code>, <code>KeycloakRealmImport</code></td>
+      <td>RHBK 26.x (from RHBK channel)</td>
+    </tr>
+    <tr>
+      <td><code>gitea-operator</code></td>
+      <td><code>gitea-operator</code></td>
+      <td>Gitea CRD &mdash; <code>Gitea</code></td>
+      <td>Latest from community channel</td>
+    </tr>
+    <tr>
+      <td><code>openshift-gitops-operator</code></td>
+      <td><code>openshift-operators</code></td>
+      <td>ArgoCD CRD &mdash; <code>ArgoCD</code>, <code>Application</code>, <code>AppProject</code></td>
+      <td>OpenShift GitOps 1.14+</td>
+    </tr>
+    <tr>
+      <td>ToolHive</td>
+      <td><code>toolhive-system</code></td>
+      <td>MCP server lifecycle management</td>
+      <td>Latest stable</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Infra layer: what the Ansible looks like</h3>
+
+<p>The infra layer is implemented as a set of AgnosticD workloads, each installing one operator:</p>
+
+<pre><code><span class="cmt"># cluster-infra-playbook.yml</span>
+<span class="op">---</span>
+<span class="kw">- name</span>: <span class="str">Install cluster infra operators</span>
+  <span class="kw">hosts</span>: <span class="str">localhost</span>
+  <span class="kw">connection</span>: <span class="str">local</span>
+  <span class="kw">gather_facts</span>: <span class="val">false</span>
+  <span class="kw">vars</span>:
+    <span class="key">ACTION</span>: <span class="str">provision</span>
+  <span class="kw">tasks</span>:
+  - <span class="kw">name</span>: <span class="str">Install RHBK operator</span>
+    <span class="kw">ansible.builtin.include_role</span>:
+      <span class="kw">name</span>: <span class="str">ocp4_workload_rhbk_operator</span>
+
+  - <span class="kw">name</span>: <span class="str">Install Gitea operator</span>
+    <span class="kw">ansible.builtin.include_role</span>:
+      <span class="kw">name</span>: <span class="str">ocp4_workload_gitea_operator</span>
+
+  - <span class="kw">name</span>: <span class="str">Install OpenShift GitOps operator</span>
+    <span class="kw">ansible.builtin.include_role</span>:
+      <span class="kw">name</span>: <span class="str">ocp4_workload_openshift_gitops</span>
+
+  - <span class="kw">name</span>: <span class="str">Install ToolHive</span>
+    <span class="kw">ansible.builtin.include_role</span>:
+      <span class="kw">name</span>: <span class="str">ocp4_workload_toolhive</span></code></pre>
+
+<div class="callout callout-warning">
+  <strong>Operator installation order matters</strong>
+  Install operators before creating instances. The CRDs (<code>Keycloak</code>, <code>Gitea</code>, <code>ArgoCD</code>) are only available after the operators are running. The platform layer assumes all CRDs exist before it runs.
+</div>
+
+<h3>RHBK Operator configuration</h3>
+
+<pre><code><span class="cmt"># Subscription for RHBK operator (OLM)</span>
+<span class="key">apiVersion</span>: <span class="val">operators.coreos.com/v1alpha1</span>
+<span class="key">kind</span>: <span class="val">Subscription</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="val">rhbk-operator</span>
+  <span class="key">namespace</span>: <span class="val">rhbk-operator</span>
+<span class="key">spec</span>:
+  <span class="key">channel</span>: <span class="val">stable-v26</span>
+  <span class="key">name</span>: <span class="val">rhbk-operator</span>
+  <span class="key">source</span>: <span class="val">redhat-operators</span>
+  <span class="key">sourceNamespace</span>: <span class="val">openshift-marketplace</span>
+  <span class="key">installPlanApproval</span>: <span class="val">Automatic</span></code></pre>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="platform">Platform Layer &mdash; Creating Instances</h2>
+
+<p>
+  Once the operators are running, the <strong>platform layer</strong> creates the actual service instances that tenants share. This includes the Keycloak realm, the Gitea instance, the shared ArgoCD instance, and the ToolHive deployment. The platform layer also creates the base namespace structure and configures OAuth integration.
+</p>
+
+<h3>What the platform layer creates</h3>
+
+<table>
+  <thead>
+    <tr><th>Resource</th><th>Namespace</th><th>Purpose</th><th>Shared or Per-Tenant?</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Keycloak</code> CR (<code>rhbk</code>)</td>
+      <td><code>keycloak</code></td>
+      <td>OIDC identity provider for the cluster; integrates with OCP OAuth</td>
+      <td>Shared &mdash; one realm, one realm export, users added per-order</td>
+    </tr>
+    <tr>
+      <td><code>Gitea</code> CR</td>
+      <td><code>gitea</code></td>
+      <td>Git server for lab repos; each tenant gets an org + mirrored repos</td>
+      <td>Shared instance; orgs and repos are per-tenant</td>
+    </tr>
+    <tr>
+      <td><code>ArgoCD</code> CR (<code>openshift-gitops</code>)</td>
+      <td><code>openshift-gitops</code></td>
+      <td>GitOps controller; manages tenant Applications</td>
+      <td>Shared instance; Applications are per-tenant</td>
+    </tr>
+    <tr>
+      <td>ToolHive deployment</td>
+      <td><code>toolhive-system</code></td>
+      <td>MCP server lifecycle manager; tenants get their own MCP server pod</td>
+      <td>Shared deployment; MCP server instances are per-tenant</td>
+    </tr>
+    <tr>
+      <td>OCP OAuth patch</td>
+      <td><code>openshift-config</code></td>
+      <td>Configures Keycloak as the OCP identity provider so <code>oc login</code> uses RHBK</td>
+      <td>Cluster-level; one-time configuration</td>
+    </tr>
+    <tr>
+      <td>LiteMaaS connection</td>
+      <td>N/A</td>
+      <td>Stores LiteMaaS admin credentials so per-tenant virtual keys can be created</td>
+      <td>Cluster-level secret in <code>openshift-gitops</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Platform layer: Keycloak instance and realm</h3>
+
+<pre><code><span class="cmt"># Keycloak instance CR</span>
+<span class="key">apiVersion</span>: <span class="val">k8s.keycloak.org/v2alpha1</span>
+<span class="key">kind</span>: <span class="val">Keycloak</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="val">rhbk</span>
+  <span class="key">namespace</span>: <span class="val">keycloak</span>
+<span class="key">spec</span>:
+  <span class="key">instances</span>: <span class="val">1</span>
+  <span class="key">db</span>:
+    <span class="key">vendor</span>: <span class="val">postgres</span>  <span class="cmt"># PostgreSQL backing store</span>
+  <span class="key">ingress</span>:
+    <span class="key">enabled</span>: <span class="val">true</span>
+    <span class="key">className</span>: <span class="val">openshift-default</span>
+  <span class="key">hostname</span>:
+    <span class="key">hostname</span>: <span class="str">"keycloak.{{ sandbox_openshift_ingress_domain }}"</span></code></pre>
+
+<div class="callout callout-info">
+  <strong>Realm is created separately</strong>
+  The <code>Keycloak</code> CR creates the server. A <code>KeycloakRealmImport</code> CR (or direct API call) creates the realm (<code>mcp-lab</code>). The realm must exist before any tenant users can be added. If the realm export is kept in Git, it is applied by ArgoCD automatically after the operator creates the Keycloak instance.
+</div>
+
+<h3>Platform layer: Gitea instance</h3>
+
+<pre><code><span class="cmt"># Gitea instance CR</span>
+<span class="key">apiVersion</span>: <span class="val">gpte.opentlc.com/v1</span>
+<span class="key">kind</span>: <span class="val">Gitea</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="val">gitea</span>
+  <span class="key">namespace</span>: <span class="val">gitea</span>
+<span class="key">spec</span>:
+  <span class="key">giteaAdminUser</span>: <span class="val">gitea-admin</span>
+  <span class="key">giteaAdminPasswordLength</span>: <span class="val">16</span>
+  <span class="key">giteaImageTag</span>: <span class="val">latest</span>
+  <span class="key">giteaVolumeSize</span>: <span class="val">4Gi</span>
+  <span class="key">postgresVolumeSize</span>: <span class="val">4Gi</span></code></pre>
+
+<h3>Platform layer: OCP OAuth integration</h3>
+
+<p>
+  After Keycloak is running, the platform layer patches the OCP OAuth config so that <code>oc login</code> and the OpenShift console both use RHBK for authentication. This is a cluster-level change that affects all users:
+</p>
+
+<pre><code><span class="cmt"># OCP OAuth CR patch (applied by ocp4_workload_rhbk_ocp_oauth role)</span>
+<span class="key">apiVersion</span>: <span class="val">config.openshift.io/v1</span>
+<span class="key">kind</span>: <span class="val">OAuth</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="val">cluster</span>
+<span class="key">spec</span>:
+  <span class="key">identityProviders</span>:
+  - <span class="key">name</span>: <span class="val">rhbk</span>
+    <span class="key">mappingMethod</span>: <span class="val">claim</span>
+    <span class="key">type</span>: <span class="val">OpenID</span>
+    <span class="key">openID</span>:
+      <span class="key">clientID</span>: <span class="val">openshift</span>
+      <span class="key">issuer</span>: <span class="str">"https://keycloak.{{ sandbox_openshift_ingress_domain }}/realms/mcp-lab"</span>
+      <span class="key">claims</span>:
+        <span class="key">preferredUsername</span>: [<span class="val">preferred_username</span>]
+        <span class="key">name</span>: [<span class="val">name</span>]
+        <span class="key">email</span>: [<span class="val">email</span>]</code></pre>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="today">How to Run It Today</h2>
+
+<p>
+  Currently, cluster provisioning is run manually by a lab developer using an Ansible playbook directly against the cluster. There is no AgV catalog item for this yet (that is the <a href="#future">future state</a>). You need the cluster API URL and a cluster-admin token.
+</p>
+
+<div class="callout callout-warning">
+  <strong>Prerequisites before running</strong>
+  <ul style="margin-top:0.4rem;">
+    <li>OpenShift 4.14+ cluster registered in the Sandbox API pool with the correct <code>cloud_selector</code> tags</li>
+    <li>Cluster-admin ServiceAccount token (or kubeconfig with cluster-admin)</li>
+    <li>AgnosticD v2 checked out and configured</li>
+    <li>Python 3.11+ and <code>ansible-core 2.16+</code> installed locally</li>
+    <li>LiteMaaS admin credentials (for virtual key creation)</li>
+  </ul>
+</div>
+
+<h3><span class="step-num">1</span> Set your environment variables</h3>
+
+<pre><code><span class="cmt"># Set cluster credentials (NEVER commit these to git)</span>
+<span class="kw">export</span> <span class="key">CLUSTER_API_URL</span>=<span class="str">"https://api.cluster-xyz.example.com:6443"</span>
+<span class="kw">export</span> <span class="key">CLUSTER_ADMIN_TOKEN</span>=<span class="str">"eyJ..."</span>   <span class="cmt"># cluster-admin SA token</span>
+<span class="kw">export</span> <span class="key">LITEMAAS_API_KEY</span>=<span class="str">"sk-..."</span>      <span class="cmt"># LiteMaaS admin key</span>
+<span class="kw">export</span> <span class="key">GITEA_ADMIN_PASSWORD</span>=<span class="str">"generated-password"</span></code></pre>
+
+<h3><span class="step-num">2</span> Create your vars file</h3>
+
+<pre><code><span class="cmt"># cluster-provision-vars.yml</span>
+<span class="key">cluster_admin_agnosticd_sa_token</span>: <span class="str">"{{ lookup('env', 'CLUSTER_ADMIN_TOKEN') }}"</span>
+<span class="key">sandbox_openshift_api_url</span>: <span class="str">"{{ lookup('env', 'CLUSTER_API_URL') }}"</span>
+<span class="key">sandbox_openshift_ingress_domain</span>: <span class="str">"apps.cluster-xyz.example.com"</span>
+<span class="key">sandbox_openshift_console_url</span>: <span class="str">"https://console-openshift-console.apps.cluster-xyz.example.com"</span>
+
+<span class="cmt"># Keycloak realm configuration</span>
+<span class="key">rhbk_realm_name</span>: <span class="str">mcp-lab</span>
+<span class="key">rhbk_namespace</span>: <span class="str">keycloak</span>
+
+<span class="cmt"># Gitea configuration</span>
+<span class="key">gitea_namespace</span>: <span class="str">gitea</span>
+<span class="key">gitea_admin_user</span>: <span class="str">gitea-admin</span>
+<span class="key">gitea_admin_password</span>: <span class="str">"{{ lookup('env', 'GITEA_ADMIN_PASSWORD') }}"</span>
+
+<span class="cmt"># LiteMaaS</span>
+<span class="key">litemaas_api_url</span>: <span class="str">"https://litemaas.example.com"</span>
+<span class="key">litemaas_api_key</span>: <span class="str">"{{ lookup('env', 'LITEMAAS_API_KEY') }}"</span></code></pre>
+
+<h3><span class="step-num">3</span> Run the infra playbook</h3>
+
+<pre><code><span class="cmt"># From agnosticd/ansible/ directory</span>
+ansible-playbook cluster-infra.yml   -e @cluster-provision-vars.yml   -e ACTION=provision
+
+<span class="cmt"># Wait for all operators to be Running before proceeding</span>
+oc get pods -n rhbk-operator -n gitea-operator -n openshift-gitops-operator --watch</code></pre>
+
+<h3><span class="step-num">4</span> Run the platform playbook</h3>
+
+<pre><code><span class="cmt"># From agnosticd/ansible/ directory</span>
+ansible-playbook cluster-platform.yml   -e @cluster-provision-vars.yml   -e ACTION=provision
+
+<span class="cmt"># Verify Keycloak is up</span>
+oc get keycloak -n keycloak
+<span class="cmt"># Verify Gitea is up</span>
+oc get gitea -n gitea
+<span class="cmt"># Verify ArgoCD is up</span>
+oc get argocd -n openshift-gitops</code></pre>
+
+<h3><span class="step-num">5</span> Register the cluster in Sandbox API</h3>
+
+<p>
+  After the cluster is provisioned, register it in the Sandbox API pool with the appropriate tags so your lab&#39;s <code>cloud_selector</code> can find it:
+</p>
+
+<pre><code><span class="cmt"># Register cluster with tags that match your lab's cloud_selector</span>
+sandbox-ctl cluster register   --api-url "${CLUSTER_API_URL}"   --token "${CLUSTER_ADMIN_TOKEN}"   --tag cloud=cnv-dedicated-shared   --tag demo=mcp-with-openshift   --tag purpose=prod   --tag keycloak=yes   --capacity 50   <span class="cmt"># max concurrent tenants</span></code></pre>
+
+<div class="callout callout-success">
+  <strong>Cluster is ready</strong>
+  Once registered, the cluster will appear in the Sandbox API pool. Orders with matching <code>cloud_selector</code> tags will land on this cluster. User provisioning can now begin for each new order.
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="future">Future: AgV Catalog Item</h2>
+
+<p>
+  The goal is to replace the manual playbook approach with a proper AgV catalog item that can be ordered from the RHDP catalog. This would allow platform engineers to provision new clusters through the same ordering workflow as lab end-users, with full audit trail, lifecycle management, and destroy support.
+</p>
+
+<div class="card-grid">
+  <div class="card blue">
+    <h3>Current State</h3>
+    <ul>
+      <li>Manual Ansible playbook run by a developer</li>
+      <li>Credentials passed via environment variables</li>
+      <li>No RHDP catalog item &mdash; not orderable by non-developers</li>
+      <li>No automated destroy / deprovision</li>
+      <li>No lifecycle management or renewal</li>
+    </ul>
+  </div>
+  <div class="card green">
+    <h3>Target State (AgV Catalog Item)</h3>
+    <ul>
+      <li>Orderable from RHDP catalog by authorized platform engineers</li>
+      <li>Sandbox API provides a &quot;bootstrap&quot; cluster token</li>
+      <li>AgnosticD roles are the same &mdash; just invoked via AgV</li>
+      <li>Destroy playbook deprovisions all platform resources</li>
+      <li>Lifecycle managed by RHDP (renewal, expiry, quota)</li>
+    </ul>
+  </div>
+</div>
+
+<p>
+  The AgV <code>common.yaml</code> for a cluster provisioner catalog item would look similar to the user provisioning common.yaml but without the per-tenant roles, and with the cluster-level roles (RHBK operator, Gitea operator, ArgoCD, ToolHive) instead.
+</p>
+
+<pre><code><span class="cmt"># Sketch: future cluster-provisioner AgV common.yaml</span>
+<span class="key">__meta__</span>:
+  <span class="key">deployer</span>:
+    <span class="key">type</span>: <span class="val">agnosticd</span>
+  <span class="key">sandboxes</span>:
+  - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
+    <span class="key">alias</span>: <span class="val">cluster</span>
+    <span class="key">cloud_selector</span>:
+      <span class="key">cloud</span>: <span class="val">cnv-bootstrap</span>  <span class="cmt"># a separate pool of &quot;bootstrap-eligible&quot; clusters</span>
+      <span class="key">purpose</span>: <span class="val">bootstrap</span>
+
+<span class="key">agnosticd_roles</span>:
+- <span class="key">role</span>: <span class="val">ocp4_workload_rhbk_operator</span>
+- <span class="key">role</span>: <span class="val">ocp4_workload_gitea_operator</span>
+- <span class="key">role</span>: <span class="val">ocp4_workload_openshift_gitops</span>
+- <span class="key">role</span>: <span class="val">ocp4_workload_toolhive</span>
+- <span class="key">role</span>: <span class="val">ocp4_workload_rhbk_instance</span>
+- <span class="key">role</span>: <span class="val">ocp4_workload_gitea_instance</span>
+- <span class="key">role</span>: <span class="val">ocp4_workload_rhbk_ocp_oauth</span>
+- <span class="key">role</span>: <span class="val">ocp4_workload_litemaas_connection</span></code></pre>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="after">What You Get After Provisioning</h2>
+
+<p>
+  After successful cluster provisioning, the cluster is ready to accept lab orders. Here is what is running and what the URLs look like:
+</p>
+
+<table>
+  <thead>
+    <tr><th>Service</th><th>URL pattern</th><th>Credentials</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Keycloak admin console</td>
+      <td><code>https://keycloak.apps.CLUSTER-DOMAIN/admin</code></td>
+      <td>Stored in secret <code>rhbk-initial-admin</code> in <code>keycloak</code> ns</td>
+    </tr>
+    <tr>
+      <td>Keycloak realm (mcp-lab)</td>
+      <td><code>https://keycloak.apps.CLUSTER-DOMAIN/realms/mcp-lab</code></td>
+      <td>N/A &mdash; this is the OIDC issuer endpoint</td>
+    </tr>
+    <tr>
+      <td>Gitea</td>
+      <td><code>https://gitea.apps.CLUSTER-DOMAIN</code></td>
+      <td>Gitea admin credentials from platform vars</td>
+    </tr>
+    <tr>
+      <td>ArgoCD UI</td>
+      <td><code>https://openshift-gitops-server-openshift-gitops.apps.CLUSTER-DOMAIN</code></td>
+      <td>Integrated with OCP OAuth (cluster-admin = ArgoCD admin)</td>
+    </tr>
+    <tr>
+      <td>ToolHive</td>
+      <td>Internal only &mdash; no public UI</td>
+      <td>Managed via <code>thv</code> CLI or Kubernetes CR</td>
+    </tr>
+    <tr>
+      <td>OpenShift console</td>
+      <td><code>https://console-openshift-console.apps.CLUSTER-DOMAIN</code></td>
+      <td>Login via RHBK (configured by OAuth patch)</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-success">
+  <strong>Next step: user provisioning</strong>
+  With the cluster provisioned, you can now order the lab from the RHDP catalog. Each order will run the user provisioning playbook, creating a tenant user, namespaces, Gitea repos, and an ArgoCD Application on this cluster. See <a href="user-provisioning.html">User Provisioning &rarr;</a>
+</div>
+
+<hr>
+<p style="color:#888;font-size:0.85rem;">Red Hat Demo Platform (RHDP) &mdash; Internal developer reference &mdash; <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops">GitHub</a></p>
+
+</div>
+</body>
+</html>
