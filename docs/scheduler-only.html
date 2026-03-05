@@ -117,7 +117,7 @@
 <h2 id="how-it-works">How It Works — Provisioning Flow</h2>
 
 <p>
-  The Scheduler-Only pattern runs in three distinct phases. Each phase has a different owner, runs at a different time, and has a different scope. Understanding this separation is essential to configuring AgV correctly.
+  Three phases — cluster provisioner runs once, Sandbox API picks a cluster per order, AgnosticD roles create the per-tenant resources. Only Layer 3 is configured in your AgV. See <a href="gitops-pattern.html">GitOps Pattern guide</a> for the full architectural explanation.
 </p>
 
 <div class="svg-wrap">
@@ -189,20 +189,7 @@
 </svg>
 </div>
 
-<div class="two-col">
-  <div class="col-box">
-    <h4>Layer 1 — Cluster Provisioner</h4>
-    <p>A separate playbook (<code>cluster-provision.yml</code>) that runs <strong>once per cluster</strong>, managed by the RHDP ops team. It installs the shared services that all tenants on this cluster use: RHBK (Keycloak), Gitea, OpenShift GitOps (ArgoCD), and LiteMaaS. This is <strong>not part of AgnosticV</strong>.</p>
-  </div>
-  <div class="col-box">
-    <h4>Layer 2 — Sandbox API</h4>
-    <p>Runs per order. Picks a pre-provisioned cluster from the pool, creates a cluster-admin SA token for AgnosticD, and injects a small set of variables (API URL, ingress domain, console URL, token). It does <strong>not</strong> create namespaces, users, or workloads in this pattern.</p>
-  </div>
-</div>
-<div class="col-box" style="margin-top:0;">
-  <h4>Layer 3 — Tenant Roles (AgnosticD, driven by AgV)</h4>
-  <p>Runs per order, after Sandbox API. These are the Ansible roles listed in your AgV <code>workloads:</code>. They create all per-tenant resources: Keycloak user, OCP namespaces, Gitea org, LiteMaaS virtual key, ArgoCD Application, and Showroom deployment. The AgV <code>common.yaml</code> is what you edit to configure this layer.</p>
-</div>
+<p><a href="gitops-pattern.html#three-layers">Full layer-by-layer explanation &rarr;</a></p>
 
 <hr>
 
