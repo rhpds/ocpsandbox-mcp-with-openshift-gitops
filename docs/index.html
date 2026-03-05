@@ -104,6 +104,7 @@
   <ol>
     <li><a href="#what-is-sandbox-api">What is Sandbox API?</a></li>
     <li><a href="#why-sandbox-api">Why Sandbox API — shared clusters</a></li>
+    <li><a href="#cluster-selection">How cluster selection works — cloud_selector</a></li>
     <li><a href="#which-pattern">Which pattern should I use?</a></li>
     <li><a href="#scheduler-only-overview">Summit 2026 — Scheduler-Only Pattern</a></li>
     <li><a href="#namespace-api-overview">Full Namespace API Pattern</a></li>
@@ -133,6 +134,89 @@
 <div class="callout callout-blue">
   <strong>Key insight</strong>
   In both patterns your AgnosticV <code>common.yaml</code> configures what runs, in what order, and with what variables. Sandbox API just gives you a cluster and injects variables. Everything else is up to your workloads — Ansible roles, GitOps, or both.
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="cluster-selection"><strong>How Cluster Selection Works — <code>cloud_selector</code></strong></h2>
+
+<p>
+  When you place an order, Sandbox API needs to pick a cluster from the pool. The <strong><code>cloud_selector</code></strong> in your <code>__meta__.sandboxes</code> entry is how you tell it which clusters are eligible. Understanding this is essential — a wrong or missing tag means your order will either fail or land on the wrong cluster.
+</p>
+
+<div class="callout callout-blue">
+  <strong>The magic behind cluster selection</strong>
+  Every cluster registered in the Sandbox API pool has a set of annotation tags (key-value pairs) stored in the database. Your <code>cloud_selector</code> is a filter — Sandbox API finds all clusters whose annotations <strong>contain every tag you specified</strong>. If a cluster has your tags (plus any others), it qualifies. From all qualifying clusters, Sandbox API picks one at random that has available capacity.
+</div>
+
+<h3>How it works — step by step</h3>
+<ol>
+  <li>You define <code>cloud_selector</code> tags in your AgV <code>__meta__.sandboxes</code> entry</li>
+  <li>Sandbox API queries the cluster pool: <em>"give me all valid clusters whose annotations contain ALL these tags"</em></li>
+  <li>From the matching clusters, it picks one at random (weighted by availability and capacity limits)</li>
+  <li>It creates a sandbox on that cluster, injects all variables into your AgnosticD run, and provisioning begins</li>
+</ol>
+
+<h3>Example <code>cloud_selector</code></h3>
+<pre><code><span class="key">__meta__</span>:
+  <span class="key">sandboxes</span>:
+  - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
+    <span class="key">namespace_suffix</span>: <span class="val">user</span>
+    <span class="key">cloud_selector</span>:
+      <span class="key">cloud</span>: <span class="val">cnv-dedicated-shared</span>   <span class="cmt"># cluster type — must match</span>
+      <span class="key">demo</span>: <span class="val">mcp-with-openshift</span>     <span class="cmt"># lab-specific tag — only clusters tagged for this lab</span>
+      <span class="key">purpose</span>: <span class="val">prod</span>               <span class="cmt"># prod vs dev pool</span>
+      <span class="key">keycloak</span>: <span class="str">"yes"</span>            <span class="cmt"># optional — only clusters with RHSSO installed</span></code></pre>
+
+<p>
+  The cluster in the pool must have ALL four tags to qualify. A cluster tagged <code>cloud: cnv-dedicated-shared</code> + <code>demo: mcp-with-openshift</code> + <code>purpose: prod</code> but missing <code>keycloak: yes</code> will NOT be selected.
+</p>
+
+<h3>Variables injected after cluster selection</h3>
+<p>Once a cluster is selected, Sandbox API injects these variables into every AgnosticD role automatically. You do not declare them — you just use them:</p>
+
+<table>
+  <thead>
+    <tr><th>Variable</th><th>What it contains</th><th>Example value</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>sandbox_openshift_api_url</code></td>
+      <td>Cluster API server URL — use this to connect to the cluster</td>
+      <td><code>https://api.cluster-xyz.example.com:6443</code></td>
+    </tr>
+    <tr>
+      <td><strong><code>sandbox_openshift_ingress_domain</code></strong></td>
+      <td><strong>Wildcard apps domain — use this to build Route hostnames and all service URLs</strong></td>
+      <td><code>apps.cluster-xyz.example.com</code></td>
+    </tr>
+    <tr>
+      <td><code>sandbox_openshift_console_url</code></td>
+      <td>Web console URL — pass to Showroom for the console tab</td>
+      <td><code>https://console-openshift-console.apps.cluster-xyz...</code></td>
+    </tr>
+    <tr>
+      <td><code>cluster_admin_agnosticd_sa_token</code></td>
+      <td>Cluster-admin SA token — used by all roles to authenticate to the cluster. <strong>Never log or commit this value.</strong></td>
+      <td><code>eyJ...</code> (JWT)</td>
+    </tr>
+    <tr>
+      <td><code>sandbox_openshift_namespace</code></td>
+      <td>Primary namespace created by Sandbox API (from <code>namespace_suffix</code>). Format: <code>sandbox-{guid}-{suffix}</code></td>
+      <td><code>sandbox-abc12-user</code></td>
+    </tr>
+    <tr>
+      <td><code>sandbox_username</code> / <code>sandbox_password</code></td>
+      <td>RHSSO user credentials — only provided when <code>keycloak: "yes"</code> is in <code>cloud_selector</code></td>
+      <td><code>sandbox-abc12</code> / <code>generated</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-orange">
+  <strong><code>sandbox_openshift_ingress_domain</code> is the most used variable</strong>
+  Almost every service URL in your lab is built from this: <code>https://myapp-{namespace}.{{ sandbox_openshift_ingress_domain }}</code>. If you are missing this in your role variables or Showroom config, your URLs will be wrong. This variable is always available — you never need to look it up manually.
 </div>
 
 <hr>

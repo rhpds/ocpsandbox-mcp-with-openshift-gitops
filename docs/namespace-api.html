@@ -218,6 +218,13 @@
 <hr>
 
 <!-- ============================================================ -->
+<div class="callout callout-blue">
+  <strong>How does Sandbox API pick a cluster? How do I get the API URL and token?</strong>
+  Your <code>cloud_selector</code> tags are matched against cluster annotations in the Sandbox API pool database. All matching clusters with available capacity are eligible — one is picked at random. After selection, <strong><code>sandbox_openshift_api_url</code></strong>, <strong><code>sandbox_openshift_ingress_domain</code></strong>, <strong><code>sandbox_openshift_console_url</code></strong>, and <strong><code>cluster_admin_agnosticd_sa_token</code></strong> are injected automatically — along with the namespace and RHSSO user if configured.
+  <br><br>
+  <a href="index.html#cluster-selection"><strong>Full explanation with variable reference &rarr;</strong></a>
+</div>
+
 <h2 id="full-common-yaml">Complete AgV common.yaml — Annotated</h2>
 
 <p>
