@@ -198,10 +198,10 @@ requirements_content:
   collections:
   - name: https://github.com/agnosticd/namespaced_workloads.git
     type: git
-    version: tenant-roles              # use main once PR #12 merges
+    version: main
   - name: https://github.com/agnosticd/core_workloads.git
     type: git
-    version: gitops-bootstrap-userinfo # use main once PR #62 merges
+    version: main
   - name: https://github.com/rhpds/rhpds.litellm_virtual_keys.git
     type: git
     version: main
@@ -388,8 +388,8 @@ Every role must have `remove_workload.yml`. Test destroy early — do not wait u
 | OCP Sandbox API guide | https://rhpds.github.io/ocpsandbox-mcp-with-openshift-gitops/namespace-api.html |
 | Migration story (MCP lab) | https://rhpds.github.io/ocpsandbox-mcp-with-openshift-gitops/migration-guide.html |
 | GitOps architecture | https://rhpds.github.io/ocpsandbox-mcp-with-openshift-gitops/gitops-pattern.html |
-| tenant_keycloak_user role | https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_keycloak_user |
-| tenant_namespace role | https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_namespace |
-| tenant_gitea role | https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_gitea |
+| tenant_keycloak_user role | https://github.com/agnosticd/namespaced_workloads/tree/main/roles/ocp4_workload_tenant_keycloak_user |
+| tenant_namespace role | https://github.com/agnosticd/namespaced_workloads/tree/main/roles/ocp4_workload_tenant_namespace |
+| tenant_gitea role | https://github.com/agnosticd/namespaced_workloads/tree/main/roles/ocp4_workload_tenant_gitea |
 | namespaced_workloads PR #12 | https://github.com/agnosticd/namespaced_workloads/pull/12 |
 | core_workloads PR #62 | https://github.com/agnosticd/core_workloads/pull/62 |

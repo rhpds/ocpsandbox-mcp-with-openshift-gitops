@@ -216,7 +216,7 @@
     <h4>Option B — Ansible role creates them</h4>
     <p>The <code>ocp4_workload_tenant_namespace</code> role creates all namespaces listed in <code>ocp4_workload_tenant_namespace_suffixes</code>. All get the same quota and limit_range. For different limits per namespace, call the role multiple times.</p>
     <p>Use this when you need full control over naming and per-namespace RBAC before ArgoCD runs.</p>
-    <p><strong>Role:</strong> <a href="https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_namespace" target="_blank">ocp4_workload_tenant_namespace</a></p>
+    <p><strong>Role:</strong> <a href="https://github.com/agnosticd/namespaced_workloads/tree/main/roles/ocp4_workload_tenant_namespace" target="_blank">ocp4_workload_tenant_namespace</a></p>
   </div>
 </div>
 
@@ -248,7 +248,7 @@
 
 <h3>Real example — Summit 2026 / Scheduler-Only: Ansible role creates namespaces <span class="badge badge-blue">Primary pattern</span></h3>
 
-<p>Ansible creates all namespaces before ArgoCD runs. <a href="https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_namespace" target="_blank">Role source →</a></p>
+<p>Ansible creates all namespaces before ArgoCD runs. <a href="https://github.com/agnosticd/namespaced_workloads/tree/main/roles/ocp4_workload_tenant_namespace" target="_blank">Role source →</a></p>
 
 <pre><code><span class="cmt"># Role: agnosticd.namespaced_workloads.ocp4_workload_tenant_namespace
 # Runs BEFORE gitops_bootstrap — namespaces must exist before ArgoCD syncs.</span>
