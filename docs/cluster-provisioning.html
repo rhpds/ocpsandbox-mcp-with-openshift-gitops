@@ -68,9 +68,14 @@
 
 <ul>
   <li>One-time setup that turns a bare OpenShift cluster into a platform ready to accept lab orders</li>
-  <li>Installs and configures shared services every tenant depends on: RHBK (Keycloak), Gitea, OpenShift GitOps (ArgoCD), and ToolHive</li>
   <li>Runs once per cluster when it is added to the pool — separate from <a href="user-provisioning.html">user provisioning</a>, which runs per-order</li>
+  <li><strong>Uses both Ansible and GitOps together</strong> — not everything goes through ArgoCD</li>
 </ul>
+
+<div class="callout callout-info">
+  <strong>Ansible + GitOps — a deliberate combination</strong>
+  Cluster provisioning uses both by design. Ansible handles tasks that require imperative ordering or external system calls (operator installation, OAuth configuration, AppProject creation). GitOps manages resources that benefit from declarative reconciliation and audit trail (user workload monitoring config via ArgoCD). The same deliberate split applies to user provisioning.
+</div>
 
 <div class="card-grid">
   <div class="card blue">

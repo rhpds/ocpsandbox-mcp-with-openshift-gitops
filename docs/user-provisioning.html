@@ -31,6 +31,7 @@
   <a href="namespace-api.html" class="sub-link">↳ AgV common.yaml</a>
   <a href="namespace-api-reference.html" class="sub-link">↳ Variables reference</a>
   <a href="user-provisioning-quotas.html" class="page-link">Namespace Quotas + Variables</a>
+  <a href="https://github.com/rhpds/agnosticv/blob/tenant-namespace-roles/agd_v2/mcp-with-openshift-sandbox/common.yaml" target="_blank" style="color:#6c7086;font-size:0.73rem;padding:0.6rem 1.25rem 0.2rem;display:block;line-height:1.4;">📄 MCP lab — real AgV example ↗</a>
 
   <div class="sidebar-section-label">GitOps Architecture</div>
   <a href="gitops-pattern.html" class="page-link">GitOps Pattern</a>
@@ -73,8 +74,13 @@
 </ul>
 
 <div class="callout callout-info">
+  <strong>Ansible + GitOps — a deliberate combination</strong>
+  User provisioning is not purely Ansible or purely GitOps — it uses both by design. Ansible handles resources that require imperative ordering (RHBK user, namespaces, Gitea instance, LiteMaaS key). GitOps (ArgoCD) then manages the workload layer declaratively (LibreChat, MCP servers, agent). The split is deliberate: Ansible owns the foundation, ArgoCD owns the workloads.
+</div>
+
+<div class="callout callout-grey">
   <strong>Order lifecycle: provision &rarr; running &rarr; destroy</strong>
-  Every RHDP order goes through three phases: <strong>provision</strong> (create resources), <strong>running</strong> (attendee works), <strong>destroy</strong> (remove resources). User provisioning covers both provision and destroy. The destroy playbook must mirror the provision playbook exactly &mdash; every resource created on provision must be deleted on destroy, or you will leak resources on the shared cluster.
+  Every RHDP order goes through three phases: <strong>provision</strong> (create resources), <strong>running</strong> (attendee works), <strong>destroy</strong> (remove resources). The destroy playbook must mirror provision — every resource created must be cleaned up, or you leak resources on the shared cluster.
 </div>
 
 <hr>
