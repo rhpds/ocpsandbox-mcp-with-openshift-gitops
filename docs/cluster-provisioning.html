@@ -195,115 +195,45 @@
 <hr>
 
 <!-- ============================================================ -->
-<h2 id="platform">Platform Layer &mdash; Creating Instances</h2>
+<h2 id="platform">Platform Layer &mdash; Configure for Tenant Provisioning</h2>
 
-<p>Once operators are running, the <strong>platform layer</strong> creates the shared service instances tenants depend on — the Keycloak realm, Gitea instance, shared ArgoCD instance, ToolHive deployment, and OCP OAuth integration.</p>
+<p>The platform layer configures anything the cluster needs <em>before tenant orders can run</em>. This is managed by ArgoCD via the <code>bootstrap-platform</code> Application, which syncs the <code>platform/</code> directory in the GitOps repo.</p>
 
-<h3>What the platform layer creates</h3>
+<div class="callout callout-info">
+  <strong>What belongs in platform?</strong>
+  Anything that must be configured once at the cluster level so that per-order provisioning works correctly. In the MCP lab this is just one thing. Other labs may need more.
+</div>
+
+<h3>What the MCP lab platform layer does</h3>
 
 <table>
   <thead>
-    <tr><th>Resource</th><th>Namespace</th><th>Purpose</th><th>Shared or Per-Tenant?</th></tr>
+    <tr><th>Resource</th><th>Namespace</th><th>What it does</th></tr>
   </thead>
   <tbody>
     <tr>
-      <td><code>Keycloak</code> CR (<code>rhbk</code>)</td>
-      <td><code>keycloak</code></td>
-      <td>OIDC identity provider for the cluster; integrates with OCP OAuth</td>
-      <td>Shared &mdash; one realm, one realm export, users added per-order</td>
-    </tr>
-    <tr>
-      <td><code>Gitea</code> CR</td>
-      <td><code>gitea</code></td>
-      <td>Git server for lab repos; each tenant gets an org + mirrored repos</td>
-      <td>Shared instance; orgs and repos are per-tenant</td>
-    </tr>
-    <tr>
-      <td><code>ArgoCD</code> CR (<code>openshift-gitops</code>)</td>
-      <td><code>openshift-gitops</code></td>
-      <td>GitOps controller; manages tenant Applications</td>
-      <td>Shared instance; Applications are per-tenant</td>
-    </tr>
-    <tr>
-      <td>ToolHive deployment</td>
-      <td><code>toolhive-system</code></td>
-      <td>MCP server lifecycle manager; tenants get their own MCP server pod</td>
-      <td>Shared deployment; MCP server instances are per-tenant</td>
-    </tr>
-    <tr>
-      <td>OCP OAuth patch</td>
-      <td><code>openshift-config</code></td>
-      <td>Configures Keycloak as the OCP identity provider so <code>oc login</code> uses RHBK</td>
-      <td>Cluster-level; one-time configuration</td>
-    </tr>
-    <tr>
-      <td>LiteMaaS connection</td>
-      <td>N/A</td>
-      <td>Stores LiteMaaS admin credentials so per-tenant virtual keys can be created</td>
-      <td>Cluster-level secret in <code>openshift-gitops</code></td>
+      <td><code>cluster-monitoring-config</code> ConfigMap</td>
+      <td><code>openshift-monitoring</code></td>
+      <td>Enables user workload monitoring — allows tenant namespace pods to expose Prometheus metrics. Without this, tenant monitoring routes fail.</td>
     </tr>
   </tbody>
 </table>
 
-<h3>Platform layer: Keycloak instance and realm</h3>
-
-<pre><code><span class="cmt"># Keycloak instance CR</span>
-<span class="key">apiVersion</span>: <span class="val">k8s.keycloak.org/v2alpha1</span>
-<span class="key">kind</span>: <span class="val">Keycloak</span>
+<pre><code><span class="cmt"># platform/monitoring/monitoring.yaml</span>
+<span class="cmt"># Source: https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/blob/main/platform/monitoring/monitoring.yaml</span>
+<span class="key">apiVersion</span>: <span class="val">v1</span>
+<span class="key">kind</span>: <span class="val">ConfigMap</span>
 <span class="key">metadata</span>:
-  <span class="key">name</span>: <span class="val">rhbk</span>
-  <span class="key">namespace</span>: <span class="val">keycloak</span>
-<span class="key">spec</span>:
-  <span class="key">instances</span>: <span class="val">1</span>
-  <span class="key">db</span>:
-    <span class="key">vendor</span>: <span class="val">postgres</span>  <span class="cmt"># PostgreSQL backing store</span>
-  <span class="key">ingress</span>:
-    <span class="key">enabled</span>: <span class="val">true</span>
-    <span class="key">className</span>: <span class="val">openshift-default</span>
-  <span class="key">hostname</span>:
-    <span class="key">hostname</span>: <span class="str">"keycloak.{{ sandbox_openshift_ingress_domain }}"</span></code></pre>
+  <span class="key">name</span>: <span class="val">cluster-monitoring-config</span>
+  <span class="key">namespace</span>: <span class="val">openshift-monitoring</span>
+<span class="key">data</span>:
+  <span class="key">config.yaml</span>: |
+    <span class="key">enableUserWorkload</span>: <span class="kw">true</span></code></pre>
 
-<div class="callout callout-info">
-  <strong>Realm is created separately</strong>
-  The <code>Keycloak</code> CR creates the server. A <code>KeycloakRealmImport</code> CR (or direct API call) creates the realm (<code>mcp-lab</code>). The realm must exist before any tenant users can be added. If the realm export is kept in Git, it is applied by ArgoCD automatically after the operator creates the Keycloak instance.
+<div class="callout callout-grey">
+  <strong>Note on Gitea and per-tenant instances</strong>
+  In the MCP lab, each tenant order gets its own Gitea instance deployed by <code>ocp4_workload_tenant_gitea</code> in the tenant layer — not a shared instance at the platform level. The platform layer only installs the Gitea <strong>operator</strong> (in infra). Instances are per-tenant by design.
 </div>
-
-<h3>Platform layer: Gitea instance</h3>
-
-<pre><code><span class="cmt"># Gitea instance CR</span>
-<span class="key">apiVersion</span>: <span class="val">gpte.opentlc.com/v1</span>
-<span class="key">kind</span>: <span class="val">Gitea</span>
-<span class="key">metadata</span>:
-  <span class="key">name</span>: <span class="val">gitea</span>
-  <span class="key">namespace</span>: <span class="val">gitea</span>
-<span class="key">spec</span>:
-  <span class="key">giteaAdminUser</span>: <span class="val">gitea-admin</span>
-  <span class="key">giteaAdminPasswordLength</span>: <span class="val">16</span>
-  <span class="key">giteaImageTag</span>: <span class="val">latest</span>
-  <span class="key">giteaVolumeSize</span>: <span class="val">4Gi</span>
-  <span class="key">postgresVolumeSize</span>: <span class="val">4Gi</span></code></pre>
-
-<h3>Platform layer: OCP OAuth integration</h3>
-
-<p>After Keycloak is running, the platform layer patches OCP OAuth so <code>oc login</code> and the console both use RHBK:</p>
-
-<pre><code><span class="cmt"># OCP OAuth CR patch (applied by ocp4_workload_rhbk_ocp_oauth role)</span>
-<span class="key">apiVersion</span>: <span class="val">config.openshift.io/v1</span>
-<span class="key">kind</span>: <span class="val">OAuth</span>
-<span class="key">metadata</span>:
-  <span class="key">name</span>: <span class="val">cluster</span>
-<span class="key">spec</span>:
-  <span class="key">identityProviders</span>:
-  - <span class="key">name</span>: <span class="val">rhbk</span>
-    <span class="key">mappingMethod</span>: <span class="val">claim</span>
-    <span class="key">type</span>: <span class="val">OpenID</span>
-    <span class="key">openID</span>:
-      <span class="key">clientID</span>: <span class="val">openshift</span>
-      <span class="key">issuer</span>: <span class="str">"https://keycloak.{{ sandbox_openshift_ingress_domain }}/realms/mcp-lab"</span>
-      <span class="key">claims</span>:
-        <span class="key">preferredUsername</span>: [<span class="val">preferred_username</span>]
-        <span class="key">name</span>: [<span class="val">name</span>]
-        <span class="key">email</span>: [<span class="val">email</span>]</code></pre>
 
 <hr>
 

@@ -34,6 +34,7 @@
   <a href="namespace-api.html" class="sub-link">↳ AgV common.yaml</a>
   <a href="namespace-api-reference.html" class="sub-link">↳ Variables reference</a>
   <a href="user-provisioning-quotas.html" class="page-link">Namespace Quotas + Variables</a>
+  <a href="https://github.com/rhpds/agnosticv/blob/tenant-namespace-roles/agd_v2/mcp-with-openshift-sandbox/common.yaml" target="_blank" style="color:#6c7086;font-size:0.73rem;padding:0.6rem 1.25rem 0.2rem;display:block;line-height:1.4;">📄 MCP lab — real AgV example ↗</a>
 
   <div class="sidebar-section-label">GitOps Architecture</div>
   <a href="gitops-pattern.html" class="page-link active">GitOps Pattern</a>
@@ -109,7 +110,7 @@
   <text x="118" y="224" font-size="9" fill="white" text-anchor="middle">platform-monitoring</text>
   <rect x="208" y="204" width="180" height="30" fill="#8b5cf6" rx="5"/>
   <text x="298" y="218" font-size="9" fill="white" text-anchor="middle">future shared services</text>
-  <text x="298" y="229" font-size="8" fill="#ddd6fe" text-anchor="middle">(shared LiteLLM, LDAP sync...)</text>
+  <text x="298" y="229" font-size="8" fill="#ddd6fe" text-anchor="middle">(user workload monitoring enabled)</text>
 
   <!-- Arrow 2→3 -->
   <line x1="430" y1="246" x2="430" y2="268" stroke="#555" stroke-width="2" marker-end="url(#arr)"/>
@@ -175,7 +176,7 @@
       <td>Create instances from installed operators, configure shared cluster services that all tenants will use</td>
       <td>Once per cluster — same one-time cluster provisioning as Infra</td>
       <td>ArgoCD syncs <code>bootstrap-platform</code> Application — created by infra bootstrap as part of the same cluster provisioning run</td>
-      <td>Creates: Gitea server instance (from Gitea operator CR), enables user workload monitoring (Prometheus/Grafana for tenant namespaces). Future: shared LiteLLM instance, LDAP sync.</td>
+      <td>In the MCP lab: enables user workload monitoring only — a single ConfigMap in <code>openshift-monitoring</code> that allows tenant namespace metrics to be scraped. This is the minimum configuration tenant provisioning needs to work. Other labs may add more shared services here.</td>
     </tr>
     <tr>
       <td><strong>Tenant</strong><br><em>The User</em></td>
