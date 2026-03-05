@@ -246,9 +246,33 @@
 
 <p><code>CreateNamespace=false</code> in every ArgoCD Application (see <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/blob/main/tenant/bootstrap/templates/applications.yaml" target="_blank">applications.yaml line 160</a>) tells ArgoCD to deploy into the existing namespace. If the namespace does not exist, ArgoCD fails — enforcing that Ansible runs first.</p>
 
-<h3>Real example — MCP lab: OCP Sandbox API creates namespaces with per-entry quota</h3>
+<h3>Real example — Summit 2026 / Scheduler-Only: Ansible role creates namespaces <span class="badge badge-blue">Primary pattern</span></h3>
 
-<p>Each namespace gets its own quota because each is a separate OCP Sandbox API entry. <a href="https://github.com/rhpds/agnosticv/blob/tenant-namespace-roles/agd_v2/mcp-with-openshift-sandbox/common.yaml" target="_blank">Full file →</a></p>
+<p>Ansible creates all namespaces before ArgoCD runs. <a href="https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_namespace" target="_blank">Role source →</a></p>
+
+<pre><code><span class="cmt"># ocp4_workload_tenant_namespace creates each namespace with per-namespace quota.
+# Runs BEFORE gitops_bootstrap — namespaces must exist before ArgoCD syncs.</span>
+<span class="key">ocp4_workload_tenant_namespace_prefix</span>: <span class="str">"{{ ocp4_workload_tenant_keycloak_username }}"</span>
+<span class="key">ocp4_workload_tenant_namespace_namespaces</span>:
+- <span class="key">suffix</span>: <span class="val">agent</span>
+  <span class="key">quota</span>: { <span class="key">limits.cpu</span>: <span class="str">"2"</span>, <span class="key">limits.memory</span>: <span class="val">4Gi</span> }
+  <span class="key">limit_range</span>:
+    <span class="key">default</span>: { <span class="key">cpu</span>: <span class="val">500m</span>, <span class="key">memory</span>: <span class="val">512Mi</span> }
+    <span class="key">defaultRequest</span>: { <span class="key">cpu</span>: <span class="val">50m</span>, <span class="key">memory</span>: <span class="val">128Mi</span> }
+- <span class="key">suffix</span>: <span class="val">librechat</span>
+  <span class="key">quota</span>: { <span class="key">limits.cpu</span>: <span class="str">"4"</span>, <span class="key">limits.memory</span>: <span class="val">6Gi</span> }   <span class="cmt"># LibreChat + MongoDB + Meilisearch</span>
+  <span class="key">limit_range</span>:
+    <span class="key">default</span>: { <span class="key">cpu</span>: <span class="val">500m</span>, <span class="key">memory</span>: <span class="val">512Mi</span> }
+    <span class="key">defaultRequest</span>: { <span class="key">cpu</span>: <span class="val">50m</span>, <span class="key">memory</span>: <span class="val">128Mi</span> }
+- <span class="key">suffix</span>: <span class="val">mcp-gitea</span>
+  <span class="key">quota</span>: { <span class="key">limits.cpu</span>: <span class="str">"1"</span>, <span class="key">limits.memory</span>: <span class="val">2Gi</span> }   <span class="cmt"># lightweight MCP proxy</span>
+  <span class="key">limit_range</span>:
+    <span class="key">default</span>: { <span class="key">cpu</span>: <span class="val">500m</span>, <span class="key">memory</span>: <span class="val">512Mi</span> }
+    <span class="key">defaultRequest</span>: { <span class="key">cpu</span>: <span class="val">50m</span>, <span class="key">memory</span>: <span class="val">128Mi</span> }</code></pre>
+
+<h3>Real example — Post-Summit / OCP Sandbox API: platform creates namespaces with per-entry quota</h3>
+
+<p>Each sandbox entry creates one namespace with its own quota — no Ansible role needed for namespace creation. <a href="https://github.com/rhpds/agnosticv/blob/tenant-namespace-roles/agd_v2/mcp-with-openshift-sandbox/common.yaml" target="_blank">Full file →</a></p>
 
 <pre><code><span class="cmt"># Each sandboxes: entry creates one namespace with its own quota.
 # OCP Sandbox API creates these BEFORE AgnosticD runs.</span>
@@ -267,33 +291,14 @@
     <span class="key">cluster_condition</span>: <span class="str">same('primary')</span>
     <span class="key">quota</span>:
       <span class="key">limits.cpu</span>: <span class="str">"4"</span>
-      <span class="key">limits.memory</span>: <span class="val">8Gi</span>       <span class="cmt"># more memory for LibreChat + MongoDB + Meilisearch</span>
+      <span class="key">limits.memory</span>: <span class="val">8Gi</span>
   <span class="cmt"># MCP servers need less</span>
   - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
     <span class="key">namespace_suffix</span>: <span class="val">mcp-gitea</span>
     <span class="key">cluster_condition</span>: <span class="str">same('primary')</span>
     <span class="key">quota</span>:
       <span class="key">limits.cpu</span>: <span class="str">"1"</span>
-      <span class="key">limits.memory</span>: <span class="val">2Gi</span>       <span class="cmt"># lightweight MCP proxy</span></code></pre>
-
-<h3>Real example — Scheduler-Only: Ansible role creates namespaces, same quota for all</h3>
-
-<p>All namespaces get the same quota in a single role call. <a href="https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_namespace" target="_blank">Role source →</a></p>
-
-<pre><code><span class="cmt"># All these namespaces get the same quota and limit_range</span>
-<span class="key">ocp4_workload_tenant_namespace_prefix</span>: <span class="str">"{{ ocp4_workload_tenant_keycloak_username }}"</span>
-<span class="key">ocp4_workload_tenant_namespace_suffixes</span>:
-- <span class="val">agent</span>
-- <span class="val">librechat</span>
-- <span class="val">mcp-gitea</span>
-- <span class="val">mcp-openshift</span>
-<span class="key">ocp4_workload_tenant_namespace_limit_range</span>:
-  <span class="key">default</span>:
-    <span class="key">cpu</span>: <span class="val">500m</span>
-    <span class="key">memory</span>: <span class="val">512Mi</span>
-  <span class="key">defaultRequest</span>:
-    <span class="key">cpu</span>: <span class="val">50m</span>
-    <span class="key">memory</span>: <span class="val">128Mi</span></code></pre>
+      <span class="key">limits.memory</span>: <span class="val">2Gi</span></code></pre>
 
 <h3>Different limits per namespace — Scheduler-Only pattern</h3>
 
