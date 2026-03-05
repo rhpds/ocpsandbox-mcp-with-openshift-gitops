@@ -219,6 +219,7 @@ workloads:
 
 # Explicit destroy order — runs in THIS order (not automatic reverse)
 remove_workloads:
+- agnosticd.showroom.ocp4_workload_showroom
 - rhpds.litellm_virtual_keys.ocp4_workload_litellm_virtual_keys
 - agnosticd.core_workloads.ocp4_workload_gitops_bootstrap   # cascade deletes all ArgoCD apps
 - agnosticd.namespaced_workloads.ocp4_workload_tenant_gitea
