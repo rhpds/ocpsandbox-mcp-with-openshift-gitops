@@ -109,6 +109,7 @@
     <li><a href="#sandbox-variables">Variables you receive from Sandbox API</a></li>
     <li><a href="#role-walkthrough">Role-by-role walkthrough</a></li>
     <li><a href="#destroy">Destroy behavior</a></li>
+    <li><a href="#common-mistakes">Common mistakes</a></li>
   </ol>
 </div>
 
@@ -751,6 +752,59 @@
 <div class="callout callout-grey">
   <strong>Shared cluster services are not deleted</strong>
   The destroy playbook does not touch RHBK, Gitea (the server), ArgoCD (the operator), or LiteMaaS themselves — those are shared cluster services managed by the cluster provisioner. Only per-tenant resources (user accounts, orgs, namespaces, keys) are deleted.
+</div>
+
+<hr>
+
+<h2 id="common-mistakes">Common Mistakes</h2>
+
+<p>These are real mistakes that have caused failures — many discovered during the <strong>Summit 2026</strong> lab migration. If your order fails before provisioning starts or ArgoCD never syncs, check these first.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Mistake</th>
+      <th>Symptom</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>config: openshift-workloads</code> instead of <code>config: namespace</code></td>
+      <td>Fails before provisioning starts — deployer cannot connect to cluster</td>
+      <td>Use <code>config: namespace</code> for all shared cluster / Sandbox API catalog items</td>
+    </tr>
+    <tr>
+      <td>Missing <code>scm_ref:</code> in <code>__meta__.deployer</code></td>
+      <td>Fails before provisioning starts — Babylon cannot determine which AgnosticD branch to run</td>
+      <td>Always add <code>scm_ref: main</code> (or your branch) to the deployer block</td>
+    </tr>
+    <tr>
+      <td><code>var: sandbox_user</code> on sandbox entry + <code>clusters:</code> block</td>
+      <td>Variables are prefixed (<code>sandbox_user.sandbox_openshift_api_url</code>) and not injected correctly with <code>config: namespace</code></td>
+      <td>Remove <code>var:</code> and <code>clusters:</code>. Use <code>sandbox_openshift_api_url</code> and <code>cluster_admin_agnosticd_sa_token</code> directly</td>
+    </tr>
+    <tr>
+      <td>Duplicate YAML key in <code>common.yaml</code></td>
+      <td>yamllint error: <em>duplication of key</em> — order rejected at validation</td>
+      <td>Search for the key name — one definition should be a comment, remove the duplicate active line</td>
+    </tr>
+    <tr>
+      <td><code>catch_all: true</code> for LiteMaaS on a shared cluster</td>
+      <td>Destroy deletes all other tenants' LiteMaaS keys</td>
+      <td>Always <code>ocp4_workload_litellm_virtual_keys_catch_all: false</code></td>
+    </tr>
+    <tr>
+      <td>ArgoCD Application syncs before Gitea repo is migrated</td>
+      <td>ArgoCD fails first sync — repo not found. Comes up eventually after retries.</td>
+      <td>The <code>tenant_gitea</code> role now waits for <code>repoMigrationComplete</code> status before exporting the repo URL. Make sure you are on the latest <code>tenant-roles</code> branch.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-orange">
+  <strong>Converting an existing lab? Read the Migration Guide.</strong>
+  If you are converting an existing lab to this pattern, the <a href="migration-guide.html"><strong>Migration Guide</strong></a> documents every challenge encountered during the <strong>Summit 2026</strong> MCP lab migration — including all the above mistakes and how they were resolved.
 </div>
 
 <hr>
