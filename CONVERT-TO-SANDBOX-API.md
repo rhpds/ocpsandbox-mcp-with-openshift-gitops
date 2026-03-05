@@ -359,6 +359,7 @@ Every role must have `remove_workload.yml`. Test destroy early — do not wait u
 | `var: sandbox_user` on sandbox entry | Wrong variable names | Remove `var:` |
 | `clusters:` block with `config: namespace` | Invalid config | Remove `clusters:` block |
 | Showroom fails with "invalid value bearer" | OCP console integration role fails in `config: namespace` | Use `agnosticd.showroom.ocp4_workload_ocp_console_embed` and add `openshift_cluster_admin_token: "{{ cluster_admin_agnosticd_sa_token }}"` |
+| Showroom namespace creation fails with "Bearer Bearer" in header | `cluster_admin_agnosticd_sa_token` already has `Bearer` prefix — setting it explicitly as `ocp4_workload_showroom_openshift_api_token` causes double prefix | Do NOT set `ocp4_workload_showroom_openshift_api_token`. Let the role use `K8S_AUTH_API_KEY` env var set automatically by `config: namespace` |
 | Duplicate YAML key | yamllint error | Search and remove the duplicate |
 | No `cluster_condition: same('alias')` on second namespace | Two namespaces on different clusters | Add `cluster_condition` |
 | `catch_all: true` for LiteMaaS | Destroys all tenants' AI keys | Always `false` |
