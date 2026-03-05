@@ -74,8 +74,8 @@
 </ul>
 
 <div class="callout callout-info">
-  <strong>Ansible + GitOps — a deliberate combination</strong>
-  User provisioning is not purely Ansible or purely GitOps — it uses both by design. Ansible handles resources that require imperative ordering (RHBK user, namespaces, Gitea instance, LiteMaaS key). GitOps (ArgoCD) then manages the workload layer declaratively (LibreChat, MCP servers, agent). The split is deliberate: Ansible owns the foundation, ArgoCD owns the workloads.
+  <strong>Why Ansible and GitOps — both used together</strong>
+  You could do all of this via GitOps or all via Ansible — both are technically possible. The reason for the split is reuse: well-tested AgnosticD roles already exist for foundational work (RHBK user, namespaces, Gitea instance, LiteMaaS key), so Ansible is used there. For the workload layer (LibreChat, MCP servers, agent), GitOps via ArgoCD gives declarative management, self-healing, and a clear audit trail in git — so that is used instead of writing more Ansible. Use what already exists; use GitOps where it adds value.
 </div>
 
 <div class="callout callout-grey">
