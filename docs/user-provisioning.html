@@ -91,8 +91,14 @@
 <p>Sandbox API selects a cluster and injects credentials — your Ansible roles do everything else. Full lifecycle control with more role complexity; requires a cluster provisioner.</p>
 
 <div class="callout callout-info">
-  <strong>Key pattern: namespaces are pre-created by Ansible before ArgoCD runs</strong>
-  In the MCP lab example below, <code>ocp4_workload_tenant_namespace</code> creates all namespaces (with quotas and RBAC) <em>before</em> <code>ocp4_workload_gitops_bootstrap</code> creates the ArgoCD Application. ArgoCD then deploys workloads into those existing namespaces using <code>CreateNamespace=false</code>. This ordering is deliberate — Ansible owns the foundation, ArgoCD owns the workloads on top of it.
+  <strong>Key pattern: users and namespaces are pre-created by Ansible before ArgoCD runs</strong>
+  In the MCP lab example below, Ansible roles run in this order before ArgoCD touches anything:
+  <ol style="margin-top:0.5rem;">
+    <li><code>ocp4_workload_tenant_keycloak_user</code> — creates the RHBK user in the shared realm</li>
+    <li><code>ocp4_workload_tenant_namespace</code> — creates all namespaces with quotas and RBAC</li>
+    <li><code>ocp4_workload_tenant_gitea</code> — deploys the per-tenant Gitea instance</li>
+  </ol>
+  Only then does <code>ocp4_workload_gitops_bootstrap</code> create the ArgoCD Application, which deploys workloads into those existing namespaces using <code>CreateNamespace=false</code>. Ansible owns the foundation, ArgoCD owns the workloads.
 </div>
 
 <h3>The AgV common.yaml (Scheduler-Only)</h3>
