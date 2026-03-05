@@ -103,6 +103,15 @@
   This pattern is not specific to the Sandbox API. It applies to any shared cluster lab where multiple tenants coexist on one cluster. The three-layer separation gives you clear ownership boundaries, predictable lifecycle, and clean destroy behavior.
 </p>
 
+<div class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#three-layers">Three-layer architecture: Infra / Platform / Tenant</a></li>
+    <li><a href="#namespace-targeting">How ArgoCD picks up pre-created namespaces</a></li>
+    <li><a href="#sandbox-api">How this connects to the Sandbox API</a></li>
+  </ol>
+</div>
+
 <h2 id="three-layers">Three-Layer Architecture: Infra / Platform / Tenant</h2>
 
 <p>
@@ -240,6 +249,67 @@
 </div>
 
 
+
+<hr>
+
+<h2 id="namespace-targeting">How ArgoCD Picks Up Pre-Created Namespaces</h2>
+
+<p>
+  This is one of the most common questions when first looking at this pattern: the GitOps repo has no namespace creation in it, yet everything deploys into the right namespaces. Here is exactly how it works — there is no magic.
+</p>
+
+<h3>The convention: <code>{suffix}-{username}</code></h3>
+
+<p>Both Ansible and the bootstrap Helm chart derive namespace names from the same formula. They do this independently — the only shared input is <code>tenant.username</code>.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Layer</th>
+      <th>Code</th>
+      <th>Result (username = mcpuser-drw4x)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Ansible</strong><br><code>ocp4_workload_tenant_namespace</code></td>
+      <td><code>ocp4_workload_tenant_namespace_suffixes: [librechat, mcp-gitea, ...]</code><br>prefix = <code>ocp4_workload_tenant_keycloak_username</code></td>
+      <td><code>librechat-mcpuser-drw4x</code><br><code>mcp-gitea-mcpuser-drw4x</code></td>
+    </tr>
+    <tr>
+      <td><strong>ArgoCD Helm</strong><br><code>tenant/bootstrap/templates/applications.yaml</code></td>
+      <td><code>printf "librechat-%s" $username</code><br><code>printf "mcp-gitea-%s" $username</code></td>
+      <td><code>librechat-mcpuser-drw4x</code><br><code>mcp-gitea-mcpuser-drw4x</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+  The names always match because both sides use the same formula on the same input. <code>tenant.username</code> is the only contract — you pass it once in AgV via <code>ocp4_workload_gitops_bootstrap_helm_values</code> and both layers produce identical namespace names.
+</p>
+
+<h3><code>CreateNamespace=false</code></h3>
+
+<p>
+  Every ArgoCD Application in the bootstrap template has:
+</p>
+<pre><code>syncOptions:
+- CreateNamespace=false</code></pre>
+<p>
+  This tells ArgoCD: <strong>deploy resources into the namespace that already exists — do not try to create it.</strong> If the namespace does not exist ArgoCD will fail, which is intentional — it enforces the rule that Ansible must run before ArgoCD syncs.
+</p>
+
+<h3>Why this design</h3>
+<ul>
+  <li><strong>Ansible owns the foundation.</strong> Namespaces, RBAC, and LimitRanges are applied deterministically before ArgoCD touches anything. No drift, no race conditions.</li>
+  <li><strong>ArgoCD owns the workloads.</strong> It reconciles Deployments, Services, Routes, Secrets — everything inside the namespace. It does not touch the namespace object itself.</li>
+  <li><strong>No namespace names in AgV.</strong> You never hardcode namespace names. Any lab using this pattern just passes <code>tenant.username</code> and both layers derive everything from it.</li>
+</ul>
+
+<div class="callout callout-blue">
+  <strong>This is the example to follow</strong>
+  The MCP with OpenShift lab (<a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops">ocpsandbox-mcp-with-openshift-gitops</a>) is the reference implementation of this pattern. If you are building a new shared cluster lab, use it as your starting point. The namespace convention, <code>CreateNamespace=false</code>, and the bootstrap chart structure are all reusable as-is.
+</div>
 
 <hr>
 
