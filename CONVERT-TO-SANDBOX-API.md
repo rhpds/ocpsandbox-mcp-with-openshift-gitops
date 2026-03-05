@@ -205,7 +205,8 @@ workloads:
 - agnosticd.namespaced_workloads.ocp4_workload_tenant_gitea             # 3. Gitea per tenant
 - rhpds.litellm_virtual_keys.ocp4_workload_litellm_virtual_keys         # 4. LiteMaaS key
 - agnosticd.core_workloads.ocp4_workload_gitops_bootstrap               # 5. ArgoCD app-of-apps
-- agnosticd.showroom.ocp4_workload_showroom                             # 6. Showroom
+- agnosticd.showroom.ocp4_workload_ocp_console_embed                    # 6. OCP console iframe support
+- agnosticd.showroom.ocp4_workload_showroom                             # 7. Showroom
 
 # Explicit destroy order — runs in THIS order (not automatic reverse)
 remove_workloads:
@@ -323,6 +324,10 @@ Everything else (collections, workloads, role vars, catalog) is inherited from `
 Replace old component-based Showroom vars with sandbox API vars:
 
 ```yaml
+# These two are required for ocp_console_embed and showroom to connect to the cluster
+openshift_api_url: "{{ sandbox_openshift_api_url }}"
+openshift_cluster_admin_token: "{{ cluster_admin_agnosticd_sa_token }}"
+
 ocp4_workload_showroom_namespace: "showroom-{{ ocp4_workload_tenant_keycloak_username }}"
 ocp4_workload_showroom_content_git_repo: https://github.com/myorg/my-showroom
 ocp4_workload_showroom_content_git_repo_ref: main
@@ -352,7 +357,7 @@ Every role must have `remove_workload.yml`. Test destroy early — do not wait u
 | Missing `scm_ref:` | Fails before provisioning starts | Add `scm_ref: main` |
 | `var: sandbox_user` on sandbox entry | Wrong variable names | Remove `var:` |
 | `clusters:` block with `config: namespace` | Invalid config | Remove `clusters:` block |
-| `openshift_api_key` undefined — showroom or other roles fail | Old roles expect `openshift_api_key` from `config: openshift-workloads` | Add `openshift_api_key: "{{ cluster_admin_agnosticd_sa_token }}"` to `common.yaml` |
+| `openshift_api_key` undefined — showroom or other roles fail | Old roles expect `openshift_api_key` from `config: openshift-workloads` | Add `openshift_cluster_admin_token: "{{ cluster_admin_agnosticd_sa_token }}"` and use `ocp4_workload_ocp_console_embed` instead of `ocp4_workload_showroom_ocp_integration` |
 | Duplicate YAML key | yamllint error | Search and remove the duplicate |
 | No `cluster_condition: same('alias')` on second namespace | Two namespaces on different clusters | Add `cluster_condition` |
 | `catch_all: true` for LiteMaaS | Destroys all tenants' AI keys | Always `false` |

@@ -1045,13 +1045,14 @@
 </div>
 
 <div class="challenge">
-  <h4>Challenge: <code>openshift_api_key</code> undefined — showroom or other roles fail</h4>
+  <h4>Challenge: Showroom fails with "invalid value bearer" — wrong role used</h4>
   <p>
-    Old roles written for <code>config: openshift-workloads</code> expect a variable called <code>openshift_api_key</code>. In <code>config: namespace</code> this variable does not exist — the equivalent is <code>cluster_admin_agnosticd_sa_token</code>.
+    The <code>ocp4_workload_showroom_ocp_integration</code> role uses <code>oc login --token</code> internally. In <code>config: namespace</code> this fails because the token format causes an "invalid value bearer" error. This role was designed for <code>config: openshift-workloads</code>.
   </p>
   <div class="fix">
-    <strong>Fix:</strong> Add this one line to <code>common.yaml</code>:
-    <pre style="margin-top:0.5rem;font-size:0.8rem;">openshift_api_key: "{{ cluster_admin_agnosticd_sa_token }}"</pre>
+    <strong>Fix:</strong> Replace <code>ocp4_workload_showroom_ocp_integration</code> with <code>ocp4_workload_ocp_console_embed</code> in your <code>workloads:</code> list. Add these two vars to <code>common.yaml</code>:
+    <pre style="margin-top:0.5rem;font-size:0.8rem;">openshift_api_url: "{{ sandbox_openshift_api_url }}"
+openshift_cluster_admin_token: "{{ cluster_admin_agnosticd_sa_token }}"</pre>
   </div>
 </div>
 
