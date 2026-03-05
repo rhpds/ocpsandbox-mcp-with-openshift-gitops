@@ -34,7 +34,7 @@
   <a href="namespace-api.html" class="sub-link">↳ AgV common.yaml</a>
   <a href="namespace-api-reference.html" class="sub-link">↳ Variables reference</a>
   <a href="user-provisioning-quotas.html" class="page-link">Namespace Quotas + Variables</a>
-  <a href="https://github.com/rhpds/agnosticv/blob/tenant-namespace-roles/agd_v2/mcp-with-openshift-sandbox/common.yaml" target="_blank" style="color:#6c7086;font-size:0.73rem;padding:0.6rem 1.25rem 0.2rem;display:block;line-height:1.4;">📄 MCP lab — real AgV example ↗</a>
+  <a href="https://github.com/rhpds/agnosticv/blob/master/agd_v2/mcp-with-openshift-sandbox/common.yaml" target="_blank" style="color:#6c7086;font-size:0.73rem;padding:0.6rem 1.25rem 0.2rem;display:block;line-height:1.4;">📄 MCP lab — real AgV example ↗</a>
 
   <div class="sidebar-section-label">GitOps Architecture</div>
   <a href="gitops-pattern.html" class="page-link active">GitOps Pattern</a>
@@ -210,7 +210,7 @@
     <h4>Option A — OCP Sandbox API creates them</h4>
     <p>Each entry in <code>__meta__.sandboxes</code> causes OCP Sandbox API to create one namespace before AgnosticD runs. Each entry gets its own <code>quota:</code> and <code>limit_range:</code>.</p>
     <p>Use this when you want OCP Sandbox API to own the namespace lifecycle and you need per-namespace quota control.</p>
-    <p><strong>Example:</strong> <a href="https://github.com/rhpds/agnosticv/blob/tenant-namespace-roles/agd_v2/mcp-with-openshift-sandbox/common.yaml" target="_blank">mcp-with-openshift-sandbox/common.yaml</a></p>
+    <p><strong>Example:</strong> <a href="https://github.com/rhpds/agnosticv/blob/master/agd_v2/mcp-with-openshift-sandbox/common.yaml" target="_blank">mcp-with-openshift-sandbox/common.yaml</a></p>
   </div>
   <div class="col-box">
     <h4>Option B — Ansible role creates them</h4>
@@ -272,7 +272,7 @@
 
 <h3>Real example — Post-Summit / OCP Sandbox API: platform creates namespaces with per-entry quota</h3>
 
-<p>Each sandbox entry creates one namespace with its own quota — no Ansible role needed for namespace creation. <a href="https://github.com/rhpds/agnosticv/blob/tenant-namespace-roles/agd_v2/mcp-with-openshift-sandbox/common.yaml" target="_blank">Full file →</a></p>
+<p>Each sandbox entry creates one namespace with its own quota — no Ansible role needed for namespace creation. <a href="https://github.com/rhpds/agnosticv/blob/master/agd_v2/mcp-with-openshift-sandbox/common.yaml" target="_blank">Full file →</a></p>
 
 <pre><code><span class="cmt"># Each sandboxes: entry creates one namespace with its own quota.
 # OCP Sandbox API creates these BEFORE AgnosticD runs.</span>
@@ -328,7 +328,7 @@
 
 <div class="callout callout-blue">
   <strong>This is the reference implementation</strong>
-  The MCP with OpenShift lab is the reference for this pattern. All files referenced above are live code — not examples. Start from the <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops" target="_blank">GitOps repo</a> and the <a href="https://github.com/rhpds/agnosticv/blob/tenant-namespace-roles/agd_v2/mcp-with-openshift-sandbox/common.yaml" target="_blank">AgV common.yaml</a>.
+  The MCP with OpenShift lab is the reference for this pattern. All files referenced above are live code — not examples. Start from the <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops" target="_blank">GitOps repo</a> and the <a href="https://github.com/rhpds/agnosticv/blob/master/agd_v2/mcp-with-openshift-sandbox/common.yaml" target="_blank">AgV common.yaml</a>.
 </div>
 
 <hr>
