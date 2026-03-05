@@ -353,6 +353,7 @@ Every role must have `remove_workload.yml`. Test destroy early — do not wait u
 | Missing `scm_ref:` | Fails before provisioning starts | Add `scm_ref: main` |
 | `var: sandbox_user` on sandbox entry | Wrong variable names | Remove `var:` |
 | `clusters:` block with `config: namespace` | Invalid config | Remove `clusters:` block |
+| `openshift_api_key` undefined — showroom or other roles fail | Old roles expect `openshift_api_key` from `config: openshift-workloads` | Add `openshift_api_key: "{{ cluster_admin_agnosticd_sa_token }}"` to `common.yaml` |
 | Duplicate YAML key | yamllint error | Search and remove the duplicate |
 | No `cluster_condition: same('alias')` on second namespace | Two namespaces on different clusters | Add `cluster_condition` |
 | `catch_all: true` for LiteMaaS | Destroys all tenants' AI keys | Always `false` |

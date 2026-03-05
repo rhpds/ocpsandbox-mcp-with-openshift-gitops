@@ -812,6 +812,11 @@
       <td>All three tags are required: <code>cloud: cnv-dedicated-shared</code>, <code>demo: your-lab</code>, <code>purpose: prod</code></td>
     </tr>
     <tr>
+      <td><code>openshift_api_key</code> undefined — showroom or other roles fail</td>
+      <td>Old roles expect <code>openshift_api_key</code> from the <code>openshift-workloads</code> config. In <code>config: namespace</code> it does not exist.</td>
+      <td>Add <code>openshift_api_key: "{{ cluster_admin_agnosticd_sa_token }}"</code> to <code>common.yaml</code></td>
+    </tr>
+    <tr>
       <td>Catalog item in <code>summit-2026/</code> using a shared cluster</td>
       <td>Order fails — <code>summit-2026/account.yaml</code> sets <code>reservation: pgpu-event</code> which excludes shared pools. Empty string override is not supported by AgV.</td>
       <td>Move the catalog item to <code>agd_v2/</code>. The <code>summit-2026/</code> directory is for Summit event clusters only — shared cluster labs belong in <code>agd_v2/</code>.</td>
