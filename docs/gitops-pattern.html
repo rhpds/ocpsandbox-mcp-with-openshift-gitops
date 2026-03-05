@@ -250,7 +250,7 @@
 
 <p>Ansible creates all namespaces before ArgoCD runs. <a href="https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_namespace" target="_blank">Role source →</a></p>
 
-<pre><code><span class="cmt"># ocp4_workload_tenant_namespace creates each namespace with per-namespace quota.
+<pre><code><span class="cmt"># Role: agnosticd.namespaced_workloads.ocp4_workload_tenant_namespace
 # Runs BEFORE gitops_bootstrap — namespaces must exist before ArgoCD syncs.</span>
 <span class="key">ocp4_workload_tenant_namespace_prefix</span>: <span class="str">"{{ ocp4_workload_tenant_keycloak_username }}"</span>
 <span class="key">ocp4_workload_tenant_namespace_namespaces</span>:
