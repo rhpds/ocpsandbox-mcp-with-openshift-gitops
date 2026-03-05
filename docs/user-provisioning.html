@@ -51,6 +51,7 @@
 <div class="page-toc">
   <strong>On this page</strong>
   <ol>
+    <li><a href="#three-layers">Understanding the three layers</a></li>
     <li><a href="#what">What is user provisioning?</a></li>
     <li><a href="#scheduler-only">Approach A: Scheduler-Only</a></li>
     <li><a href="#ocp-sandbox-api">Approach B: OCP Sandbox API</a></li>
@@ -81,6 +82,47 @@
 <div class="callout callout-grey">
   <strong>Order lifecycle: provision &rarr; running &rarr; destroy</strong>
   Every RHDP order goes through three phases: <strong>provision</strong> (create resources), <strong>running</strong> (attendee works), <strong>destroy</strong> (remove resources). The destroy playbook must mirror provision — every resource created must be cleaned up, or you leak resources on the shared cluster.
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="three-layers">Understanding the Three Layers — Lab Developer Perspective</h2>
+
+<p>Before writing a single line of AgV, understand who owns each layer and what goes where. The separation is about <strong>ownership</strong>, not resource type.</p>
+
+<table>
+  <thead>
+    <tr><th>Layer</th><th>Owner</th><th>What goes here</th><th>Example — MCP lab</th><th>Example — Service Mesh lab</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Infra</strong></td>
+      <td>Ops team</td>
+      <td>Generic cluster infrastructure — operators, ArgoCD, base platform capabilities. Not specific to any one lab.</td>
+      <td>RHBK, Gitea operator, ArgoCD, Tekton, ToolHive</td>
+      <td>Same — RHBK, ArgoCD, Service Mesh operator</td>
+    </tr>
+    <tr>
+      <td><strong>Platform</strong></td>
+      <td>Lab owner (you)</td>
+      <td>Cluster-wide resources specific to <em>your</em> lab. Not per-user — shared across all tenants on the cluster. What your lab needs at the cluster level that infra doesn't provide.</td>
+      <td>User workload monitoring ConfigMap</td>
+      <td>Shared Service Mesh Gateway, mesh control plane config</td>
+    </tr>
+    <tr>
+      <td><strong>Tenant</strong></td>
+      <td>Lab owner (you)</td>
+      <td>Per-user resources — created fresh for every order, destroyed when the order ends.</td>
+      <td>RHBK user, namespaces, Gitea instance, LiteMaaS key, LibreChat, MCP servers</td>
+      <td>User namespace, app deployment, mesh membership</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-info">
+  <strong>Platform + Tenant are both owned by you — the lab developer</strong>
+  The same persona writes both layers. Platform is cluster-wide (runs once when the cluster is provisioned for your lab). Tenant is per-user (runs every order). Infra is owned by the ops team — you consume it but do not write it.
 </div>
 
 <hr>
