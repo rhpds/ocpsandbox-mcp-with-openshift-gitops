@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scheduler-Only — Common Mistakes — Sandbox API Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="product">Sandbox API Docs</div>
+    <div class="version">Red Hat Demo Platform</div>
+  </div>
+
+  <div class="sidebar-section-label">Getting Started</div>
+  <a href="index.html" class="page-link">Overview</a>
+
+  <div class="sidebar-section-label">Cluster Setup (Once)</div>
+  <a href="cluster-provisioning.html" class="page-link">Cluster Provisioning</a>
+  <a href="cluster-provisioning.html#infra" class="sub-link">↳ Infra — install operators</a>
+  <a href="cluster-provisioning.html#platform" class="sub-link">↳ Platform — create instances</a>
+  <a href="cluster-provisioning.html#today" class="sub-link">↳ Running today</a>
+  <a href="cluster-provisioning.html#future" class="sub-link">↳ Future with AgV</a>
+
+  <div class="sidebar-section-label">User Provisioning (Per Order)</div>
+  <a href="user-provisioning.html" class="page-link">Overview + Scheduler-Only</a>
+  <a href="user-provisioning-ocp.html" class="page-link">OCP Sandbox API</a>
+  <a href="user-provisioning-quotas.html" class="page-link">Namespace Quotas + Variables</a>
+
+  <div class="sidebar-section-label">GitOps Architecture</div>
+  <a href="gitops-pattern.html" class="page-link">GitOps Pattern</a>
+  <a href="gitops-pattern.html#three-layers" class="sub-link">↳ Three layers</a>
+  <a href="gitops-pattern.html#namespace-targeting" class="sub-link">↳ Namespace contract</a>
+
+  <div class="sidebar-section-label">Migration Guide</div>
+  <a href="migration-guide.html" class="page-link">Why + What Changed</a>
+  <a href="migration-guide-layers.html" class="page-link">Layers + Role Conversions</a>
+  <a href="migration-guide-lessons.html" class="page-link">Challenges + Lessons</a>
+
+  <div class="sidebar-section-label">AgV Reference</div>
+  <a href="scheduler-only.html" class="page-link">Scheduler-Only — common.yaml</a>
+  <a href="scheduler-only-roles.html" class="page-link">Scheduler-Only — Roles</a>
+  <a href="scheduler-only-mistakes.html" class="page-link active">Scheduler-Only — Mistakes</a>
+  <a href="namespace-api.html" class="page-link">OCP Sandbox API — common.yaml</a>
+  <a href="namespace-api-reference.html" class="page-link">OCP Sandbox API — Reference</a>
+</nav>
+<div class="main">
+<h2 id="common-mistakes">Common Mistakes</h2>
+
+<p>These are real mistakes that have caused failures — many discovered during the <strong>Summit 2026</strong> lab migration. If your order fails before provisioning starts or ArgoCD never syncs, check these first.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Mistake</th>
+      <th>Symptom</th>
+      <th>Fix</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>config: openshift-workloads</code> instead of <code>config: namespace</code></td>
+      <td>Fails before provisioning starts — deployer cannot connect to cluster</td>
+      <td>Use <code>config: namespace</code> for all shared cluster / Sandbox API catalog items</td>
+    </tr>
+    <tr>
+      <td>Missing <code>scm_ref:</code> in <code>__meta__.deployer</code></td>
+      <td>Fails before provisioning starts — Babylon cannot determine which AgnosticD branch to run</td>
+      <td>Always add <code>scm_ref: main</code> (or your branch) to the deployer block</td>
+    </tr>
+    <tr>
+      <td><code>var: sandbox_user</code> on sandbox entry + <code>clusters:</code> block</td>
+      <td>Variables are prefixed (<code>sandbox_user.sandbox_openshift_api_url</code>) and not injected correctly with <code>config: namespace</code></td>
+      <td>Remove <code>var:</code> and <code>clusters:</code>. Use <code>sandbox_openshift_api_url</code> and <code>cluster_admin_agnosticd_sa_token</code> directly</td>
+    </tr>
+    <tr>
+      <td>Duplicate YAML key in <code>common.yaml</code></td>
+      <td>yamllint error: <em>duplication of key</em> — order rejected at validation</td>
+      <td>Search for the key name — one definition should be a comment, remove the duplicate active line</td>
+    </tr>
+    <tr>
+      <td><code>catch_all: true</code> for LiteMaaS on a shared cluster</td>
+      <td>Destroy deletes all other tenants' LiteMaaS keys</td>
+      <td>Always <code>ocp4_workload_litellm_virtual_keys_catch_all: false</code></td>
+    </tr>
+    <tr>
+      <td><code>catch_all: false</code> set as a role var instead of in <code>__meta__</code></td>
+      <td>Sandbox API ignores the role var — other tenants' LiteMaaS keys deleted on destroy</td>
+      <td>Set <code>catch_all: false</code> under <code>__meta__.sandbox_api.actions.destroy</code>, not as <code>ocp4_workload_litellm_virtual_keys_catch_all</code></td>
+    </tr>
+    <tr>
+      <td>Missing <code>cloud:</code> tag in <code>cloud_selector</code></td>
+      <td>Sandbox API finds no matching cluster — order fails immediately</td>
+      <td>All three tags are required: <code>cloud: cnv-dedicated-shared</code>, <code>demo: your-lab</code>, <code>purpose: prod</code></td>
+    </tr>
+    <tr>
+      <td>Showroom fails with "invalid value bearer"</td>
+      <td>OCP console integration role fails in <code>config: namespace</code></td>
+      <td>Remove the OCP integration role. <code>ocp4_workload_ocp_console_embed</code> is already in the cluster provisioner — do not add to tenant workloads. Add <code>openshift_cluster_admin_token: "{{ cluster_admin_agnosticd_sa_token }}"</code></td>
+    </tr>
+    <tr>
+      <td>Catalog item in <code>summit-2026/</code> using a shared cluster</td>
+      <td>Order fails — <code>summit-2026/account.yaml</code> sets <code>reservation: pgpu-event</code> which excludes shared pools. Empty string override is not supported by AgV.</td>
+      <td>Move the catalog item to <code>agd_v2/</code>. The <code>summit-2026/</code> directory is for Summit event clusters only — shared cluster labs belong in <code>agd_v2/</code>.</td>
+    </tr>
+    <tr>
+      <td><code>dev.yaml</code> duplicating <code>collections</code>, <code>workloads</code>, and <code>catalog</code> from <code>common.yaml</code></td>
+      <td>Any change must be made in two files — easy to get out of sync</td>
+      <td><code>dev.yaml</code> should only contain <code>purpose: development</code> and <code>__meta__</code> overrides. Everything else inherits from <code>common.yaml</code></td>
+    </tr>
+    <tr>
+      <td>ArgoCD Application syncs before Gitea repo is migrated</td>
+      <td>ArgoCD fails first sync — repo not found. Comes up eventually after retries.</td>
+      <td>The <code>tenant_gitea</code> role now waits for <code>repoMigrationComplete</code> status before exporting the repo URL. Make sure you are on the latest <code>tenant-roles</code> branch.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-orange">
+  <strong>Converting an existing lab? Read the Migration Guide.</strong>
+  If you are converting an existing lab to this pattern, the <a href="migration-guide.html"><strong>Migration Guide</strong></a> documents every challenge encountered during the <strong>Summit 2026</strong> MCP lab migration — including all the above mistakes and how they were resolved.
+</div>
+
+<hr>
+<p style="color:#888;font-size:0.85rem;">Red Hat Demo Platform (RHDP) &mdash; Internal developer reference &mdash; <a href="index.html">Back to overview</a> &mdash; <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops">GitHub</a></p>
+<div style="display:flex; justify-content:space-between; margin-top:3rem; padding-top:1.5rem; border-top:1px solid #ddd;">
+  <a href="scheduler-only-roles.html">← Previous: Scheduler-Only — Roles</a>
+  <a href="namespace-api.html">Next: OCP Sandbox API — common.yaml →</a>
+</div>
+</div>
+</body>
+</html>

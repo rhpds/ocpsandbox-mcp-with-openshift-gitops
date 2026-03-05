@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Provisioning — OCP Sandbox API — Sandbox API Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="product">Sandbox API Docs</div>
+    <div class="version">Red Hat Demo Platform</div>
+  </div>
+
+  <div class="sidebar-section-label">Getting Started</div>
+  <a href="index.html" class="page-link">Overview</a>
+
+  <div class="sidebar-section-label">Cluster Setup (Once)</div>
+  <a href="cluster-provisioning.html" class="page-link">Cluster Provisioning</a>
+  <a href="cluster-provisioning.html#infra" class="sub-link">↳ Infra — install operators</a>
+  <a href="cluster-provisioning.html#platform" class="sub-link">↳ Platform — create instances</a>
+  <a href="cluster-provisioning.html#today" class="sub-link">↳ Running today</a>
+  <a href="cluster-provisioning.html#future" class="sub-link">↳ Future with AgV</a>
+
+  <div class="sidebar-section-label">User Provisioning (Per Order)</div>
+  <a href="user-provisioning.html" class="page-link">Overview + Scheduler-Only</a>
+  <a href="user-provisioning-ocp.html" class="page-link active">OCP Sandbox API</a>
+  <a href="user-provisioning-quotas.html" class="page-link">Namespace Quotas + Variables</a>
+
+  <div class="sidebar-section-label">GitOps Architecture</div>
+  <a href="gitops-pattern.html" class="page-link">GitOps Pattern</a>
+  <a href="gitops-pattern.html#three-layers" class="sub-link">↳ Three layers</a>
+  <a href="gitops-pattern.html#namespace-targeting" class="sub-link">↳ Namespace contract</a>
+
+  <div class="sidebar-section-label">Migration Guide</div>
+  <a href="migration-guide.html" class="page-link">Why + What Changed</a>
+  <a href="migration-guide-layers.html" class="page-link">Layers + Role Conversions</a>
+  <a href="migration-guide-lessons.html" class="page-link">Challenges + Lessons</a>
+
+  <div class="sidebar-section-label">AgV Reference</div>
+  <a href="scheduler-only.html" class="page-link">Scheduler-Only — common.yaml</a>
+  <a href="scheduler-only-roles.html" class="page-link">Scheduler-Only — Roles</a>
+  <a href="scheduler-only-mistakes.html" class="page-link">Scheduler-Only — Mistakes</a>
+  <a href="namespace-api.html" class="page-link">OCP Sandbox API — common.yaml</a>
+  <a href="namespace-api-reference.html" class="page-link">OCP Sandbox API — Reference</a>
+</nav>
+<div class="main">
+<h2 id="ocp-sandbox-api">Approach B: OCP Sandbox API</h2>
+
+<p>
+  In the OCP Sandbox API pattern, you declare the namespaces you want directly in the AgV <code>__meta__.sandboxes</code> list. Sandbox API creates these namespaces, applies the quota you specify, creates an OCP local user, and optionally creates an RHSSO user if <code>keycloak: "yes"</code> is set. Your workload roles then deploy lab content into the ready-made namespaces.
+</p>
+
+<p>
+  This pattern is simpler &mdash; no cluster provisioner, no Keycloak role, no Gitea role. Use it for labs that do not need shared services or complex multi-namespace topologies.
+</p>
+
+<h3>The AgV common.yaml (OCP Sandbox API)</h3>
+
+<pre><code><span class="cmt"># ============================================================
+# AgnosticV common.yaml — Simple Lab Example
+# Pattern: OCP Sandbox API
+# ============================================================</span>
+
+<span class="key">__meta__</span>:
+  <span class="key">deployer</span>:
+    <span class="key">type</span>: <span class="val">agnosticd</span>
+
+  <span class="cmt"># Sandbox API creates each namespace listed here.
+  # All entries with the same alias land on the same cluster
+  # (use cluster_condition: same('alias') for multiple namespaces).</span>
+  <span class="key">sandboxes</span>:
+  - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
+    <span class="key">alias</span>: <span class="val">sandbox</span>             <span class="cmt"># logical name for this sandbox</span>
+    <span class="key">namespace_suffix</span>: <span class="val">user</span>    <span class="cmt"># created namespace: sandbox-{guid}-user</span>
+    <span class="key">cloud_selector</span>:
+      <span class="key">cloud</span>: <span class="val">aws-us-east-1</span>
+      <span class="key">purpose</span>: <span class="val">prod</span>
+    <span class="key">quota</span>:
+      <span class="key">cpu</span>: <span class="val">"8"</span>
+      <span class="key">memory</span>: <span class="val">"16Gi"</span>
+      <span class="key">pods</span>: <span class="val">"30"</span>
+    <span class="cmt"># Optional: create RHSSO user (only on clusters with Keycloak)</span>
+    <span class="key">keycloak</span>: <span class="str">"yes"</span>
+
+  <span class="cmt"># Second namespace on the SAME cluster (note cluster_condition)</span>
+  - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
+    <span class="key">alias</span>: <span class="val">sandbox</span>
+    <span class="key">namespace_suffix</span>: <span class="val">tools</span>   <span class="cmt"># created namespace: sandbox-{guid}-tools</span>
+    <span class="key">cluster_condition</span>: <span class="str">"same('alias')"</span>  <span class="cmt"># MUST use same cluster as above</span>
+    <span class="key">quota</span>:
+      <span class="key">cpu</span>: <span class="val">"4"</span>
+      <span class="key">memory</span>: <span class="val">"8Gi"</span>
+      <span class="key">pods</span>: <span class="val">"20"</span>
+
+<span class="cmt"># Variables injected by Sandbox API (use directly in roles):</span>
+<span class="cmt"># sandbox_openshift_api_url     — cluster API URL</span>
+<span class="cmt"># sandbox_openshift_ingress_domain — apps domain for building routes</span>
+<span class="cmt"># sandbox_openshift_console_url — web console URL</span>
+<span class="cmt"># sandbox_openshift_namespace   — primary namespace (sandbox-{guid}-user)</span>
+<span class="cmt"># cluster_admin_agnosticd_sa_token — cluster-admin token</span>
+<span class="cmt"># sandbox_username / sandbox_password — RHSSO user (if keycloak: yes)</span>
+
+<span class="cmt"># ── Workload roles ─────────────────────────────────────────────</span>
+<span class="key">agnosticd_roles</span>:
+
+<span class="cmt"># Deploy lab application into the sandbox namespace
+# (namespace already created by Sandbox API)</span>
+- <span class="key">role</span>: <span class="val">ocp4_workload_my_lab_app</span>
+  <span class="key">vars</span>:
+    <span class="key">app_namespace</span>: <span class="str">"{{ sandbox_openshift_namespace }}"</span>
+    <span class="key">app_image</span>: <span class="val">registry.access.redhat.com/ubi9/ubi-minimal:latest</span>
+
+<span class="cmt"># Deploy Showroom with Sandbox API injected variables</span>
+- <span class="key">role</span>: <span class="val">ocp4_workload_showroom</span>
+  <span class="key">vars</span>:
+    <span class="key">showroom_namespace</span>: <span class="str">"{{ sandbox_openshift_namespace }}"</span>
+    <span class="key">showroom_git_repo</span>: <span class="str">"https://github.com/rhpds/showroom-my-lab"</span>
+    <span class="key">showroom_extra_vars</span>:
+      <span class="key">console_url</span>: <span class="str">"{{ sandbox_openshift_console_url }}"</span>
+      <span class="key">username</span>: <span class="str">"{{ sandbox_username }}"</span>
+      <span class="key">password</span>: <span class="str">"{{ sandbox_password }}"</span></code></pre>
+
+<h3>What Sandbox API does vs what you do</h3>
+
+<table>
+  <thead>
+    <tr><th>Task</th><th>Sandbox API (OCP pattern)</th><th>Your roles</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Select cluster</td><td>Yes &mdash; based on <code>cloud_selector</code></td><td>&mdash;</td></tr>
+    <tr><td>Create namespaces</td><td>Yes &mdash; from <code>namespace_suffix</code> entries</td><td>&mdash;</td></tr>
+    <tr><td>Apply ResourceQuota</td><td>Yes &mdash; from <code>quota:</code> in each sandbox entry</td><td>&mdash;</td></tr>
+    <tr><td>Create OCP local user</td><td>Yes &mdash; automatically</td><td>&mdash;</td></tr>
+    <tr><td>Create RHSSO user</td><td>Yes &mdash; if <code>keycloak: "yes"</code></td><td>&mdash;</td></tr>
+    <tr><td>Deploy lab application</td><td>&mdash;</td><td>Yes &mdash; via workload roles</td></tr>
+    <tr><td>Deploy Showroom</td><td>&mdash;</td><td>Yes &mdash; via <code>ocp4_workload_showroom</code></td></tr>
+    <tr><td>Create Gitea repos</td><td>&mdash;</td><td>Yes &mdash; if needed</td></tr>
+    <tr><td>Destroy namespaces</td><td>Yes &mdash; automatically on order destroy</td><td>&mdash;</td></tr>
+  </tbody>
+</table>
+
+<div class="callout callout-warning">
+  <strong>Destroy with OCP Sandbox API</strong>
+  Sandbox API deletes the namespaces it created on destroy. You do not need a destroy role for namespace cleanup. However, any resources you created <em>outside</em> those namespaces (cluster-level resources, RHBK users, Gitea orgs) will not be cleaned up automatically &mdash; you must handle those in your destroy roles.
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+
+<div style="display:flex; justify-content:space-between; margin-top:3rem; padding-top:1.5rem; border-top:1px solid #ddd;">
+  <a href="user-provisioning.html">← Previous: Overview + Scheduler-Only</a>
+  <a href="user-provisioning-quotas.html">Next: Namespace Quotas + Variables →</a>
+</div>
+</div>
+</body>
+</html>

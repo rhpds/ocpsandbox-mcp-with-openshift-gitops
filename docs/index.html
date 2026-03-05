@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sandbox API — Developer Reference</title>
+  <title>Overview — Sandbox API Docs</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,34 +17,35 @@
   <a href="index.html" class="page-link active">Overview</a>
 
   <div class="sidebar-section-label">Cluster Setup (Once)</div>
-  <a href="cluster-provisioning.html" class="page-link ">Cluster Provisioning</a>
-  <a href="cluster-provisioning.html#infra" class="sub-link ">&#8627; Infra &mdash; install operators</a>
-  <a href="cluster-provisioning.html#platform" class="sub-link ">&#8627; Platform &mdash; create instances</a>
-  <a href="cluster-provisioning.html#today" class="sub-link ">&#8627; Running today</a>
-  <a href="cluster-provisioning.html#future" class="sub-link ">&#8627; Future with AgV</a>
+  <a href="cluster-provisioning.html" class="page-link">Cluster Provisioning</a>
+  <a href="cluster-provisioning.html#infra" class="sub-link">↳ Infra — install operators</a>
+  <a href="cluster-provisioning.html#platform" class="sub-link">↳ Platform — create instances</a>
+  <a href="cluster-provisioning.html#today" class="sub-link">↳ Running today</a>
+  <a href="cluster-provisioning.html#future" class="sub-link">↳ Future with AgV</a>
 
   <div class="sidebar-section-label">User Provisioning (Per Order)</div>
-  <a href="user-provisioning.html" class="page-link ">User Provisioning</a>
-  <a href="user-provisioning.html#scheduler-only" class="sub-link ">&#8627; Approach A: Scheduler-Only</a>
-  <a href="user-provisioning.html#ocp-sandbox-api" class="sub-link ">&#8627; Approach B: OCP Sandbox API</a>
-  <a href="user-provisioning.html#namespaces" class="sub-link ">&#8627; Namespace quotas</a>
-  <a href="user-provisioning.html#variables" class="sub-link ">&#8627; Variables reference</a>
+  <a href="user-provisioning.html" class="page-link">Overview + Scheduler-Only</a>
+  <a href="user-provisioning-ocp.html" class="page-link">OCP Sandbox API</a>
+  <a href="user-provisioning-quotas.html" class="page-link">Namespace Quotas + Variables</a>
 
-  <div class="sidebar-section-label">Deep Dives</div>
-  <a href="gitops-pattern.html" class="page-link ">GitOps Architecture</a>
-  <a href="gitops-pattern.html#three-layers" class="sub-link ">&#8627; Three layers</a>
-  <a href="gitops-pattern.html#namespace-targeting" class="sub-link ">&#8627; Namespace contract</a>
-  <a href="migration-guide.html" class="page-link ">Migration Guide</a>
-  <a href="migration-guide.html#original" class="sub-link ">&#8627; Original lab</a>
-  <a href="migration-guide.html#roles" class="sub-link ">&#8627; Role conversions</a>
-  <a href="migration-guide.html#challenges" class="sub-link ">&#8627; Challenges</a>
+  <div class="sidebar-section-label">GitOps Architecture</div>
+  <a href="gitops-pattern.html" class="page-link">GitOps Pattern</a>
+  <a href="gitops-pattern.html#three-layers" class="sub-link">↳ Three layers</a>
+  <a href="gitops-pattern.html#namespace-targeting" class="sub-link">↳ Namespace contract</a>
+
+  <div class="sidebar-section-label">Migration Guide</div>
+  <a href="migration-guide.html" class="page-link">Why + What Changed</a>
+  <a href="migration-guide-layers.html" class="page-link">Layers + Role Conversions</a>
+  <a href="migration-guide-lessons.html" class="page-link">Challenges + Lessons</a>
 
   <div class="sidebar-section-label">AgV Reference</div>
-  <a href="scheduler-only.html" class="page-link ">Scheduler-Only common.yaml</a>
-  <a href="namespace-api.html" class="page-link ">OCP Sandbox API common.yaml</a>
+  <a href="scheduler-only.html" class="page-link">Scheduler-Only — common.yaml</a>
+  <a href="scheduler-only-roles.html" class="page-link">Scheduler-Only — Roles</a>
+  <a href="scheduler-only-mistakes.html" class="page-link">Scheduler-Only — Mistakes</a>
+  <a href="namespace-api.html" class="page-link">OCP Sandbox API — common.yaml</a>
+  <a href="namespace-api-reference.html" class="page-link">OCP Sandbox API — Reference</a>
 </nav>
 <div class="main">
-
 <h1>Sandbox API — Developer Reference</h1>
 <p class="subtitle">AgnosticD / AgnosticV integration guide for Red Hat Demo Platform (RHDP)</p>
 
@@ -342,7 +343,10 @@
 
 <hr>
 <p style="color:#888;font-size:0.85rem;">Red Hat Demo Platform (RHDP) &mdash; Internal developer reference &mdash; <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops">GitHub</a></p>
-
+<div style="display:flex; justify-content:space-between; margin-top:3rem; padding-top:1.5rem; border-top:1px solid #ddd;">
+  <span></span>
+  <a href="cluster-provisioning.html">Next: Cluster Provisioning →</a>
+</div>
 </div>
 </body>
 </html>

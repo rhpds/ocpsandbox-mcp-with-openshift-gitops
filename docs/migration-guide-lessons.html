@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Migration Guide — Challenges + Lessons — Sandbox API Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="product">Sandbox API Docs</div>
+    <div class="version">Red Hat Demo Platform</div>
+  </div>
+
+  <div class="sidebar-section-label">Getting Started</div>
+  <a href="index.html" class="page-link">Overview</a>
+
+  <div class="sidebar-section-label">Cluster Setup (Once)</div>
+  <a href="cluster-provisioning.html" class="page-link">Cluster Provisioning</a>
+  <a href="cluster-provisioning.html#infra" class="sub-link">↳ Infra — install operators</a>
+  <a href="cluster-provisioning.html#platform" class="sub-link">↳ Platform — create instances</a>
+  <a href="cluster-provisioning.html#today" class="sub-link">↳ Running today</a>
+  <a href="cluster-provisioning.html#future" class="sub-link">↳ Future with AgV</a>
+
+  <div class="sidebar-section-label">User Provisioning (Per Order)</div>
+  <a href="user-provisioning.html" class="page-link">Overview + Scheduler-Only</a>
+  <a href="user-provisioning-ocp.html" class="page-link">OCP Sandbox API</a>
+  <a href="user-provisioning-quotas.html" class="page-link">Namespace Quotas + Variables</a>
+
+  <div class="sidebar-section-label">GitOps Architecture</div>
+  <a href="gitops-pattern.html" class="page-link">GitOps Pattern</a>
+  <a href="gitops-pattern.html#three-layers" class="sub-link">↳ Three layers</a>
+  <a href="gitops-pattern.html#namespace-targeting" class="sub-link">↳ Namespace contract</a>
+
+  <div class="sidebar-section-label">Migration Guide</div>
+  <a href="migration-guide.html" class="page-link">Why + What Changed</a>
+  <a href="migration-guide-layers.html" class="page-link">Layers + Role Conversions</a>
+  <a href="migration-guide-lessons.html" class="page-link active">Challenges + Lessons</a>
+
+  <div class="sidebar-section-label">AgV Reference</div>
+  <a href="scheduler-only.html" class="page-link">Scheduler-Only — common.yaml</a>
+  <a href="scheduler-only-roles.html" class="page-link">Scheduler-Only — Roles</a>
+  <a href="scheduler-only-mistakes.html" class="page-link">Scheduler-Only — Mistakes</a>
+  <a href="namespace-api.html" class="page-link">OCP Sandbox API — common.yaml</a>
+  <a href="namespace-api-reference.html" class="page-link">OCP Sandbox API — Reference</a>
+</nav>
+<div class="main">
+<h2 id="challenges">7. Challenges and Fixes</h2>
+
+<p>
+  These are the real problems we encountered during the migration — not theoretical edge cases, but actual failures that blocked progress.
+</p>
+
+<div class="challenge">
+  <h4>Challenge 1: <code>$password</code> undefined in the bootstrap Helm template</h4>
+  <p>
+    <strong>Symptom:</strong> LibreChat's user creation init job was creating accounts with the hardcoded username <code>user1@example.com</code> and a placeholder password string, not the actual tenant credentials.
+  </p>
+  <p>
+    <strong>Root cause:</strong> The Helm bootstrap template in <code>tenant/bootstrap/templates/applications.yaml</code> received <code>tenant.password</code> in <code>.Values</code> but never declared the <code>$password</code> variable. The template silently fell back to its hardcoded defaults rather than failing loudly.
+  </p>
+  <div class="fix">
+    <strong>Fix</strong>
+    Added <code>{{- $password := .Values.tenant.password | default "" }}</code> at the top of the template, alongside the existing <code>$username</code> declaration. Email was then set as <code>"{{ $username }}@example.com"</code> and the password flowed through correctly. The silent fallback was the problem — always test that injected Helm values actually reach the places you expect.
+  </div>
+</div>
+
+<div class="challenge">
+  <h4>Challenge 2: LibreChat secrets showing placeholder values</h4>
+  <p>
+    <strong>Symptom:</strong> LibreChat crashed immediately after deployment. Inspecting the pod logs showed that <code>creds_key</code>, <code>jwt_secret</code>, and <code>meili_master_key</code> all contained literal placeholder strings like <code>FROM_SECRETS</code> or <code>REPLACE_ME</code>.
+  </p>
+  <p>
+    <strong>Root cause:</strong> The original monolithic role constructed these secrets by reading from a Kubernetes Secret object that it created per-user. In the new pattern, that Secret did not exist — there was no Ansible task creating it, and the Helm template was not generating it either.
+  </p>
+  <div class="fix">
+    <strong>Fix</strong>
+    Generated deterministic values directly in the Helm bootstrap template using <code>sha256sum</code> of the tenant username, so no external Secret object is needed:
+    <pre><code><span class="cmt"># In tenant/bootstrap/templates/applications.yaml</span>
+<span class="key">creds_key</span>: <span class="str">{{ sha256sum $username }}</span>
+<span class="key">jwt_secret</span>: <span class="str">{{ sha256sum (printf "%s-jwt" $username) }}</span>
+<span class="key">meili_master_key</span>: <span class="str">{{ sha256sum (printf "%s-meili" $username) | trunc 16 }}</span></code></pre>
+    These are stable across ArgoCD syncs — the same username always produces the same secret values.
+  </div>
+</div>
+
+<div class="challenge">
+  <h4>Challenge 3: OCP login broke after cluster re-provision</h4>
+  <p>
+    <strong>Symptom:</strong> Users could not log in via RHBK after a cluster was re-provisioned. The RHBK login page showed "Invalid client credentials." The RHBK realm and users were intact; only OCP authentication was broken.
+  </p>
+  <p>
+    <strong>Root cause:</strong> Re-running the cluster provisioner regenerated the OAuth client secret for the RHBK Identity Provider configured in OpenShift's OAuth config. The <code>oauth-openshift</code> pods in <code>openshift-authentication</code> had the old client secret cached in memory and continued using it, causing all authentication attempts to fail.
+  </p>
+  <div class="fix">
+    <strong>Fix</strong>
+    Restart the <code>oauth-openshift</code> pods in the <code>openshift-authentication</code> namespace after any OAuth configuration change or cluster re-provision:
+    <pre><code>oc delete pods -n openshift-authentication -l app=oauth-openshift</code></pre>
+    The pods restart and reload the current OAuth config, picking up the new client secret.
+  </div>
+</div>
+
+<div class="challenge">
+  <h4>Challenge 4: <code>git_url</code> undefined when <code>gitops_bootstrap</code> ran</h4>
+  <p>
+    <strong>Symptom:</strong> The <code>ocp4_workload_gitops_bootstrap</code> role failed with a variable undefined error. The repo URL for the tenant's Gitea mirror was not set anywhere the role could find it.
+  </p>
+  <p>
+    <strong>Root cause:</strong> <code>ocp4_workload_gitops_bootstrap_repo_url</code> was expected to be available when the bootstrap role ran, but no task had set it. In the original lab this URL was hardcoded. In the new pattern, the URL depends on which Gitea instance is on the cluster and what the tenant's org name is — neither of which is known at AgV authoring time.
+  </p>
+  <div class="fix">
+    <strong>Fix</strong>
+    The <code>ocp4_workload_tenant_gitea</code> role now exports the mirrored repo URL as a <code>set_fact</code> at the end of its <code>workload.yml</code>:
+    <pre><code><span class="cmt"># At the end of ocp4_workload_tenant_gitea/tasks/workload.yml</span>
+- <span class="key">name</span>: <span class="str">Export repo URL for gitops_bootstrap</span>
+  <span class="kw">ansible.builtin.set_fact</span>:
+    <span class="key">ocp4_workload_gitops_bootstrap_repo_url</span>: <span class="str">"{{ _gitea_repo_clone_url }}"</span></code></pre>
+    Because <code>tenant_gitea</code> runs before <code>gitops_bootstrap</code> in the workloads list, the variable is available when <code>gitops_bootstrap</code> needs it. No AgV change required.
+  </div>
+</div>
+
+<div class="challenge">
+  <h4>Challenge 5: Namespace naming was inconsistent</h4>
+  <p>
+    <strong>Symptom:</strong> Namespace names changed format between development iterations. Some ArgoCD Applications were looking for <code>agent-mcpuser-abc123</code>; other code was generating <code>mcpuser-abc123-agent</code>. Resources could not find their target namespaces.
+  </p>
+  <p>
+    <strong>Root cause:</strong> The naming convention was not pinned early in the project. The <code>ocp4_workload_tenant_namespace</code> role defaulted to one format; the bootstrap Helm chart was written assuming another format; ArgoCD AppProject target namespaces used a third format written before the others were finalised.
+  </p>
+  <div class="fix">
+    <strong>Fix</strong>
+    Standardised on <code>{suffix}-{username}</code> across all roles, all Helm templates, and all ArgoCD AppProject definitions — for example, <code>agent-mcpuser-abc123</code>, <code>librechat-mcpuser-abc123</code>. All three sources (tenant_namespace role, bootstrap Helm chart, AppProject) were updated in a single commit to prevent partial states.
+  </div>
+</div>
+
+<div class="challenge">
+  <h4>Challenge 6: LibreChat log directory permission denied</h4>
+  <p>
+    <strong>Symptom:</strong> LibreChat pod entered <code>CrashLoopBackOff</code> immediately. Pod logs showed: <code>mkdir /app/logs/: permission denied</code>.
+  </p>
+  <p>
+    <strong>Root cause:</strong> The LibreChat container image attempts to create <code>/app/logs</code> and <code>/app/api/logs</code> directories at startup. On OpenShift, SCCs prevent containers from writing to paths owned by root, and the directories did not exist in the image layers — the container expected to create them at runtime.
+  </p>
+  <div class="fix">
+    <strong>Fix</strong>
+    Added <code>emptyDir</code> volume mounts for both log paths in the bootstrap Helm values. OpenShift mounts the <code>emptyDir</code> before the container starts, which means the directories already exist and the container does not need to create them:
+    <pre><code><span class="key">extraVolumes</span>:
+  - <span class="key">name</span>: <span class="str">logs</span>
+    <span class="key">emptyDir</span>: {}
+  - <span class="key">name</span>: <span class="str">api-logs</span>
+    <span class="key">emptyDir</span>: {}
+<span class="key">extraVolumeMounts</span>:
+  - <span class="key">name</span>: <span class="str">logs</span>
+    <span class="key">mountPath</span>: <span class="str">/app/logs</span>
+  - <span class="key">name</span>: <span class="str">api-logs</span>
+    <span class="key">mountPath</span>: <span class="str">/app/api/logs</span></code></pre>
+  </div>
+</div>
+
+<div class="challenge">
+  <h4>Challenge 7: LiteMaaS models rendered as a comma string, not a YAML list</h4>
+  <p>
+    <strong>Symptom:</strong> LibreChat rejected the generated <code>configYaml</code> — the models field contained <code>"gpt-4o,llama-3.3-70b"</code> as a plain string instead of a proper YAML list. LibreChat's YAML parser threw a type error.
+  </p>
+  <p>
+    <strong>Root cause:</strong> AgV passes <code>litemaas.models</code> to the bootstrap Helm values as a comma-joined string (produced by <code>| join(',')</code> in the Jinja template). The Helm chart was then passing this string directly into the <code>configYamlContent</code> field without splitting it back into a list.
+  </p>
+  <div class="fix">
+    <strong>Fix</strong>
+    Used Helm's <code>splitList</code> function in the bootstrap template to convert the comma-separated string back into a YAML list before rendering <code>configYamlContent</code>:
+    <pre><code><span class="cmt"># In the Helm template</span>
+{{- $models := splitList "," .Values.litemaas.models }}
+<span class="key">endpoints</span>:
+  - <span class="key">name</span>: <span class="str">LiteMaaS</span>
+    <span class="key">models</span>:
+{{- range $models }}
+      - <span class="key">name</span>: <span class="str">{{ . }}</span>
+{{- end }}</code></pre>
+  </div>
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="lessons">8. Lessons Learned</h2>
+
+<ol>
+  <li>
+    <strong>Monolithic roles do not scale.</strong> The <code>ocp4_workload_mcp_user</code> role was doing too much. When something broke, the failure could originate anywhere across hundreds of tasks. Splitting into single-responsibility roles made every failure immediately attributable to one role, and made updates surgical rather than all-or-nothing.
+  </li>
+  <li>
+    <strong>"Delete the cluster" is not a destroy strategy.</strong> When you move to shared clusters, every role must clean up exactly what it created — and nothing more. Write <code>remove_workload.yml</code> at the same time you write <code>workload.yml</code>, not as an afterthought when destroy testing is on the schedule.
+  </li>
+  <li>
+    <strong>Move cluster-wide infra out of the order.</strong> Installing Pipelines, OpenShift GitOps, ToolHive, and Gitea per order is wasteful. These are cluster-wide operators. Install them once in the cluster provisioner and let every order on that cluster benefit. The per-order provisioning time drops dramatically.
+  </li>
+  <li>
+    <strong>One username variable, referenced everywhere.</strong> The original lab had sequential names (<code>user1</code>, <code>user2</code>) with no connection to the order GUID. The new pattern has a single <code>ocp4_workload_tenant_keycloak_username</code> — set once in AgV, used by every role, every Helm chart, and every ArgoCD Application. Tracing a problem from an ArgoCD app name back to an order is immediate.
+  </li>
+  <li>
+    <strong>Deterministic passwords from the GUID.</strong> Both the old and new patterns derive passwords from the GUID rather than generating random values. Deterministic derivation means you never need to store the password anywhere — it can always be recalculated from the GUID. The new <code>sha256</code> formula is stronger and satisfies modern password complexity requirements with the fixed prefix and suffix.
+  </li>
+  <li>
+    <strong>ArgoCD cascade finalizer is essential for clean destroy.</strong> Without the cascade finalizer on the bootstrap Application, deleting it leaves all child Applications and all their synced Kubernetes resources as orphans in the cluster. Adding <code>argocd.argoproj.io/finalizer: resources-finalizer.argocd.argoproj.io</code> to the bootstrap Application ensures ArgoCD cleans up the entire tree before the parent Application is removed.
+  </li>
+  <li>
+    <strong>Test destroy on every iteration, not just at the end.</strong> Destroy testing was done late in this migration and uncovered several ordering problems in <code>remove_workloads:</code> and missing <code>remove_workload.yml</code> implementations. Running a full provision-then-destroy cycle on every significant change would have caught these much earlier.
+  </li>
+</ol>
+
+<hr>
+
+<h2 id="open-questions">9. Open Questions — Unresolved Concerns</h2>
+
+<p>
+  These are concerns raised during development that are not yet resolved. They need to be addressed before this pattern is used at scale. They are documented here so the next person who works on this does not have to rediscover them.
+</p>
+
+<div class="challenge">
+  <h4>Concern 1 (raised by @Judd): Namespace termination deadlocks and etcd orphans</h4>
+  <p>
+    If we rely on namespace deletion to clean up resources, we will run into namespace termination deadlocks. When a namespace is stuck terminating and we force it by removing the finalizer, the resources inside the namespace are <strong>not deleted</strong> — they become orphans. They remain in etcd but are inaccessible. This causes two serious problems:
+  </p>
+  <ol>
+    <li><strong>Resource name conflicts on re-use.</strong> If a new order tries to create a resource with the same name as an orphaned resource, it will hit a conflict and the old orphaned data will win. New resources of the same name as orphans cannot be created cleanly.</li>
+    <li><strong>etcd fills up over time.</strong> Orphaned resources accumulate. On a long-running shared cluster with many orders, this will eventually exhaust etcd capacity.</li>
+  </ol>
+  <p>
+    The current implementation uses the ArgoCD cascade finalizer to delete managed resources before the namespace is removed. This helps when ArgoCD cleanup completes cleanly. But if ArgoCD cleanup itself gets stuck, or if there are resources not managed by ArgoCD, namespace force-deletion will still produce orphans.
+  </p>
+  <div class="fix">
+    <strong>Status: Open — needs resolution before production scale</strong>
+    The cascade finalizer is in place but does not cover all cases. A robust solution needs explicit resource deletion (not relying on namespace deletion as the primary cleanup mechanism) and validation that etcd does not accumulate orphans over repeated order cycles.
+  </div>
+</div>
+
+<div class="challenge">
+  <h4>Concern 2 (raised by @Judd): Namespaces not created by ArgoCD — portability problem</h4>
+  <p>
+    In the current pattern, namespaces are pre-created by Ansible (<code>ocp4_workload_tenant_namespace</code>) before ArgoCD syncs. ArgoCD is explicitly told <code>CreateNamespace=false</code> and does not own the namespaces.
+  </p>
+  <p>
+    This creates a portability problem: <strong>the GitOps repos cannot be used on non-OcpSandbox clusters without modification.</strong> If someone tries to use the same GitOps repo on a plain OpenShift cluster (without the Sandbox API or the Ansible tenant roles), the ArgoCD sync will fail immediately because the namespaces do not exist and ArgoCD is not allowed to create them.
+  </p>
+  <p>
+    Being good corporate citizens means our GitOps repos should be usable by customers in their own clusters, not just in RHDP. Right now they are not — they have a hidden dependency on the Ansible pre-provisioning step that is not expressed anywhere in the GitOps repo itself.
+  </p>
+  <div class="fix">
+    <strong>Status: Open — design decision needed</strong>
+    Two options to consider: (1) Have ArgoCD create the namespaces (<code>CreateNamespace=true</code>) — this makes the repo portable but means ArgoCD owns the namespace lifecycle, which has its own implications for multi-tenant shared clusters. (2) Document the dependency explicitly and provide a standalone mode where the GitOps repo includes a namespace creation step that is skipped when Ansible pre-creates them. Neither option is implemented yet.
+  </div>
+</div>
+
+<div class="challenge">
+  <h4>Challenge: Showroom fails with "invalid value bearer" — wrong role used</h4>
+  <p>
+    The <code>ocp4_workload_showroom_ocp_integration</code> role uses <code>oc login --token</code> internally. In <code>config: namespace</code> this fails because the token format causes an "invalid value bearer" error. This role was designed for <code>config: openshift-workloads</code>.
+  </p>
+  <div class="fix">
+    <strong>Fix:</strong> Remove <code>ocp4_workload_showroom_ocp_integration</code> from your <code>workloads:</code> list entirely. The <code>ocp4_workload_ocp_console_embed</code> role is already run once by the cluster provisioner — do not add it to tenant workloads. Add these two vars to <code>common.yaml</code>:
+    <pre style="margin-top:0.5rem;font-size:0.8rem;">openshift_api_url: "{{ sandbox_openshift_api_url }}"
+openshift_cluster_admin_token: "{{ cluster_admin_agnosticd_sa_token }}"</pre>
+  </div>
+</div>
+
+<div class="challenge">
+  <h4>Challenge: Catalog item in <code>summit-2026/</code> — Sandbox API cannot find cluster</h4>
+  <p>
+    The <code>summit-2026/account.yaml</code> sets <code>sandbox_api: reservation: pgpu-event</code> at account level. This restricts ALL catalog items in that directory to only schedule against Summit event clusters. Shared clusters (like <code>cnv-us-east-ocp-3</code>) are not in that reservation, so Sandbox API returns "No OCP shared cluster configuration found." Empty string override (<code>reservation: ""</code>) is not supported by AgV and does not work.
+  </p>
+  <div class="fix">
+    <strong>Fix:</strong> Move the catalog item to <code>agd_v2/</code> instead of <code>summit-2026/</code>. The <code>summit-2026/</code> directory is specifically for Summit event clusters — shared cluster labs that run year-round belong in <code>agd_v2/</code>. The <code>agd_v2/account.yaml</code> does not set a reservation so any matching cluster in the pool can be scheduled.
+  </div>
+</div>
+
+<div class="challenge">
+  <h4>Challenge: <code>catch_all</code> set as a role var — does not work</h4>
+  <p>
+    Setting <code>ocp4_workload_litellm_virtual_keys_catch_all: false</code> as a regular role variable does not prevent the Sandbox API from deleting other tenants' LiteMaaS keys. The <code>catch_all</code> setting must be in <code>__meta__.sandbox_api.actions.destroy</code> where Sandbox API reads it directly.
+  </p>
+  <div class="fix">
+    <strong>Fix:</strong> Move it to <code>__meta__</code>:
+    <pre style="margin-top:0.5rem;font-size:0.8rem;">__meta__:
+  sandbox_api:
+    actions:
+      destroy:
+        catch_all: false</pre>
+  </div>
+</div>
+
+<div class="challenge">
+  <h4>Challenge: Missing tag in <code>cloud_selector</code> — cluster not found</h4>
+  <p>
+    The Sandbox API does a subset match — a cluster qualifies only if it has ALL the tags you specify. Missing even one tag means zero clusters match and the order fails before provisioning starts. Common mistake: omitting <code>cloud: cnv-dedicated-shared</code>.
+  </p>
+  <div class="fix">
+    <strong>Fix:</strong> All three tags are required:
+    <pre style="margin-top:0.5rem;font-size:0.8rem;">cloud_selector:
+  cloud: cnv-dedicated-shared   # required
+  demo: your-lab-name           # required
+  purpose: prod                 # required</pre>
+  </div>
+</div>
+
+<hr>
+
+<h2 id="links">10. All Links</h2>
+
+<h3>Pull Requests</h3>
+<table>
+  <thead>
+    <tr><th>Repository</th><th>PR</th><th>Title</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>agnosticd/agnosticd-v2</td>
+      <td><a href="https://github.com/agnosticd/agnosticd-v2/pull/123" target="_blank">PR #123</a></td>
+      <td>config/namespace: support explicit <code>remove_workloads</code> list on destroy</td>
+      <td><span class="badge badge-green">Merged</span></td>
+    </tr>
+    <tr>
+      <td>agnosticd/namespaced_workloads</td>
+      <td><a href="https://github.com/agnosticd/namespaced_workloads/pull/12" target="_blank">PR #12</a></td>
+      <td>feat: add tenant roles for shared cluster labs (keycloak_user, namespace, gitea)</td>
+      <td><span class="badge badge-orange">Open</span></td>
+    </tr>
+    <tr>
+      <td>agnosticd/core_workloads</td>
+      <td><a href="https://github.com/agnosticd/core_workloads/pull/62" target="_blank">PR #62</a></td>
+      <td>gitops_bootstrap: userinfo ConfigMap discovery + cascade cleanup on destroy</td>
+      <td><span class="badge badge-orange">Open</span></td>
+    </tr>
+    <tr>
+      <td>rhpds/agnosticv</td>
+      <td><a href="https://github.com/rhpds/agnosticv/pull/25180" target="_blank">PR #25180</a></td>
+      <td>MCP Sandbox: tenant roles pattern, scheduler-only sandbox, gitops_bootstrap</td>
+      <td><span class="badge badge-orange">Open</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Repositories</h3>
+<table>
+  <thead>
+    <tr><th>Repo</th><th>Branch / path</th><th>What it contains</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="https://github.com/agnosticd/namespaced_workloads" target="_blank">agnosticd/namespaced_workloads</a></td>
+      <td><code>tenant-roles</code></td>
+      <td>New tenant roles: <a href="https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_keycloak_user" target="_blank">tenant_keycloak_user</a>, <a href="https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_namespace" target="_blank">tenant_namespace</a>, <a href="https://github.com/agnosticd/namespaced_workloads/tree/tenant-roles/roles/ocp4_workload_tenant_gitea" target="_blank">tenant_gitea</a></td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/agnosticd/core_workloads" target="_blank">agnosticd/core_workloads</a></td>
+      <td><code>gitops-bootstrap-userinfo</code></td>
+      <td><a href="https://github.com/agnosticd/core_workloads/tree/gitops-bootstrap-userinfo/roles/ocp4_workload_gitops_bootstrap" target="_blank">ocp4_workload_gitops_bootstrap</a> — cascade finalizer, remove_workload, multi-app list, userinfo ConfigMap</td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/agnosticd/agnosticd-v2" target="_blank">agnosticd/agnosticd-v2</a></td>
+      <td><code>tenant-roles-support</code></td>
+      <td>AgnosticD v2 deployer with explicit <code>remove_workloads</code> list support</td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/rhpds/agnosticv" target="_blank">rhpds/agnosticv</a></td>
+      <td><code>tenant-namespace-roles</code></td>
+      <td>AgV catalog item: <a href="https://github.com/rhpds/agnosticv/blob/tenant-namespace-roles/agd_v2/mcp-with-openshift-sandbox/common.yaml" target="_blank">mcp-with-openshift-sandbox/common.yaml</a></td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops" target="_blank">rhpds/ocpsandbox-mcp-with-openshift-gitops</a></td>
+      <td><code>main</code></td>
+      <td>GitOps repo: <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/infra/bootstrap" target="_blank">infra/bootstrap</a> · <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/platform/bootstrap" target="_blank">platform/bootstrap</a> · <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/tenant/bootstrap" target="_blank">tenant/bootstrap</a> · <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/tenant/librechat" target="_blank">tenant/librechat</a> · <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/tenant/mcp-gitea" target="_blank">mcp-gitea</a> · <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/tenant/mcp-openshift" target="_blank">mcp-openshift</a> · <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops/tree/main/tenant/agent" target="_blank">agent</a></td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift" target="_blank">rhpds/rhpds.ocpsandbox_mcp_with_openshift</a></td>
+      <td><code>main</code></td>
+      <td>Cluster provisioner: <a href="https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift/blob/main/tests/e2e/cluster-provision.yml" target="_blank">cluster-provision.yml</a> (Infra + Platform bootstrap)</td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift" target="_blank">rhpds/rhpds.ocpsandbox_mcp_with_openshift</a></td>
+      <td><code>main</code></td>
+      <td>Original workshop (before migration): <a href="https://github.com/rhpds/agnosticv/blob/master/agd_v2/mcp-with-openshift/common.yaml" target="_blank">mcp-with-openshift/common.yaml</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Documentation</h3>
+<table>
+  <thead>
+    <tr><th>Page</th><th>What it covers</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="index.html">Overview</a></td>
+      <td>What is Sandbox API, three-layer architecture, both patterns compared, variables reference</td>
+    </tr>
+    <tr>
+      <td><a href="scheduler-only.html">Summit 2026 / Scheduler-Only</a></td>
+      <td>Complete annotated AgV common.yaml for the scheduler-only pattern</td>
+    </tr>
+    <tr>
+      <td><a href="namespace-api.html">OCP Sandbox API</a></td>
+      <td>Complete annotated AgV common.yaml for the full OCP Sandbox API pattern</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-orange">
+  <strong>Before you go live — check the Common Mistakes list.</strong>
+  Many of the mistakes documented in this <strong>migration</strong> have also been seen in other labs converting to the shared cluster pattern for <strong>Summit 2026</strong>. The <a href="scheduler-only.html#common-mistakes">Common Mistakes section in the Scheduler-Only guide</a> lists all of them with symptoms and fixes — read it before ordering your first test environment.
+</div>
+<div style="display:flex; justify-content:space-between; margin-top:3rem; padding-top:1.5rem; border-top:1px solid #ddd;">
+  <a href="migration-guide-layers.html">← Previous: Layers + Role Conversions</a>
+  <span></span>
+</div>
+</div>
+</body>
+</html>

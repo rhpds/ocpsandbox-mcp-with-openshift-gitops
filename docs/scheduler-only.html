@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scheduler-Only Pattern — Summit 2026 — Sandbox API Docs</title>
+  <title>Scheduler-Only — common.yaml — Sandbox API Docs</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,37 +14,38 @@
   </div>
 
   <div class="sidebar-section-label">Getting Started</div>
-  <a href="index.html" class="page-link ">Overview</a>
+  <a href="index.html" class="page-link">Overview</a>
 
   <div class="sidebar-section-label">Cluster Setup (Once)</div>
-  <a href="cluster-provisioning.html" class="page-link ">Cluster Provisioning</a>
-  <a href="cluster-provisioning.html#infra" class="sub-link ">&#8627; Infra &mdash; install operators</a>
-  <a href="cluster-provisioning.html#platform" class="sub-link ">&#8627; Platform &mdash; create instances</a>
-  <a href="cluster-provisioning.html#today" class="sub-link ">&#8627; Running today</a>
-  <a href="cluster-provisioning.html#future" class="sub-link ">&#8627; Future with AgV</a>
+  <a href="cluster-provisioning.html" class="page-link">Cluster Provisioning</a>
+  <a href="cluster-provisioning.html#infra" class="sub-link">↳ Infra — install operators</a>
+  <a href="cluster-provisioning.html#platform" class="sub-link">↳ Platform — create instances</a>
+  <a href="cluster-provisioning.html#today" class="sub-link">↳ Running today</a>
+  <a href="cluster-provisioning.html#future" class="sub-link">↳ Future with AgV</a>
 
   <div class="sidebar-section-label">User Provisioning (Per Order)</div>
-  <a href="user-provisioning.html" class="page-link ">User Provisioning</a>
-  <a href="user-provisioning.html#scheduler-only" class="sub-link ">&#8627; Approach A: Scheduler-Only</a>
-  <a href="user-provisioning.html#ocp-sandbox-api" class="sub-link ">&#8627; Approach B: OCP Sandbox API</a>
-  <a href="user-provisioning.html#namespaces" class="sub-link ">&#8627; Namespace quotas</a>
-  <a href="user-provisioning.html#variables" class="sub-link ">&#8627; Variables reference</a>
+  <a href="user-provisioning.html" class="page-link">Overview + Scheduler-Only</a>
+  <a href="user-provisioning-ocp.html" class="page-link">OCP Sandbox API</a>
+  <a href="user-provisioning-quotas.html" class="page-link">Namespace Quotas + Variables</a>
 
-  <div class="sidebar-section-label">Deep Dives</div>
-  <a href="gitops-pattern.html" class="page-link ">GitOps Architecture</a>
-  <a href="gitops-pattern.html#three-layers" class="sub-link ">&#8627; Three layers</a>
-  <a href="gitops-pattern.html#namespace-targeting" class="sub-link ">&#8627; Namespace contract</a>
-  <a href="migration-guide.html" class="page-link ">Migration Guide</a>
-  <a href="migration-guide.html#original" class="sub-link ">&#8627; Original lab</a>
-  <a href="migration-guide.html#roles" class="sub-link ">&#8627; Role conversions</a>
-  <a href="migration-guide.html#challenges" class="sub-link ">&#8627; Challenges</a>
+  <div class="sidebar-section-label">GitOps Architecture</div>
+  <a href="gitops-pattern.html" class="page-link">GitOps Pattern</a>
+  <a href="gitops-pattern.html#three-layers" class="sub-link">↳ Three layers</a>
+  <a href="gitops-pattern.html#namespace-targeting" class="sub-link">↳ Namespace contract</a>
+
+  <div class="sidebar-section-label">Migration Guide</div>
+  <a href="migration-guide.html" class="page-link">Why + What Changed</a>
+  <a href="migration-guide-layers.html" class="page-link">Layers + Role Conversions</a>
+  <a href="migration-guide-lessons.html" class="page-link">Challenges + Lessons</a>
 
   <div class="sidebar-section-label">AgV Reference</div>
-  <a href="scheduler-only.html" class="page-link active">Scheduler-Only common.yaml</a>
-  <a href="namespace-api.html" class="page-link ">OCP Sandbox API common.yaml</a>
+  <a href="scheduler-only.html" class="page-link active">Scheduler-Only — common.yaml</a>
+  <a href="scheduler-only-roles.html" class="page-link">Scheduler-Only — Roles</a>
+  <a href="scheduler-only-mistakes.html" class="page-link">Scheduler-Only — Mistakes</a>
+  <a href="namespace-api.html" class="page-link">OCP Sandbox API — common.yaml</a>
+  <a href="namespace-api-reference.html" class="page-link">OCP Sandbox API — Reference</a>
 </nav>
 <div class="main">
-
 <h1>Scheduler-Only Pattern <span class="badge badge-blue">Summit 2026</span></h1>
 <p class="subtitle">Complete developer reference — AgnosticV common.yaml, role walkthrough, and destroy behavior</p>
 
@@ -488,304 +489,11 @@
 <hr>
 
 <!-- ============================================================ -->
-<h2 id="sandbox-variables">Variables You Receive from Sandbox API</h2>
 
-<p>These four variables are injected by Sandbox API into every AgnosticD run using the Scheduler-Only pattern. You reference them directly in your AgV <code>common.yaml</code>.</p>
-
-<table>
-  <thead>
-    <tr>
-      <th>Variable</th>
-      <th>Example value</th>
-      <th>How it is used in common.yaml</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>sandbox_openshift_api_url</code></td>
-      <td><code>https://api.cluster-drw4x.example.com:6443</code></td>
-      <td>Passed to any role that needs to authenticate with the cluster API. AgnosticD uses this automatically for <code>k8s</code> module connections.</td>
-    </tr>
-    <tr>
-      <td><code>sandbox_openshift_ingress_domain</code></td>
-      <td><code>apps.cluster-drw4x.example.com</code></td>
-      <td>Used to build all service URLs: Keycloak host, Gitea host, Showroom URLs, LibreChat URL. Example: <code>"keycloak-keycloak.{{ sandbox_openshift_ingress_domain }}"</code></td>
-    </tr>
-    <tr>
-      <td><code>sandbox_openshift_console_url</code></td>
-      <td><code>https://console-openshift-console.apps.cluster-drw4x.example.com</code></td>
-      <td>Passed to Showroom <code>user_data</code> so lab attendees see a direct link to the OCP console tab.</td>
-    </tr>
-    <tr>
-      <td><code>cluster_admin_agnosticd_sa_token</code></td>
-      <td><code>eyJhbGciOiJSUzI1NiIs...</code></td>
-      <td>Used internally by AgnosticD for all Kubernetes API calls. Never reference this in your role vars or log it. Never commit it.</td>
-    </tr>
-  </tbody>
-</table>
-
-<div class="callout callout-orange">
-  <strong>sandbox_openshift_namespace is NOT provided</strong>
-  In the Scheduler-Only pattern, <code>sandbox_openshift_namespace</code> is undefined. Sandbox API did not create a namespace. Your <code>ocp4_workload_tenant_namespace</code> role creates namespaces using <code>ocp4_workload_tenant_namespace_suffixes</code>. Do not reference <code>sandbox_openshift_namespace</code> anywhere in your config.
+<div style="display:flex; justify-content:space-between; margin-top:3rem; padding-top:1.5rem; border-top:1px solid #ddd;">
+  <span></span>
+  <a href="scheduler-only-roles.html">Next: Scheduler-Only — Roles →</a>
 </div>
-
-<div class="callout callout-grey">
-  <strong>Cluster provisioner runs a separate playbook</strong>
-  The <code>cluster-provision.yml</code> playbook is run by the RHDP ops team when a new cluster is added to the pool. It is not part of AgnosticV and is not triggered per order. If RHBK, Gitea, or ArgoCD are missing from the cluster, the tenant roles will fail — this indicates the cluster was not properly provisioned.
-</div>
-
-<hr>
-
-<!-- ============================================================ -->
-<h2 id="role-walkthrough">Role-by-Role Walkthrough</h2>
-
-<h3>Role 1 — ocp4_workload_tenant_keycloak_user</h3>
-<p><strong>Collection:</strong> <code>agnosticd.namespaced_workloads</code></p>
-<p>
-  Creates a single user account in the existing Red Hat Build of Keycloak (RHBK) instance on the cluster. RHBK was installed by the cluster provisioner and serves as the SSO provider for all tenant services (LibreChat, the MCP proxies, etc.).
-</p>
-<ul>
-  <li>Authenticates to RHBK admin API using <code>ocp4_workload_tenant_keycloak_user_admin_username</code> and <code>ocp4_workload_tenant_keycloak_user_admin_password</code></li>
-  <li>Creates a user with username <code>{{ ocp4_workload_tenant_keycloak_username }}</code> and password <code>{{ common_password }}</code></li>
-  <li>Assigns the user to the realm specified by <code>ocp4_workload_tenant_keycloak_user_realm</code></li>
-  <li>Does not create any Kubernetes resources</li>
-</ul>
-<div class="callout callout-blue">
-  <strong>Key vars:</strong> <code>ocp4_workload_tenant_keycloak_user_rhbk_host</code>, <code>ocp4_workload_tenant_keycloak_user_realm</code>, <code>ocp4_workload_tenant_keycloak_username</code>, <code>common_password</code>
-</div>
-
-<h3>Role 2 — ocp4_workload_tenant_namespace</h3>
-<p><strong>Collection:</strong> <code>agnosticd.namespaced_workloads</code></p>
-<p>
-  Creates one OCP namespace per entry in <code>ocp4_workload_tenant_namespace_suffixes</code>. Each namespace is named <code>&lt;username&gt;-&lt;suffix&gt;</code> (e.g., <code>mcpuser-drw4x-agent</code>). The role also:
-</p>
-<ul>
-  <li>Applies a <code>LimitRange</code> with default CPU and memory limits to each namespace</li>
-  <li>Grants the tenant user edit access to each namespace</li>
-  <li>Optionally applies a <code>ResourceQuota</code> if quota vars are set</li>
-</ul>
-<div class="callout callout-blue">
-  <strong>Key vars:</strong> <code>ocp4_workload_tenant_namespace_suffixes</code>, <code>ocp4_workload_tenant_keycloak_username</code>
-</div>
-
-<h3>Role 3 — ocp4_workload_tenant_gitea</h3>
-<p><strong>Collection:</strong> <code>agnosticd.namespaced_workloads</code></p>
-<p>
-  Configures a Gitea organization and repositories for this tenant within the shared Gitea instance. The role:
-</p>
-<ul>
-  <li>Creates a Gitea organization named after the tenant user</li>
-  <li>Creates a Gitea user account for the tenant</li>
-  <li>For each entry in <code>ocp4_workload_tenant_gitea_repos</code>, mirrors the source repo into the tenant org</li>
-  <li>Sets the fact <code>ocp4_workload_tenant_gitea_repo_url</code> for each mirrored repo — this is consumed by the GitOps bootstrap role</li>
-</ul>
-<p>The mirrored Gitea repo is what ArgoCD watches for this tenant. Changes pushed to the tenant's Gitea fork are picked up by ArgoCD and deployed automatically.</p>
-<div class="callout callout-blue">
-  <strong>Key vars:</strong> <code>ocp4_workload_tenant_gitea_host</code>, <code>ocp4_workload_tenant_gitea_admin_user</code>, <code>ocp4_workload_tenant_gitea_repos</code>
-</div>
-
-<h3>Role 4 — ocp4_workload_litellm_virtual_keys</h3>
-<p><strong>Collection:</strong> <code>agnosticd.ai_workloads</code></p>
-<p>
-  Creates a rate-limited AI API virtual key via the LiteMaaS admin API. LiteMaaS provides a unified OpenAI-compatible endpoint in front of multiple LLM providers. The virtual key:
-</p>
-<ul>
-  <li>Is scoped to the models listed in <code>ocp4_workload_litellm_virtual_keys_models</code></li>
-  <li>Has a spending cap of <code>ocp4_workload_litellm_virtual_keys_max_budget</code> USD</li>
-  <li>Resets on the cadence set by <code>ocp4_workload_litellm_virtual_keys_budget_duration</code></li>
-  <li>Is tagged with the tenant GUID for lifecycle management</li>
-  <li>Sets the Ansible fact <code>litellm_virtual_key</code> after creation — used by the GitOps bootstrap role to pass the key to ArgoCD Helm values</li>
-</ul>
-<div class="callout callout-orange">
-  <strong>catch_all: false — always</strong>
-  Setting <code>ocp4_workload_litellm_virtual_keys_catch_all: true</code> causes the destroy playbook to delete ALL virtual keys on the LiteMaaS instance that are not tagged to this tenant. This will break every other concurrent lab's AI access. Keep this <code>false</code>.
-</div>
-
-<h3>Role 5 — ocp4_workload_gitops_bootstrap</h3>
-<p><strong>Collection:</strong> <code>agnosticd.core_workloads</code></p>
-<p>
-  Creates an ArgoCD Application resource (the "bootstrap" app) in the OpenShift GitOps namespace. This bootstrap application uses the app-of-apps pattern: it points to a Helm chart at <code>ocp4_workload_gitops_bootstrap_path</code> in the tenant's Gitea repo, which in turn defines all the child ArgoCD applications for this tenant.
-</p>
-<ul>
-  <li>ArgoCD continuously reconciles the tenant's desired state from Gitea</li>
-  <li>The Helm chart values are passed via <code>ocp4_workload_gitops_bootstrap_helm_values</code>, which includes the tenant username, password, domain, and LiteMaaS key</li>
-  <li>ArgoCD cascade-deletes all child resources when the bootstrap app is deleted during destroy</li>
-</ul>
-<div class="callout callout-blue">
-  <strong>Key vars:</strong> <code>ocp4_workload_gitops_bootstrap_revision</code>, <code>ocp4_workload_gitops_bootstrap_path</code>, <code>ocp4_workload_gitops_bootstrap_helm_values</code>, <code>litellm_virtual_key</code> (fact from role 4)
-</div>
-<div class="callout callout-grey">
-  <strong>How namespace targeting works</strong>
-  See <a href="gitops-pattern.html#namespace-targeting">GitOps Pattern — How ArgoCD picks up pre-created namespaces</a> for a full explanation.
-</div>
-
-<h3>Role 6 — ocp4_workload_showroom</h3>
-<p><strong>Collection:</strong> <code>agnosticd.showroom</code></p>
-<p>
-  Deploys the Showroom tab-based UI. Showroom is a small web application that presents the lab attendee with a set of browser tabs — typically a lab guide, an OCP console link, and application-specific URLs. It is driven by a Git repository containing an Antora (AsciiDoc) site.
-</p>
-<ul>
-  <li>Clones <code>showroom_git_repo</code> at <code>showroom_git_repo_revision</code> and builds the tab configuration</li>
-  <li>Deploys the Showroom pod into a namespace named after the tenant</li>
-  <li>The <code>showroom_user_data</code> dict is rendered into template variables in the Showroom content — use it to pass per-tenant URLs and credentials</li>
-  <li>Must be deployed last (all other services must be up so their URLs are valid)</li>
-</ul>
-
-<hr>
-
-<!-- ============================================================ -->
-<h2 id="destroy">Destroy Behavior</h2>
-
-<p>
-  When an order is destroyed (user cancels, order expires, or admin triggers destruction), AgnosticD calls the <code>remove_workload.yml</code> of each role in <code>remove_workloads:</code> order. This is the reverse of provisioning.
-</p>
-
-<table>
-  <thead>
-    <tr>
-      <th>Step</th>
-      <th>Role</th>
-      <th>What is deleted</th>
-      <th>Notes</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>1</td>
-      <td><code>ocp4_workload_showroom</code></td>
-      <td>Showroom Deployment, Service, Route</td>
-      <td>UI goes down first. Users see the session as ended.</td>
-    </tr>
-    <tr>
-      <td>2</td>
-      <td><code>ocp4_workload_litellm_virtual_keys</code></td>
-      <td>LiteMaaS virtual key for this tenant</td>
-      <td>Tenant's AI API access revoked. Budget tracking ends.</td>
-    </tr>
-    <tr>
-      <td>3</td>
-      <td><code>ocp4_workload_gitops_bootstrap</code></td>
-      <td>ArgoCD bootstrap Application + all child apps (cascade delete)</td>
-      <td>ArgoCD's cascade delete removes all Kubernetes resources deployed by ArgoCD in the tenant namespaces. This is the most powerful step — it cleans up all workloads without needing individual role teardowns.</td>
-    </tr>
-    <tr>
-      <td>4</td>
-      <td><code>ocp4_workload_tenant_gitea</code></td>
-      <td>Gitea org, repos, and tenant user account</td>
-      <td>Tenant's Git repositories deleted from shared Gitea.</td>
-    </tr>
-    <tr>
-      <td>5</td>
-      <td><code>ocp4_workload_tenant_namespace</code></td>
-      <td>All OCP namespaces created for this tenant</td>
-      <td>Any remaining in-namespace resources (not cleaned by ArgoCD cascade) are deleted with the namespace.</td>
-    </tr>
-    <tr>
-      <td>6</td>
-      <td><code>ocp4_workload_tenant_keycloak_user</code></td>
-      <td>RHBK user account for this tenant</td>
-      <td>SSO identity removed. Tenant cannot log in after this step.</td>
-    </tr>
-    <tr>
-      <td>7</td>
-      <td>(Sandbox API)</td>
-      <td>Cluster-admin SA token revoked; cluster returned to pool</td>
-      <td>Automatic — Sandbox API handles this after all remove_workloads complete. The cluster is re-provisioned or returned to available inventory.</td>
-    </tr>
-  </tbody>
-</table>
-
-<div class="callout callout-green">
-  <strong>ArgoCD cascade delete is your cleanup friend</strong>
-  By deleting the ArgoCD bootstrap Application with cascade enabled (the default), ArgoCD removes every Kubernetes resource it manages across all tenant namespaces. This means your namespace deletion in step 5 is straightforward — most resources are already gone. Any resources created directly by Ansible (not via ArgoCD) must be handled by the relevant role's <code>remove_workload.yml</code>.
-</div>
-
-<div class="callout callout-grey">
-  <strong>Shared cluster services are not deleted</strong>
-  The destroy playbook does not touch RHBK, Gitea (the server), ArgoCD (the operator), or LiteMaaS themselves — those are shared cluster services managed by the cluster provisioner. Only per-tenant resources (user accounts, orgs, namespaces, keys) are deleted.
-</div>
-
-<hr>
-
-<h2 id="common-mistakes">Common Mistakes</h2>
-
-<p>These are real mistakes that have caused failures — many discovered during the <strong>Summit 2026</strong> lab migration. If your order fails before provisioning starts or ArgoCD never syncs, check these first.</p>
-
-<table>
-  <thead>
-    <tr>
-      <th>Mistake</th>
-      <th>Symptom</th>
-      <th>Fix</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>config: openshift-workloads</code> instead of <code>config: namespace</code></td>
-      <td>Fails before provisioning starts — deployer cannot connect to cluster</td>
-      <td>Use <code>config: namespace</code> for all shared cluster / Sandbox API catalog items</td>
-    </tr>
-    <tr>
-      <td>Missing <code>scm_ref:</code> in <code>__meta__.deployer</code></td>
-      <td>Fails before provisioning starts — Babylon cannot determine which AgnosticD branch to run</td>
-      <td>Always add <code>scm_ref: main</code> (or your branch) to the deployer block</td>
-    </tr>
-    <tr>
-      <td><code>var: sandbox_user</code> on sandbox entry + <code>clusters:</code> block</td>
-      <td>Variables are prefixed (<code>sandbox_user.sandbox_openshift_api_url</code>) and not injected correctly with <code>config: namespace</code></td>
-      <td>Remove <code>var:</code> and <code>clusters:</code>. Use <code>sandbox_openshift_api_url</code> and <code>cluster_admin_agnosticd_sa_token</code> directly</td>
-    </tr>
-    <tr>
-      <td>Duplicate YAML key in <code>common.yaml</code></td>
-      <td>yamllint error: <em>duplication of key</em> — order rejected at validation</td>
-      <td>Search for the key name — one definition should be a comment, remove the duplicate active line</td>
-    </tr>
-    <tr>
-      <td><code>catch_all: true</code> for LiteMaaS on a shared cluster</td>
-      <td>Destroy deletes all other tenants' LiteMaaS keys</td>
-      <td>Always <code>ocp4_workload_litellm_virtual_keys_catch_all: false</code></td>
-    </tr>
-    <tr>
-      <td><code>catch_all: false</code> set as a role var instead of in <code>__meta__</code></td>
-      <td>Sandbox API ignores the role var — other tenants' LiteMaaS keys deleted on destroy</td>
-      <td>Set <code>catch_all: false</code> under <code>__meta__.sandbox_api.actions.destroy</code>, not as <code>ocp4_workload_litellm_virtual_keys_catch_all</code></td>
-    </tr>
-    <tr>
-      <td>Missing <code>cloud:</code> tag in <code>cloud_selector</code></td>
-      <td>Sandbox API finds no matching cluster — order fails immediately</td>
-      <td>All three tags are required: <code>cloud: cnv-dedicated-shared</code>, <code>demo: your-lab</code>, <code>purpose: prod</code></td>
-    </tr>
-    <tr>
-      <td>Showroom fails with "invalid value bearer"</td>
-      <td>OCP console integration role fails in <code>config: namespace</code></td>
-      <td>Remove the OCP integration role. <code>ocp4_workload_ocp_console_embed</code> is already in the cluster provisioner — do not add to tenant workloads. Add <code>openshift_cluster_admin_token: "{{ cluster_admin_agnosticd_sa_token }}"</code></td>
-    </tr>
-    <tr>
-      <td>Catalog item in <code>summit-2026/</code> using a shared cluster</td>
-      <td>Order fails — <code>summit-2026/account.yaml</code> sets <code>reservation: pgpu-event</code> which excludes shared pools. Empty string override is not supported by AgV.</td>
-      <td>Move the catalog item to <code>agd_v2/</code>. The <code>summit-2026/</code> directory is for Summit event clusters only — shared cluster labs belong in <code>agd_v2/</code>.</td>
-    </tr>
-    <tr>
-      <td><code>dev.yaml</code> duplicating <code>collections</code>, <code>workloads</code>, and <code>catalog</code> from <code>common.yaml</code></td>
-      <td>Any change must be made in two files — easy to get out of sync</td>
-      <td><code>dev.yaml</code> should only contain <code>purpose: development</code> and <code>__meta__</code> overrides. Everything else inherits from <code>common.yaml</code></td>
-    </tr>
-    <tr>
-      <td>ArgoCD Application syncs before Gitea repo is migrated</td>
-      <td>ArgoCD fails first sync — repo not found. Comes up eventually after retries.</td>
-      <td>The <code>tenant_gitea</code> role now waits for <code>repoMigrationComplete</code> status before exporting the repo URL. Make sure you are on the latest <code>tenant-roles</code> branch.</td>
-    </tr>
-  </tbody>
-</table>
-
-<div class="callout callout-orange">
-  <strong>Converting an existing lab? Read the Migration Guide.</strong>
-  If you are converting an existing lab to this pattern, the <a href="migration-guide.html"><strong>Migration Guide</strong></a> documents every challenge encountered during the <strong>Summit 2026</strong> MCP lab migration — including all the above mistakes and how they were resolved.
-</div>
-
-<hr>
-<p style="color:#888;font-size:0.85rem;">Red Hat Demo Platform (RHDP) &mdash; Internal developer reference &mdash; <a href="index.html">Back to overview</a> &mdash; <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops">GitHub</a></p>
-
 </div>
 </body>
 </html>

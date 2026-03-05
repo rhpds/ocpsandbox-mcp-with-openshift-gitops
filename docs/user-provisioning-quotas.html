@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Provisioning — Namespace Quotas + Variables — Sandbox API Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="product">Sandbox API Docs</div>
+    <div class="version">Red Hat Demo Platform</div>
+  </div>
+
+  <div class="sidebar-section-label">Getting Started</div>
+  <a href="index.html" class="page-link">Overview</a>
+
+  <div class="sidebar-section-label">Cluster Setup (Once)</div>
+  <a href="cluster-provisioning.html" class="page-link">Cluster Provisioning</a>
+  <a href="cluster-provisioning.html#infra" class="sub-link">↳ Infra — install operators</a>
+  <a href="cluster-provisioning.html#platform" class="sub-link">↳ Platform — create instances</a>
+  <a href="cluster-provisioning.html#today" class="sub-link">↳ Running today</a>
+  <a href="cluster-provisioning.html#future" class="sub-link">↳ Future with AgV</a>
+
+  <div class="sidebar-section-label">User Provisioning (Per Order)</div>
+  <a href="user-provisioning.html" class="page-link">Overview + Scheduler-Only</a>
+  <a href="user-provisioning-ocp.html" class="page-link">OCP Sandbox API</a>
+  <a href="user-provisioning-quotas.html" class="page-link active">Namespace Quotas + Variables</a>
+
+  <div class="sidebar-section-label">GitOps Architecture</div>
+  <a href="gitops-pattern.html" class="page-link">GitOps Pattern</a>
+  <a href="gitops-pattern.html#three-layers" class="sub-link">↳ Three layers</a>
+  <a href="gitops-pattern.html#namespace-targeting" class="sub-link">↳ Namespace contract</a>
+
+  <div class="sidebar-section-label">Migration Guide</div>
+  <a href="migration-guide.html" class="page-link">Why + What Changed</a>
+  <a href="migration-guide-layers.html" class="page-link">Layers + Role Conversions</a>
+  <a href="migration-guide-lessons.html" class="page-link">Challenges + Lessons</a>
+
+  <div class="sidebar-section-label">AgV Reference</div>
+  <a href="scheduler-only.html" class="page-link">Scheduler-Only — common.yaml</a>
+  <a href="scheduler-only-roles.html" class="page-link">Scheduler-Only — Roles</a>
+  <a href="scheduler-only-mistakes.html" class="page-link">Scheduler-Only — Mistakes</a>
+  <a href="namespace-api.html" class="page-link">OCP Sandbox API — common.yaml</a>
+  <a href="namespace-api-reference.html" class="page-link">OCP Sandbox API — Reference</a>
+</nav>
+<div class="main">
+<h2 id="namespaces">Namespace Configuration and Quotas</h2>
+
+<p>
+  Namespace quotas prevent any single tenant from consuming too many cluster resources. In the Scheduler-Only pattern, quotas are enforced by <code>ocp4_workload_tenant_namespace</code> via <code>ResourceQuota</code> and <code>LimitRange</code> objects. In the OCP Sandbox API pattern, quotas are set in the <code>__meta__.sandboxes</code> quota block.
+</p>
+
+<h3>ResourceQuota created by ocp4_workload_tenant_namespace</h3>
+
+<pre><code><span class="cmt"># ResourceQuota applied to each tenant namespace</span>
+<span class="key">apiVersion</span>: <span class="val">v1</span>
+<span class="key">kind</span>: <span class="val">ResourceQuota</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="val">tenant-quota</span>
+  <span class="key">namespace</span>: <span class="str">"sandbox-{{ guid }}-user"</span>
+<span class="key">spec</span>:
+  <span class="key">hard</span>:
+    <span class="key">requests.cpu</span>: <span class="str">"{{ quota_cpu_requests }}"</span>
+    <span class="key">requests.memory</span>: <span class="str">"{{ quota_memory_requests }}"</span>
+    <span class="key">limits.cpu</span>: <span class="str">"{{ quota_cpu_limits | default(quota_cpu_requests) }}"</span>
+    <span class="key">limits.memory</span>: <span class="str">"{{ quota_memory_limits | default(quota_memory_requests) }}"</span>
+    <span class="key">pods</span>: <span class="str">"{{ quota_pods }}"</span>
+    <span class="key">persistentvolumeclaims</span>: <span class="str">"{{ quota_pvcs | default('10') }}"</span>
+    <span class="key">services.loadbalancers</span>: <span class="str">"0"</span>   <span class="cmt"># no LoadBalancer services on shared clusters</span>
+    <span class="key">services.nodeports</span>: <span class="str">"0"</span>       <span class="cmt"># no NodePort services on shared clusters</span></code></pre>
+
+<h3>LimitRange created per namespace</h3>
+
+<pre><code><span class="cmt"># LimitRange sets default resource requests/limits for containers
+# that do not specify their own. Prevents unbounded containers.</span>
+<span class="key">apiVersion</span>: <span class="val">v1</span>
+<span class="key">kind</span>: <span class="val">LimitRange</span>
+<span class="key">metadata</span>:
+  <span class="key">name</span>: <span class="val">tenant-limits</span>
+  <span class="key">namespace</span>: <span class="str">"sandbox-{{ guid }}-user"</span>
+<span class="key">spec</span>:
+  <span class="key">limits</span>:
+  - <span class="key">type</span>: <span class="val">Container</span>
+    <span class="key">default</span>:
+      <span class="key">cpu</span>: <span class="val">500m</span>
+      <span class="key">memory</span>: <span class="val">512Mi</span>
+    <span class="key">defaultRequest</span>:
+      <span class="key">cpu</span>: <span class="val">100m</span>
+      <span class="key">memory</span>: <span class="val">128Mi</span>
+    <span class="key">max</span>:
+      <span class="key">cpu</span>: <span class="val">"4"</span>       <span class="cmt"># no single container can request more than 4 CPU</span>
+      <span class="key">memory</span>: <span class="val">8Gi</span></code></pre>
+
+<h3>Recommended quota values for MCP lab</h3>
+
+<table>
+  <thead>
+    <tr><th>Namespace</th><th>CPU Requests</th><th>Memory Requests</th><th>Pods</th><th>Rationale</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>sandbox-{guid}-user</code></td>
+      <td>8 cores</td>
+      <td>16 Gi</td>
+      <td>30</td>
+      <td>Main workload namespace; MCP server + application pods</td>
+    </tr>
+    <tr>
+      <td><code>sandbox-{guid}-tools</code></td>
+      <td>4 cores</td>
+      <td>8 Gi</td>
+      <td>20</td>
+      <td>ToolHive MCP servers (each is a separate pod)</td>
+    </tr>
+    <tr>
+      <td><code>sandbox-{guid}-showroom</code></td>
+      <td>500m</td>
+      <td>1 Gi</td>
+      <td>5</td>
+      <td>Showroom lab guide &mdash; lightweight Nginx + content</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-warning">
+  <strong>NodePort and LoadBalancer services are blocked</strong>
+  On shared clusters, <code>services.loadbalancers: "0"</code> and <code>services.nodeports: "0"</code> are always set. All external access must go through OpenShift Routes (<code>kind: Route</code>). If your lab content tries to create a LoadBalancer service, it will fail. Use Routes instead.
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="variables">Variables from Sandbox API</h2>
+
+<p>
+  These variables are automatically injected into every AgnosticD role invocation. You do not need to declare them &mdash; just use them. They are available from the moment the first role runs.
+</p>
+
+<table>
+  <thead>
+    <tr><th>Variable</th><th>Pattern</th><th>Description</th><th>Example</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>sandbox_openshift_api_url</code></td>
+      <td>Both</td>
+      <td>Cluster API server URL. Pass to <code>k8s_auth</code> or <code>oc login</code></td>
+      <td><code>https://api.cluster-xyz.example.com:6443</code></td>
+    </tr>
+    <tr>
+      <td><code>sandbox_openshift_ingress_domain</code></td>
+      <td>Both</td>
+      <td><strong>Most important.</strong> Wildcard apps domain. Build all Route hostnames from this</td>
+      <td><code>apps.cluster-xyz.example.com</code></td>
+    </tr>
+    <tr>
+      <td><code>sandbox_openshift_console_url</code></td>
+      <td>Both</td>
+      <td>OpenShift web console URL. Pass to Showroom for the console tab</td>
+      <td><code>https://console-openshift-console.apps.cluster-xyz...</code></td>
+    </tr>
+    <tr>
+      <td><code>cluster_admin_agnosticd_sa_token</code></td>
+      <td>Both</td>
+      <td>Cluster-admin ServiceAccount token. Used by all roles to auth. <strong>Never log or commit.</strong></td>
+      <td><code>eyJ...</code> (JWT, long string)</td>
+    </tr>
+    <tr>
+      <td><code>sandbox_openshift_namespace</code></td>
+      <td>OCP only</td>
+      <td>Primary namespace created by Sandbox API. Format: <code>sandbox-{guid}-{suffix}</code></td>
+      <td><code>sandbox-abc12-user</code></td>
+    </tr>
+    <tr>
+      <td><code>sandbox_username</code></td>
+      <td>OCP + keycloak:yes</td>
+      <td>RHSSO username created by Sandbox API</td>
+      <td><code>sandbox-abc12</code></td>
+    </tr>
+    <tr>
+      <td><code>sandbox_password</code></td>
+      <td>OCP + keycloak:yes</td>
+      <td>RHSSO user password (generated). <strong>Never log or commit.</strong></td>
+      <td><em>generated string</em></td>
+    </tr>
+    <tr>
+      <td><code>guid</code></td>
+      <td>Both</td>
+      <td>Globally unique order identifier. Use as prefix for all per-tenant resource names</td>
+      <td><code>abc12</code></td>
+    </tr>
+    <tr>
+      <td><code>sandbox_name</code></td>
+      <td>Both</td>
+      <td>Full sandbox name in the pool. Useful for debugging</td>
+      <td><code>sandbox-abc12</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>How to use ingress_domain in a role</h3>
+
+<pre><code><span class="cmt"># Building a Route hostname from sandbox_openshift_ingress_domain</span>
+<span class="op">---</span>
+<span class="kw">- name</span>: <span class="str">Create Route for MCP server</span>
+  <span class="kw">kubernetes.core.k8s</span>:
+    <span class="kw">state</span>: <span class="val">present</span>
+    <span class="kw">definition</span>:
+      <span class="kw">apiVersion</span>: <span class="val">route.openshift.io/v1</span>
+      <span class="kw">kind</span>: <span class="val">Route</span>
+      <span class="kw">metadata</span>:
+        <span class="kw">name</span>: <span class="val">mcp-server</span>
+        <span class="kw">namespace</span>: <span class="str">"{{ tenant_namespace }}"</span>
+      <span class="kw">spec</span>:
+        <span class="kw">host</span>: <span class="str">"mcp-server-{{ tenant_namespace }}.{{ sandbox_openshift_ingress_domain }}"</span>
+        <span class="kw">to</span>:
+          <span class="kw">kind</span>: <span class="val">Service</span>
+          <span class="kw">name</span>: <span class="val">mcp-server</span>
+        <span class="kw">tls</span>:
+          <span class="kw">termination</span>: <span class="val">edge</span>
+          <span class="kw">insecureEdgeTerminationPolicy</span>: <span class="val">Redirect</span></code></pre>
+
+<div class="callout callout-success">
+  <strong>Pattern: always include namespace in Route hostname</strong>
+  On a shared cluster, multiple tenants have routes in the same wildcard domain. Always include the namespace (which is guid-scoped) in the Route hostname to prevent collisions: <code>mcp-server-sandbox-{guid}-user.apps.cluster.example.com</code>
+</div>
+
+<h3>How roles authenticate to the cluster</h3>
+
+<pre><code><span class="cmt"># All AgnosticD roles authenticate using the injected SA token.
+# This is handled automatically if you use the standard k8s_auth pattern.</span>
+<span class="op">---</span>
+<span class="kw">- name</span>: <span class="str">Set cluster credentials fact</span>
+  <span class="kw">ansible.builtin.set_fact</span>:
+    <span class="kw">k8s_auth_api_key</span>: <span class="str">"{{ cluster_admin_agnosticd_sa_token }}"</span>
+    <span class="kw">k8s_auth_host</span>: <span class="str">"{{ sandbox_openshift_api_url }}"</span>
+    <span class="kw">k8s_auth_verify_ssl</span>: <span class="val">false</span>
+
+<span class="kw">- name</span>: <span class="str">Create namespace</span>
+  <span class="kw">kubernetes.core.k8s</span>:
+    <span class="kw">api_key</span>: <span class="str">"{{ k8s_auth_api_key }}"</span>
+    <span class="kw">host</span>: <span class="str">"{{ k8s_auth_host }}"</span>
+    <span class="kw">validate_certs</span>: <span class="val">false</span>
+    <span class="kw">state</span>: <span class="val">present</span>
+    <span class="kw">definition</span>:
+      <span class="kw">apiVersion</span>: <span class="val">v1</span>
+      <span class="kw">kind</span>: <span class="val">Namespace</span>
+      <span class="kw">metadata</span>:
+        <span class="kw">name</span>: <span class="str">"{{ tenant_namespace }}"</span></code></pre>
+
+<hr>
+<p style="color:#888;font-size:0.85rem;">Red Hat Demo Platform (RHDP) &mdash; Internal developer reference &mdash; <a href="https://github.com/rhpds/ocpsandbox-mcp-with-openshift-gitops">GitHub</a></p>
+<div style="display:flex; justify-content:space-between; margin-top:3rem; padding-top:1.5rem; border-top:1px solid #ddd;">
+  <a href="user-provisioning-ocp.html">← Previous: OCP Sandbox API</a>
+  <span></span>
+</div>
+</div>
+</body>
+</html>
