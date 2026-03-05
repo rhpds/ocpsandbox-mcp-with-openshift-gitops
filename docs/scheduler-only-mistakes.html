@@ -127,7 +127,7 @@
     </tr>
     <tr>
       <td><code>openshift_cluster_ingress_domain is undefined</code> in <code>ocp4_workload_gitops_bootstrap</code></td>
-      <td><code>gitops_bootstrap</code> uses this to build deployer values. Undefined if <code>ocp4_workload_tenant_keycloak_user</code> has not run first (that role discovers it from the cluster)</td>
+      <td>Many roles require this: <code>ocp4_workload_gitops_bootstrap</code>, <code>ocp4_workload_showroom</code>, <code>ocp4_workload_authentication</code>, <code>ocp4_workload_gitea_operator</code> and more. All fail if it is undefined.</td>
       <td>Ensure <code>ocp4_workload_tenant_keycloak_user</code> runs before <code>ocp4_workload_gitops_bootstrap</code> in <code>workloads:</code>. If not using that role: add <code>openshift_cluster_ingress_domain: "{{ sandbox_openshift_ingress_domain }}"</code> to <code>common.yaml</code></td>
     </tr>
   </tbody>

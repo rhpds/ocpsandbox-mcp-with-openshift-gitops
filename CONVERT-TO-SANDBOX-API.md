@@ -141,10 +141,17 @@ openshift_api_url: "{{ sandbox_openshift_api_url }}"
 # Old roles expect openshift_cluster_admin_token — map from Sandbox API variable
 openshift_cluster_admin_token: "{{ cluster_admin_agnosticd_sa_token }}"
 
-# Old roles expect openshift_cluster_ingress_domain — map from Sandbox API variable
-# ONLY add this if you are NOT using ocp4_workload_tenant_keycloak_user.
-# That role discovers and sets openshift_cluster_ingress_domain automatically from the cluster.
-# Setting it here when sandbox_openshift_ingress_domain is undefined (e.g. in CI) will cause a failure.
+# openshift_cluster_ingress_domain is required by MANY roles:
+# gitops_bootstrap, showroom, authentication, gitea_operator, field_content, and more.
+# Two ways to set it:
+#
+# Option A — if using ocp4_workload_tenant_keycloak_user (recommended):
+#   That role discovers and exports it automatically from the cluster API.
+#   No need to set it here — just ensure tenant_keycloak_user runs BEFORE gitops_bootstrap.
+#
+# Option B — if NOT using ocp4_workload_tenant_keycloak_user:
+#   Set it explicitly. Note: do NOT set this in CI where sandbox_openshift_ingress_domain
+#   may be undefined — it will cause a failure.
 openshift_cluster_ingress_domain: "{{ sandbox_openshift_ingress_domain }}"
 ```
 
