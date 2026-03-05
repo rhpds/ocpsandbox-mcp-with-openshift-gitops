@@ -446,26 +446,20 @@
       <span class="key">secondaryBU</span>: <span class="val">Artificial_Intelligence</span>
   <span class="key">sandbox_api</span>:
     <span class="key">actions</span>:
-      <span class="key">destroy</span>: <span class="val">{}</span>    <span class="cmt"># catch_all goes in __meta__.sandbox_api.actions.destroy — see below</span>
+      <span class="key">destroy</span>:
+        <span class="key">catch_all</span>: <span class="kw">false</span>    <span class="cmt"># REQUIRED — prevents deleting other tenants' LiteMaaS keys on destroy</span>
   <span class="cmt"># ── SANDBOX ENTRY ──────────────────────────────────────────</span>
-  <span class="cmt"># Single entry — scheduler only.</span>
-  <span class="cmt"># kind: OcpSandbox  — request an OpenShift cluster from the pool.</span>
-  <span class="cmt"># alias: cluster    — used to reference this sandbox in role vars.</span>
-  <span class="cmt"># namespace_suffix  — Sandbox API creates one primary namespace</span>
-  <span class="cmt">#   named: &lt;catalog-item&gt;-user-&lt;guid&gt;</span>
-  <span class="cmt">#   This is the scheduling artifact. All other namespaces are</span>
-  <span class="cmt">#   created by ocp4_workload_tenant_namespace (Ansible role).</span>
-  <span class="cmt"># cloud_selector    — tags that must match the cluster in the pool.</span>
-  <span class="cmt"># quota             — applied to the primary namespace only.</span>
-  <span class="cmt"># limit_range       — default CPU/memory for pods in primary namespace.</span>
+  <span class="cmt"># ALL THREE cloud_selector tags are required.</span>
+  <span class="cmt"># Sandbox API matches clusters whose annotations contain ALL your tags.</span>
+  <span class="cmt"># Missing even one tag = no cluster found = order fails immediately.</span>
   <span class="key">sandboxes</span>:
   - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
     <span class="key">alias</span>: <span class="val">cluster</span>
     <span class="key">namespace_suffix</span>: <span class="val">user</span>
     <span class="key">cloud_selector</span>:
-      <span class="key">cloud</span>: <span class="val">cnv-dedicated-shared</span>
-      <span class="key">demo</span>: <span class="val">mcp-with-openshift</span>
-      <span class="key">purpose</span>: <span class="val">prod</span>
+      <span class="key">cloud</span>: <span class="val">cnv-dedicated-shared</span>   <span class="cmt"># required</span>
+      <span class="key">demo</span>: <span class="val">mcp-with-openshift</span>     <span class="cmt"># required — ask admin for your pool tag</span>
+      <span class="key">purpose</span>: <span class="val">prod</span>               <span class="cmt"># required</span>
     <span class="key">quota</span>:
       <span class="key">limits.cpu</span>: <span class="str">"2"</span>
       <span class="key">requests.cpu</span>: <span class="str">"2"</span>

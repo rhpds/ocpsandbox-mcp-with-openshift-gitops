@@ -79,15 +79,16 @@ components:
 __meta__:
   sandbox_api:
     actions:
-      destroy: {}
+      destroy:
+        catch_all: false    # required — prevents deleting other tenants' LiteMaaS keys
   sandboxes:
   - kind: OcpSandbox
     alias: cluster
     namespace_suffix: user
     cloud_selector:
-      cloud: cnv-dedicated-shared     # cluster type — ask your admin for the right value
-      demo: your-lab-name             # tag specific to your lab's pool
-      purpose: prod
+      cloud: cnv-dedicated-shared     # required — cluster type
+      demo: your-lab-name             # required — tag specific to your lab's pool (ask admin)
+      purpose: prod                   # required — all three tags must be present
     quota:
       limits.cpu: "4"
       requests.cpu: "4"
@@ -130,15 +131,11 @@ You do not declare them. Just use them:
 | `cluster_admin_agnosticd_sa_token` | Cluster-admin SA token |
 | `sandbox_openshift_namespace` | Primary namespace (`sandbox-{guid}-{suffix}`) |
 
-**If you previously used `openshift_api_url` or `openshift_api_key` in your roles, replace them:**
+**If any role uses `openshift_api_key` (common in older roles), add this mapping:**
 ```yaml
-# BEFORE
-my_role_api_url: "{{ openshift_api_url }}"
-my_role_token: "{{ openshift_api_key }}"
-
-# AFTER
-my_role_api_url: "{{ sandbox_openshift_api_url }}"
-my_role_token: "{{ cluster_admin_agnosticd_sa_token }}"
+# Required if any role expects openshift_api_key (old config: openshift-workloads name)
+openshift_api_key: "{{ cluster_admin_agnosticd_sa_token }}"
+openshift_api_url: "{{ sandbox_openshift_api_url }}"
 ```
 
 **Build all service URLs from `sandbox_openshift_ingress_domain`:**
