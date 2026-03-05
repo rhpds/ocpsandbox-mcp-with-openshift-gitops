@@ -34,6 +34,7 @@
   <a href="namespace-api.html" class="sub-link">↳ AgV common.yaml</a>
   <a href="namespace-api-reference.html" class="sub-link">↳ Variables reference</a>
   <a href="user-provisioning-quotas.html" class="page-link">Namespace Quotas + Variables</a>
+  <a href="https://github.com/rhpds/agnosticv/blob/tenant-namespace-roles/agd_v2/mcp-with-openshift-sandbox/common.yaml" target="_blank" style="color:#6c7086;font-size:0.73rem;padding:0.6rem 1.25rem 0.2rem;display:block;line-height:1.4;">📄 MCP lab — real AgV example ↗</a>
 
   <div class="sidebar-section-label">GitOps Architecture</div>
   <a href="gitops-pattern.html" class="page-link">GitOps Pattern</a>
@@ -413,28 +414,79 @@ sandbox-ctl cluster register   --api-url "${CLUSTER_API_URL}"   --token "${CLUST
   </div>
 </div>
 
-<p>The AgV <code>common.yaml</code> would use cluster-level roles instead of per-tenant roles:</p>
+<p>Same AgV structure as user provisioning — only the <code>workloads:</code> list differs. Roles match exactly what <a href="https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift/blob/main/tests/e2e/cluster-provision.yml" target="_blank">cluster-provision.yml</a> runs today.</p>
 
-<pre><code><span class="cmt"># Sketch: future cluster-provisioner AgV common.yaml</span>
+<pre><code><span class="cmt">---</span>
+<span class="cmt"># ============================================================</span>
+<span class="cmt"># FUTURE: Cluster Provisioner — AgV common.yaml (sketch)</span>
+<span class="cmt"># Ordered ONCE when a new cluster joins the shared pool.</span>
+<span class="cmt"># Same structure as user provisioning — only workloads differ.</span>
+<span class="cmt"># ============================================================</span>
+
+<span class="cmt">#include /includes/agd-v2-mapping.yaml</span>
+<span class="cmt">#include /includes/sandbox-api.yaml</span>
+<span class="cmt">#include /includes/catalog-icon-openshift.yaml</span>
+<span class="cmt">#include /includes/terms-of-service.yaml</span>
+<span class="cmt">#include /includes/parameters/purpose.yaml</span>
+
+<span class="key">cloud_provider</span>: <span class="val">none</span>
+<span class="key">config</span>: <span class="val">openshift-workloads</span>   <span class="cmt"># runs against an existing cluster</span>
+
+<span class="key">clusters</span>:
+  - <span class="key">default</span>:
+      <span class="key">api_url</span>: <span class="str">"{{ sandbox_openshift_api_url }}"</span>
+      <span class="key">api_token</span>: <span class="str">"{{ cluster_admin_agnosticd_sa_token }}"</span>
+
+<span class="key">requirements_content</span>:
+  <span class="key">collections</span>:
+  - <span class="key">name</span>: <span class="str">https://github.com/agnosticd/core_workloads.git</span>
+    <span class="key">type</span>: <span class="val">git</span>
+    <span class="key">version</span>: <span class="val">main</span>
+  - <span class="key">name</span>: <span class="str">https://github.com/agnosticd/ai_workloads.git</span>
+    <span class="key">type</span>: <span class="val">git</span>
+    <span class="key">version</span>: <span class="val">main</span>
+  - <span class="key">name</span>: <span class="str">https://github.com/agnosticd/showroom.git</span>
+    <span class="key">type</span>: <span class="val">git</span>
+    <span class="key">version</span>: <span class="val">v1.5.1</span>
+
+<span class="cmt"># Cluster-wide operators and shared services — runs ONCE per cluster</span>
+<span class="key">workloads</span>:
+- <span class="val">agnosticd.core_workloads.ocp4_workload_authentication</span>     <span class="cmt"># RHBK operator + realm</span>
+- <span class="val">agnosticd.core_workloads.ocp4_workload_gitea_operator</span>     <span class="cmt"># Gitea operator</span>
+- <span class="val">agnosticd.core_workloads.ocp4_workload_pipelines</span>          <span class="cmt"># Tekton</span>
+- <span class="val">agnosticd.core_workloads.ocp4_workload_openshift_gitops</span>   <span class="cmt"># ArgoCD</span>
+- <span class="val">agnosticd.core_workloads.ocp4_workload_gitops_bootstrap</span>   <span class="cmt"># infra + platform AppProjects</span>
+- <span class="val">agnosticd.ai_workloads.ocp4_workload_toolhive</span>             <span class="cmt"># ToolHive</span>
+- <span class="val">agnosticd.showroom.ocp4_workload_ocp_console_embed</span>        <span class="cmt"># Showroom iframe (once)</span>
+
+<span class="cmt"># No remove_workloads — clusters are retired, not unprovisioned</span>
+
 <span class="key">__meta__</span>:
   <span class="key">deployer</span>:
-    <span class="key">type</span>: <span class="val">agnosticd</span>
+    <span class="key">scm_url</span>: <span class="str">https://github.com/agnosticd/agnosticd-v2</span>
+    <span class="key">scm_ref</span>: <span class="val">main</span>
+    <span class="key">execution_environment</span>:
+      <span class="key">image</span>: <span class="str">quay.io/agnosticd/ee-multicloud:chained-2025-12-17</span>
+  <span class="key">catalog</span>:
+    <span class="key">namespace</span>: <span class="str">babylon-catalog-{{ stage | default('?') }}</span>
+    <span class="key">display_name</span>: <span class="str">"MCP Shared Cluster Provisioner"</span>
+    <span class="key">category</span>: <span class="val">Open_Environments</span>
+  <span class="key">sandbox_api</span>:
+    <span class="key">actions</span>:
+      <span class="key">destroy</span>: <span class="val">{}</span>
   <span class="key">sandboxes</span>:
   - <span class="key">kind</span>: <span class="val">OcpSandbox</span>
     <span class="key">alias</span>: <span class="val">cluster</span>
+    <span class="key">namespace_suffix</span>: <span class="val">bootstrap</span>   <span class="cmt"># scheduling artifact only</span>
     <span class="key">cloud_selector</span>:
-      <span class="key">cloud</span>: <span class="val">cnv-bootstrap</span>  <span class="cmt"># a separate pool of &quot;bootstrap-eligible&quot; clusters</span>
-      <span class="key">purpose</span>: <span class="val">bootstrap</span>
-
-<span class="key">agnosticd_roles</span>:
-- <span class="key">role</span>: <span class="val">ocp4_workload_rhbk_operator</span>
-- <span class="key">role</span>: <span class="val">ocp4_workload_gitea_operator</span>
-- <span class="key">role</span>: <span class="val">ocp4_workload_openshift_gitops</span>
-- <span class="key">role</span>: <span class="val">ocp4_workload_toolhive</span>
-- <span class="key">role</span>: <span class="val">ocp4_workload_rhbk_instance</span>
-- <span class="key">role</span>: <span class="val">ocp4_workload_gitea_instance</span>
-- <span class="key">role</span>: <span class="val">ocp4_workload_rhbk_ocp_oauth</span>
-- <span class="key">role</span>: <span class="val">ocp4_workload_litemaas_connection</span></code></pre>
+      <span class="key">cloud</span>: <span class="val">cnv-dedicated-shared</span>
+      <span class="key">demo</span>: <span class="val">mcp-with-openshift</span>
+      <span class="key">purpose</span>: <span class="val">prod</span>
+    <span class="key">quota</span>:
+      <span class="key">limits.cpu</span>: <span class="str">"2"</span>
+      <span class="key">requests.cpu</span>: <span class="str">"2"</span>
+      <span class="key">limits.memory</span>: <span class="val">4Gi</span>
+      <span class="key">requests.memory</span>: <span class="val">4Gi</span></code></pre>
 
 <hr>
 
