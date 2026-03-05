@@ -679,6 +679,12 @@
 <div class="callout callout-blue">
   <strong>Key vars:</strong> <code>ocp4_workload_gitops_bootstrap_revision</code>, <code>ocp4_workload_gitops_bootstrap_path</code>, <code>ocp4_workload_gitops_bootstrap_helm_values</code>, <code>litellm_virtual_key</code> (fact from role 4)
 </div>
+<div class="callout callout-grey">
+  <strong>How ArgoCD knows which namespaces to use</strong>
+  The bootstrap Helm chart constructs namespace names as <code>{suffix}-{tenant.username}</code> — for example <code>librechat-mcpuser-drw4x</code>. The <code>ocp4_workload_tenant_namespace</code> role creates namespaces using the exact same formula. Both derive the names from <code>tenant.username</code> independently — that is the entire contract between Ansible and ArgoCD.
+  <br><br>
+  <code>CreateNamespace=false</code> in every ArgoCD Application tells ArgoCD to deploy into the pre-created namespace rather than try to create it. You never specify namespace names in AgV — they are always derived from the username.
+</div>
 
 <h3>Role 6 — ocp4_workload_showroom</h3>
 <p><strong>Collection:</strong> <code>agnosticd.showroom</code></p>

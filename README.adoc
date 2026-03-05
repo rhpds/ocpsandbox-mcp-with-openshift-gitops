@@ -215,6 +215,27 @@ On destroy (REVERSE order):
     ensures destroy job completes first)
 ----
 
+== How Namespace Targeting Works
+
+ArgoCD deploys into namespaces that Ansible pre-creates — they never need to be specified explicitly in AgV.
+
+The convention is `{suffix}-{username}`. Both layers derive the same names independently:
+
+[cols="1,2"]
+|===
+|Layer |How namespace names are constructed
+
+|*Ansible* (`ocp4_workload_tenant_namespace`)
+|`ocp4_workload_tenant_namespace_prefix` + suffix → `librechat-mcpuser-drw4x`
+
+|*ArgoCD* (`tenant/bootstrap/templates/applications.yaml`)
+|`printf "librechat-%s" $username` where `$username` = `tenant.username` from Helm values
+|===
+
+`tenant.username` is the single contract variable. You pass it once in `gitops_bootstrap_helm_values` and both layers produce identical namespace names. `CreateNamespace=false` in the ArgoCD Application tells ArgoCD to use the existing namespace rather than create it.
+
+This is why you never specify namespace names in AgV — they are fully derived from the username.
+
 == Agent Architecture
 
 The Pipeline Failure Agent connects MCP servers to an LLM for automated pipeline failure analysis:
