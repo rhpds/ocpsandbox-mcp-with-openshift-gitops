@@ -87,8 +87,10 @@ __meta__:
     namespace_suffix: user
     cloud_selector:
       cloud: cnv-dedicated-shared     # required — cluster type
-      demo: your-lab-name             # required — tag specific to your lab's pool (ask admin)
-      purpose: prod                   # required — all three tags must be present
+      # The additional tag key and value depend on how the cluster is registered
+      # in the Sandbox API pool. Ask your admin what tags your cluster has.
+      # Example: demo: mcp-with-openshift  OR  lab: my-lab  etc.
+      purpose: prod                   # required
     quota:
       limits.cpu: "4"
       requests.cpu: "4"

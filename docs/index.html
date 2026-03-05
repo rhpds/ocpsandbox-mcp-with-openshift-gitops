@@ -165,7 +165,8 @@
     <span class="key">namespace_suffix</span>: <span class="val">user</span>
     <span class="key">cloud_selector</span>:
       <span class="key">cloud</span>: <span class="val">cnv-dedicated-shared</span>   <span class="cmt"># cluster type — must match</span>
-      <span class="key">demo</span>: <span class="val">mcp-with-openshift</span>     <span class="cmt"># lab-specific tag — only clusters tagged for this lab</span>
+      <span class="key">demo</span>: <span class="val">mcp-with-openshift</span>     <span class="cmt"># lab-specific tag — key and value set by admin at cluster registration</span>
+                                     <span class="cmt"># key name varies: could be "demo", "lab", or anything — ask admin</span>
       <span class="key">purpose</span>: <span class="val">prod</span>               <span class="cmt"># prod vs dev pool</span>
       <span class="key">keycloak</span>: <span class="str">"yes"</span>            <span class="cmt"># optional — only clusters with RHSSO installed</span></code></pre>
 
