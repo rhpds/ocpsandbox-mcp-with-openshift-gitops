@@ -73,8 +73,8 @@
 </ul>
 
 <div class="callout callout-info">
-  <strong>Ansible + GitOps — a deliberate combination</strong>
-  Cluster provisioning uses both by design. Ansible handles tasks that require imperative ordering or external system calls (operator installation, OAuth configuration, AppProject creation). GitOps manages resources that benefit from declarative reconciliation and audit trail (user workload monitoring config via ArgoCD). The same deliberate split applies to user provisioning.
+  <strong>Why Ansible for cluster provisioning?</strong>
+  You could do all of this via GitOps — it is technically possible. The reason Ansible is used here is that well-tested AgnosticD roles already exist for every step (<code>ocp4_workload_authentication</code>, <code>ocp4_workload_gitea_operator</code>, <code>ocp4_workload_openshift_gitops</code>, etc.). Reusing them is faster and more reliable than recreating the same logic in Helm charts. Where no role exists, GitOps is used instead — for example, enabling user workload monitoring via ArgoCD.
 </div>
 
 <div class="card-grid">
