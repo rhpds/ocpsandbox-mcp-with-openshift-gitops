@@ -407,6 +407,15 @@
 <span class="key">ocp4_workload_showroom_content_git_repo</span>: <span class="str">https://github.com/rhpds/lb1726-mcp-showroom</span>
 <span class="key">ocp4_workload_showroom_content_git_repo_ref</span>: <span class="val">sandbox-login-instructions</span>
 <span class="key">ocp4_workload_showroom_content_only</span>: <span class="kw">false</span>
+<span class="cmt"># ── COMPATIBILITY MAPPINGS ────────────────────────────────────</span>
+<span class="cmt"># Sandbox API provides variables with the sandbox_ prefix.</span>
+<span class="cmt"># Older roles (showroom, ocp_console_embed, etc.) were written for</span>
+<span class="cmt"># config: openshift-workloads and expect the names below.</span>
+<span class="cmt"># These three lines bridge the gap — required in every catalog item.</span>
+<span class="cmt">#</span>
+<span class="cmt"># openshift_cluster_ingress_domain: showroom uses this for Route hostnames.</span>
+<span class="cmt">#   Without it, Showroom gets an empty domain and Routes have no hostname.</span>
+<span class="key">openshift_cluster_ingress_domain</span>: <span class="str">"{{ sandbox_openshift_ingress_domain }}"</span>
 <span class="key">openshift_api_url</span>: <span class="str">"{{ sandbox_openshift_api_url }}"</span>
 <span class="key">openshift_cluster_admin_token</span>: <span class="str">"{{ cluster_admin_agnosticd_sa_token }}"</span>
 

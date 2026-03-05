@@ -133,12 +133,20 @@ You do not declare them. Just use them:
 | `cluster_admin_agnosticd_sa_token` | Cluster-admin SA token |
 | `sandbox_openshift_namespace` | Primary namespace (`sandbox-{guid}-{suffix}`) |
 
-**If any role uses `openshift_api_key` (common in older roles), add this mapping:**
+**Add these mappings to `common.yaml` so older roles that expect the `config: openshift-workloads` variable names work without changes:**
 ```yaml
-# Required if any role expects openshift_api_key (old config: openshift-workloads name)
-openshift_api_key: "{{ cluster_admin_agnosticd_sa_token }}"
+# Old roles expect openshift_cluster_ingress_domain — Sandbox API provides sandbox_openshift_ingress_domain
+# Showroom and any role using deployer.domain needs this mapping or it gets an empty domain
+openshift_cluster_ingress_domain: "{{ sandbox_openshift_ingress_domain }}"
+
+# Old roles expect openshift_api_url — map it from the Sandbox API variable
 openshift_api_url: "{{ sandbox_openshift_api_url }}"
+
+# Old roles expect openshift_cluster_admin_token — map it from the Sandbox API variable
+openshift_cluster_admin_token: "{{ cluster_admin_agnosticd_sa_token }}"
 ```
+
+These three lines act as a compatibility bridge. In `config: openshift-workloads`, these variables were always set automatically. In `config: namespace` with Sandbox API, only the `sandbox_*` prefixed variables are injected. Any role that reads `openshift_cluster_ingress_domain` (like the showroom role's domain fallback) will get an empty string without this mapping.
 
 **Build all service URLs from `sandbox_openshift_ingress_domain`:**
 ```yaml
