@@ -807,9 +807,9 @@
       <td>All three tags are required: <code>cloud: cnv-dedicated-shared</code>, <code>demo: your-lab</code>, <code>purpose: prod</code></td>
     </tr>
     <tr>
-      <td>Showroom fails with "invalid value bearer" on namespace creation</td>
-      <td>The <code>ocp4_workload_showroom_ocp_integration</code> role uses <code>oc login</code> with a token which fails in <code>config: namespace</code></td>
-      <td>Use <code>agnosticd.showroom.ocp4_workload_ocp_console_embed</code> and add <code>openshift_cluster_admin_token: "{{ cluster_admin_agnosticd_sa_token }}"</code> to <code>common.yaml</code></td>
+      <td>Showroom fails with "invalid value bearer"</td>
+      <td>OCP console integration role fails in <code>config: namespace</code></td>
+      <td>Use <code>agnosticd.showroom.ocp4_workload_ocp_console_embed</code> and add <code>openshift_cluster_admin_token: "{{ cluster_admin_agnosticd_sa_token }}"</code></td>
     </tr>
     <tr>
       <td>Catalog item in <code>summit-2026/</code> using a shared cluster</td>
