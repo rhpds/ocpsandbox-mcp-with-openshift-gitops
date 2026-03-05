@@ -74,7 +74,7 @@
 
   <!-- LAYER 1: INFRA -->
   <rect x="20" y="16" width="820" height="112" fill="#dbeafe" stroke="#2563eb" stroke-width="2" rx="8"/>
-  <text x="38" y="42" font-size="13" font-weight="700" fill="#1e3a8a">Layer 1 — Infra (Ops-owned)</text>
+  <text x="38" y="42" font-size="13" font-weight="700" fill="#1e3a8a">Layer 1 — Infra (Generic, reusable)</text>
   <text x="38" y="58" font-size="11" fill="#1e40af">Runs ONCE per cluster. Installs all cluster-wide operators via cluster-provision.yml. Never runs per order.</text>
   <rect x="38" y="68" width="100" height="40" fill="#3b82f6" rx="5"/>
   <text x="88" y="86" font-size="9" fill="white" text-anchor="middle">RHBK</text>
@@ -165,21 +165,21 @@
   </thead>
   <tbody>
     <tr>
-      <td><strong>Infra</strong><br><em>Owned by Ops</em></td>
-      <td>Generic cluster infrastructure applicable to many labs — not specific to any one catalog item. Owned and operated by the platform/ops team.</td>
+      <td><strong>Infra</strong><br><em>Reusable across labs</em></td>
+      <td>Base cluster capabilities — foundational layer that everything else depends on. Installed once when the cluster is onboarded.</td>
       <td>Once per cluster</td>
-      <td><code>cluster-provision.yml</code> playbook — run by ops when cluster is onboarded. See: <a href="https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift/blob/main/tests/e2e/cluster-provision.yml">cluster-provision.yml</a></td>
+      <td><code>cluster-provision.yml</code> playbook — run by the developer when cluster is onboarded. See: <a href="https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift/blob/main/tests/e2e/cluster-provision.yml">cluster-provision.yml</a></td>
       <td>RHBK, Gitea operator, OpenShift GitOps (ArgoCD), Tekton, ToolHive, CloudNativePG, ArgoCD AppProjects. These are generic — any lab on this cluster can rely on them.</td>
     </tr>
     <tr>
-      <td><strong>Platform</strong><br><em>Owned by Lab Owner</em></td>
-      <td>Cluster-wide but <strong>catalog-item-specific</strong> resources. Things the lab needs at a cluster level but that are not generic enough to go in infra. Owned by the same person who builds the lab, not ops.</td>
+      <td><strong>Platform</strong><br><em>Lab-specific</em></td>
+      <td>Cluster-wide resources specific to what <em>this lab</em> needs on top of infra. Not per-user — shared across all tenants on the cluster. The lab developer decides what goes here.</td>
       <td>Once per cluster — same provisioning run as infra</td>
       <td>ArgoCD syncs <code>bootstrap-platform</code> Application</td>
       <td>MCP lab: user workload monitoring ConfigMap. Service mesh lab example: a shared service mesh gateway. AI lab example: a shared LiteLLM instance. Anything cluster-wide but specific to this lab's needs.</td>
     </tr>
     <tr>
-      <td><strong>Tenant</strong><br><em>Owned by Lab Owner</em></td>
+      <td><strong>Tenant</strong><br><em>Lab-specific</em></td>
       <td>Per-user isolated environment — created per order, destroyed when done. Same owner as platform, just a different scope (per-user vs cluster-wide).</td>
       <td>Every order</td>
       <td>AgnosticD runs AgV <code>workloads:</code> list via Sandbox API scheduler</td>
@@ -189,8 +189,8 @@
 </table>
 
 <div class="callout callout-blue">
-  <strong>The key separation is ownership, not resource type</strong>
-  Infra is owned by ops — generic, reusable across many labs. Platform and Tenant are both owned by the lab owner — the same persona, just different scopes. Platform is cluster-wide but lab-specific. Tenant is per-user. This means the lab owner controls both Platform and Tenant, while ops controls Infra.
+  <strong>All three layers are developer-owned — the distinction is scope and timing</strong>
+  In the MCP lab, the cluster is dedicated to this lab. All three layers are set up by developers. The distinction is: <strong>Infra</strong> = the base cluster capabilities (installed once, cluster-wide, foundational). <strong>Platform</strong> = cluster-wide resources specific to what this lab needs on top of infra (MCP: user workload monitoring; a service mesh lab would add a service mesh gateway here). <strong>Tenant</strong> = per-user, per-order.
 </div>
 
 
