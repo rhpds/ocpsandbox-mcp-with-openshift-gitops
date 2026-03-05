@@ -135,18 +135,18 @@ You do not declare them. Just use them:
 
 **Add these mappings to `common.yaml` so older roles that expect the `config: openshift-workloads` variable names work without changes:**
 ```yaml
-# Old roles expect openshift_cluster_ingress_domain — Sandbox API provides sandbox_openshift_ingress_domain
-# Showroom and any role using deployer.domain needs this mapping or it gets an empty domain
-openshift_cluster_ingress_domain: "{{ sandbox_openshift_ingress_domain }}"
-
-# Old roles expect openshift_api_url — map it from the Sandbox API variable
+# Old roles expect openshift_api_url — map from Sandbox API variable
 openshift_api_url: "{{ sandbox_openshift_api_url }}"
 
-# Old roles expect openshift_cluster_admin_token — map it from the Sandbox API variable
+# Old roles expect openshift_cluster_admin_token — map from Sandbox API variable
 openshift_cluster_admin_token: "{{ cluster_admin_agnosticd_sa_token }}"
-```
 
-These three lines act as a compatibility bridge. In `config: openshift-workloads`, these variables were always set automatically. In `config: namespace` with Sandbox API, only the `sandbox_*` prefixed variables are injected. Any role that reads `openshift_cluster_ingress_domain` (like the showroom role's domain fallback) will get an empty string without this mapping.
+# Old roles expect openshift_cluster_ingress_domain — map from Sandbox API variable
+# ONLY add this if you are NOT using ocp4_workload_tenant_keycloak_user.
+# That role discovers and sets openshift_cluster_ingress_domain automatically from the cluster.
+# Setting it here when sandbox_openshift_ingress_domain is undefined (e.g. in CI) will cause a failure.
+openshift_cluster_ingress_domain: "{{ sandbox_openshift_ingress_domain }}"
+```
 
 **Build all service URLs from `sandbox_openshift_ingress_domain`:**
 ```yaml
