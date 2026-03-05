@@ -1044,6 +1044,51 @@
   </div>
 </div>
 
+<div class="challenge">
+  <h4>Challenge: Catalog item in <code>summit-2026/</code> — Sandbox API cannot find cluster</h4>
+  <p>
+    The <code>summit-2026/account.yaml</code> sets <code>sandbox_api: reservation: pgpu-event</code> at account level. This restricts ALL catalog items in that directory to only schedule against Summit event clusters. Shared clusters (like <code>cnv-us-east-ocp-3</code>) are not in that reservation, so Sandbox API returns "No OCP shared cluster configuration found."
+  </p>
+  <div class="fix">
+    <strong>Fix:</strong> Override the reservation in your <code>common.yaml</code> <code>__meta__</code> block:
+    <pre style="margin-top:0.5rem;font-size:0.8rem;">__meta__:
+  sandbox_api:
+    reservation: ""    # clears the account-level pgpu-event restriction
+    actions:
+      destroy:
+        catch_all: false</pre>
+  </div>
+</div>
+
+<div class="challenge">
+  <h4>Challenge: <code>catch_all</code> set as a role var — does not work</h4>
+  <p>
+    Setting <code>ocp4_workload_litellm_virtual_keys_catch_all: false</code> as a regular role variable does not prevent the Sandbox API from deleting other tenants' LiteMaaS keys. The <code>catch_all</code> setting must be in <code>__meta__.sandbox_api.actions.destroy</code> where Sandbox API reads it directly.
+  </p>
+  <div class="fix">
+    <strong>Fix:</strong> Move it to <code>__meta__</code>:
+    <pre style="margin-top:0.5rem;font-size:0.8rem;">__meta__:
+  sandbox_api:
+    actions:
+      destroy:
+        catch_all: false</pre>
+  </div>
+</div>
+
+<div class="challenge">
+  <h4>Challenge: Missing tag in <code>cloud_selector</code> — cluster not found</h4>
+  <p>
+    The Sandbox API does a subset match — a cluster qualifies only if it has ALL the tags you specify. Missing even one tag means zero clusters match and the order fails before provisioning starts. Common mistake: omitting <code>cloud: cnv-dedicated-shared</code>.
+  </p>
+  <div class="fix">
+    <strong>Fix:</strong> All three tags are required:
+    <pre style="margin-top:0.5rem;font-size:0.8rem;">cloud_selector:
+  cloud: cnv-dedicated-shared   # required
+  demo: your-lab-name           # required
+  purpose: prod                 # required</pre>
+  </div>
+</div>
+
 <hr>
 
 <h2 id="links">10. All Links</h2>

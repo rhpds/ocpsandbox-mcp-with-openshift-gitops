@@ -446,7 +446,7 @@
       <span class="key">secondaryBU</span>: <span class="val">Artificial_Intelligence</span>
   <span class="key">sandbox_api</span>:
     <span class="key">actions</span>:
-      <span class="key">destroy</span>: <span class="val">{}</span>
+      <span class="key">destroy</span>: <span class="val">{}</span>    <span class="cmt"># catch_all goes in __meta__.sandbox_api.actions.destroy — see below</span>
   <span class="cmt"># ── SANDBOX ENTRY ──────────────────────────────────────────</span>
   <span class="cmt"># Single entry — scheduler only.</span>
   <span class="cmt"># kind: OcpSandbox  — request an OpenShift cluster from the pool.</span>
@@ -800,6 +800,26 @@
       <td><code>catch_all: true</code> for LiteMaaS on a shared cluster</td>
       <td>Destroy deletes all other tenants' LiteMaaS keys</td>
       <td>Always <code>ocp4_workload_litellm_virtual_keys_catch_all: false</code></td>
+    </tr>
+    <tr>
+      <td><code>catch_all: false</code> set as a role var instead of in <code>__meta__</code></td>
+      <td>Sandbox API ignores the role var — other tenants' LiteMaaS keys deleted on destroy</td>
+      <td>Set <code>catch_all: false</code> under <code>__meta__.sandbox_api.actions.destroy</code>, not as <code>ocp4_workload_litellm_virtual_keys_catch_all</code></td>
+    </tr>
+    <tr>
+      <td>Missing <code>cloud:</code> tag in <code>cloud_selector</code></td>
+      <td>Sandbox API finds no matching cluster — order fails immediately</td>
+      <td>All three tags are required: <code>cloud: cnv-dedicated-shared</code>, <code>demo: your-lab</code>, <code>purpose: prod</code></td>
+    </tr>
+    <tr>
+      <td>Catalog item in <code>summit-2026/</code> using a shared cluster</td>
+      <td>Order fails — <code>summit-2026/account.yaml</code> sets <code>reservation: pgpu-event</code> which excludes shared pools</td>
+      <td>Add <code>reservation: ""</code> under <code>__meta__.sandbox_api</code> to override the account-level reservation</td>
+    </tr>
+    <tr>
+      <td><code>dev.yaml</code> duplicating <code>collections</code>, <code>workloads</code>, and <code>catalog</code> from <code>common.yaml</code></td>
+      <td>Any change must be made in two files — easy to get out of sync</td>
+      <td><code>dev.yaml</code> should only contain <code>purpose: development</code> and <code>__meta__</code> overrides. Everything else inherits from <code>common.yaml</code></td>
     </tr>
     <tr>
       <td>ArgoCD Application syncs before Gitea repo is migrated</td>

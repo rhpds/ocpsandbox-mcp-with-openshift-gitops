@@ -258,7 +258,9 @@ ocp4_workload_litellm_virtual_keys_duration: "7d"
 ocp4_workload_litellm_virtual_keys_models:
 - qwen3-14b
 - llama-scout-17b
-ocp4_workload_litellm_virtual_keys_catch_all: false   # NEVER set true on shared clusters
+ocp4_workload_litellm_virtual_keys_catch_all: false
+# NOTE: catch_all ALSO must be set in __meta__.sandbox_api.actions.destroy
+# (the role var alone is not enough — see Step 7b below)
 ```
 
 ### GitOps Bootstrap
@@ -276,6 +278,47 @@ ocp4_workload_gitops_bootstrap_helm_values:
     key: "{{ litellm_virtual_key | default('') }}"
     models: "{{ litellm_available_models | default([]) | join(',') }}"
 ```
+
+---
+
+## Step 7b — dev.yaml: Keep It Minimal
+
+`dev.yaml` should only contain what differs from `common.yaml`. Do NOT duplicate collections,
+workloads, role vars, or catalog metadata — any change would then need to be made in two places.
+
+```yaml
+---
+purpose: development
+
+ocp4_workload_showroom_antora_enable_dev_mode: "true"
+
+__meta__:
+  deployer:
+    scm_ref: main
+  sandbox_api:
+    # reservation: ""  # only add this if your catalog item is in summit-2026/
+    #                  # that directory's account.yaml sets pgpu-event reservation
+    #                  # which excludes shared clusters — omit this for agd_v2/
+    actions:
+      destroy:
+        catch_all: false
+  sandboxes:
+  - kind: OcpSandbox
+    alias: cluster
+    namespace_suffix: user
+    cloud_selector:
+      cloud: cnv-dedicated-shared
+      demo: mcp-with-openshift
+      purpose: development
+    quota:
+      limits.cpu: "4"
+      requests.cpu: "4"
+      limits.memory: 8Gi
+      requests.memory: 8Gi
+      requests.storage: 50Gi
+```
+
+Everything else (collections, workloads, role vars, catalog) is inherited from `common.yaml`.
 
 ---
 
@@ -316,6 +359,10 @@ Every role must have `remove_workload.yml`. Test destroy early — do not wait u
 | Duplicate YAML key | yamllint error | Search and remove the duplicate |
 | No `cluster_condition: same('alias')` on second namespace | Two namespaces on different clusters | Add `cluster_condition` |
 | `catch_all: true` for LiteMaaS | Destroys all tenants' AI keys | Always `false` |
+| `ocp4_workload_litellm_virtual_keys_catch_all: false` as a role var | Does not work — Sandbox API does not read it | Put `catch_all: false` under `__meta__.sandbox_api.actions.destroy` instead |
+| Missing `cloud: cnv-dedicated-shared` in `cloud_selector` | Sandbox API finds no cluster | All three tags required: `cloud:`, `demo:`, `purpose:` |
+| Catalog item in `summit-2026/` with shared cluster | Order fails — account.yaml sets `reservation: pgpu-event` which excludes shared clusters | Add `reservation: ""` under `__meta__.sandbox_api` to override |
+| `dev.yaml` duplicating collections and workloads from `common.yaml` | Maintenance nightmare — changes must be made in two places | `dev.yaml` should only contain `purpose: development` and `__meta__` overrides |
 
 ---
 
