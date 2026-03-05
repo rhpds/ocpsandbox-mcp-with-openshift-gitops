@@ -74,7 +74,7 @@
 
   <!-- LAYER 1: INFRA -->
   <rect x="20" y="16" width="820" height="112" fill="#dbeafe" stroke="#2563eb" stroke-width="2" rx="8"/>
-  <text x="38" y="42" font-size="13" font-weight="700" fill="#1e3a8a">Layer 1 — Infra: Install Operators</text>
+  <text x="38" y="42" font-size="13" font-weight="700" fill="#1e3a8a">Layer 1 — Infra (Ops-owned)</text>
   <text x="38" y="58" font-size="11" fill="#1e40af">Runs ONCE per cluster. Installs all cluster-wide operators via cluster-provision.yml. Never runs per order.</text>
   <rect x="38" y="68" width="100" height="40" fill="#3b82f6" rx="5"/>
   <text x="88" y="86" font-size="9" fill="white" text-anchor="middle">RHBK</text>
@@ -104,7 +104,7 @@
 
   <!-- LAYER 2: PLATFORM -->
   <rect x="20" y="154" width="820" height="90" fill="#ede9fe" stroke="#7c3aed" stroke-width="2" rx="8"/>
-  <text x="38" y="178" font-size="13" font-weight="700" fill="#4c1d95">Layer 2 — Platform: Create Instances &amp; Configure</text>
+  <text x="38" y="178" font-size="13" font-weight="700" fill="#4c1d95">Layer 2 — Platform (Lab Owner, cluster-wide)</text>
   <text x="38" y="194" font-size="11" fill="#5b21b6">Runs ONCE per cluster. Creates operator instances, configures shared cluster services via ArgoCD (bootstrap-platform).</text>
   <rect x="38" y="204" width="160" height="30" fill="#7c3aed" rx="5"/>
   <text x="118" y="224" font-size="9" fill="white" text-anchor="middle">platform-monitoring</text>
@@ -118,7 +118,7 @@
 
   <!-- LAYER 3: TENANT -->
   <rect x="20" y="270" width="820" height="130" fill="#ffedd5" stroke="#ea580c" stroke-width="2" rx="8"/>
-  <text x="38" y="294" font-size="13" font-weight="700" fill="#7c2d12">Layer 3 — Tenant: The User</text>
+  <text x="38" y="294" font-size="13" font-weight="700" fill="#7c2d12">Layer 3 — Tenant (Lab Owner, per-user)</text>
   <text x="38" y="310" font-size="11" fill="#9a3412">Runs PER ORDER. One isolated environment per user. Created by AgnosticD roles + gitops_bootstrap. Destroyed when order ends.</text>
 
   <rect x="38" y="318" width="90" height="32" fill="#ea580c" rx="5"/>
@@ -165,32 +165,32 @@
   </thead>
   <tbody>
     <tr>
-      <td><strong>Infra</strong><br><em>Install Operators</em></td>
-      <td>Install cluster-wide operators — no instances created yet, just the operators available</td>
+      <td><strong>Infra</strong><br><em>Owned by Ops</em></td>
+      <td>Generic cluster infrastructure applicable to many labs — not specific to any one catalog item. Owned and operated by the platform/ops team.</td>
       <td>Once per cluster</td>
-      <td><code>cluster-provision.yml</code> playbook — run manually (or via CI) when cluster is onboarded to the Sandbox API pool. See: <a href="https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift/blob/main/tests/e2e/cluster-provision.yml">cluster-provision.yml</a></td>
-      <td>Installs: RHBK operator, Gitea operator, OpenShift GitOps (ArgoCD), Tekton (Pipelines), ToolHive, CloudNativePG. Creates <code>infra</code>, <code>platform</code>, <code>tenants</code> ArgoCD AppProjects.</td>
+      <td><code>cluster-provision.yml</code> playbook — run by ops when cluster is onboarded. See: <a href="https://github.com/rhpds/rhpds.ocpsandbox_mcp_with_openshift/blob/main/tests/e2e/cluster-provision.yml">cluster-provision.yml</a></td>
+      <td>RHBK, Gitea operator, OpenShift GitOps (ArgoCD), Tekton, ToolHive, CloudNativePG, ArgoCD AppProjects. These are generic — any lab on this cluster can rely on them.</td>
     </tr>
     <tr>
-      <td><strong>Platform</strong><br><em>Create Instances &amp; Configure</em></td>
-      <td>Create instances from installed operators, configure shared cluster services that all tenants will use</td>
-      <td>Once per cluster — same one-time cluster provisioning as Infra</td>
-      <td>ArgoCD syncs <code>bootstrap-platform</code> Application — created by infra bootstrap as part of the same cluster provisioning run</td>
-      <td>In the MCP lab: enables user workload monitoring only — a single ConfigMap in <code>openshift-monitoring</code> that allows tenant namespace metrics to be scraped. This is the minimum configuration tenant provisioning needs to work. Other labs may add more shared services here.</td>
+      <td><strong>Platform</strong><br><em>Owned by Lab Owner</em></td>
+      <td>Cluster-wide but <strong>catalog-item-specific</strong> resources. Things the lab needs at a cluster level but that are not generic enough to go in infra. Owned by the same person who builds the lab, not ops.</td>
+      <td>Once per cluster — same provisioning run as infra</td>
+      <td>ArgoCD syncs <code>bootstrap-platform</code> Application</td>
+      <td>MCP lab: user workload monitoring ConfigMap. Service mesh lab example: a shared service mesh gateway. AI lab example: a shared LiteLLM instance. Anything cluster-wide but specific to this lab's needs.</td>
     </tr>
     <tr>
-      <td><strong>Tenant</strong><br><em>The User</em></td>
-      <td>Everything for one user's isolated environment — created fresh per order, destroyed when done</td>
+      <td><strong>Tenant</strong><br><em>Owned by Lab Owner</em></td>
+      <td>Per-user isolated environment — created per order, destroyed when done. Same owner as platform, just a different scope (per-user vs cluster-wide).</td>
       <td>Every order</td>
       <td>AgnosticD runs AgV <code>workloads:</code> list via Sandbox API scheduler</td>
-      <td>Creates: one RHBK user, 6 namespaces, one Gitea instance (per-tenant, in user namespace), LiteMaaS virtual key. ArgoCD deploys: LibreChat, MCP servers (gitea + openshift), AI agent, Showroom.</td>
+      <td>RHBK user, 6 namespaces, per-tenant Gitea instance, LiteMaaS virtual key. ArgoCD deploys: LibreChat, MCP servers, AI agent, Showroom.</td>
     </tr>
   </tbody>
 </table>
 
 <div class="callout callout-blue">
-  <strong>Only the Tenant layer is in your AgV common.yaml</strong>
-  The Infra and Platform layers are set up once by the cluster operator when a cluster joins the pool — they are not part of your catalog item. When you write a <code>workloads:</code> list in AgV, you are configuring only the Tenant layer. The operators and shared services are already there waiting.
+  <strong>The key separation is ownership, not resource type</strong>
+  Infra is owned by ops — generic, reusable across many labs. Platform and Tenant are both owned by the lab owner — the same persona, just different scopes. Platform is cluster-wide but lab-specific. Tenant is per-user. This means the lab owner controls both Platform and Tenant, while ops controls Infra.
 </div>
 
 

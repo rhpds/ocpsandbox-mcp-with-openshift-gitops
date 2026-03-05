@@ -200,9 +200,14 @@
 <hr>
 
 <!-- ============================================================ -->
-<h2 id="platform">Platform Layer &mdash; Configure for Tenant Provisioning</h2>
+<h2 id="platform">Platform Layer &mdash; Lab-Specific Cluster-Wide Resources</h2>
 
-<p>The platform layer configures anything the cluster needs <em>before tenant orders can run</em>. This is managed by ArgoCD via the <code>bootstrap-platform</code> Application, which syncs the <code>platform/</code> directory in the GitOps repo.</p>
+<p>The platform layer is owned by the <strong>lab owner</strong>, not ops. It contains cluster-wide resources that are specific to this catalog item — things that do not belong in infra (which is generic) and are not per-user (which belongs in tenant). It is managed by ArgoCD via the <code>bootstrap-platform</code> Application.</p>
+
+<div class="callout callout-grey">
+  <strong>Examples across different labs</strong>
+  MCP lab: user workload monitoring ConfigMap. Service mesh lab: shared service mesh gateway. AI lab: shared LiteLLM instance. The platform layer is different for every lab — it is whatever cluster-wide setup your specific lab needs before per-user provisioning can work.
+</div>
 
 <div class="callout callout-info">
   <strong>What belongs in platform?</strong>
