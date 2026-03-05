@@ -49,6 +49,17 @@
 <h1>Converting an Existing Lab to the Sandbox API Shared Cluster Pattern</h1>
 <p class="subtitle">A real account of how the MCP with OpenShift lab moved from dedicated CNV clusters to shared clusters — what changed, role by role, and every problem we hit</p>
 
+<nav class="page-toc">
+  <strong>On this page</strong>
+  <ol>
+    <li><a href="#original">1. The original workshop</a></li>
+    <li><a href="#why">2. Why we changed it</a></li>
+    <li><a href="#design">3. Design decisions</a></li>
+    <li><a href="#agv-changes">4. What changed in AgV</a></li>
+  </ol>
+  <span style="font-size:0.82rem; color:#888;">Continued in: <a href="migration-guide-layers.html">Layers + Role Conversions</a> · <a href="migration-guide-lessons.html">Challenges + Lessons</a></span>
+</nav>
+
 <div class="callout callout-grey">
   <strong>About this guide</strong>
   This is a personal account of how I did this migration — not an official step-by-step playbook. I used Claude Code extensively throughout to help build roles, templates, and debug issues. Every lab is different and you will hit edge cases that are not covered here. The challenges listed are the ones I ran into with this specific lab. Your lab will have its own. Use this as a reference for the approach and the thinking, not as a guaranteed recipe.
@@ -103,23 +114,6 @@
 </ul>
 
 <hr style="margin-top:1.5rem;">
-
-<div class="toc">
-  <h2>Contents</h2>
-  <ol>
-    <li><a href="#original">1. The original workshop</a></li>
-    <li><a href="#why">2. Why we changed it</a></li>
-    <li><a href="#design">3. Design decisions — why we built it this way</a></li>
-    <li><a href="#agv-changes">4. What changed in AgV — before and after</a></li>
-    <li><a href="#layers-mcp">5. What we put in each layer — MCP lab</a></li>
-    <li><a href="#roles">6. Role-by-role conversion</a></li>
-    <li><a href="#challenges">7. Challenges and fixes</a></li>
-    <li><a href="#lessons">8. Lessons learned</a></li>
-    <li><a href="#open-questions">9. Open questions — unresolved concerns</a></li>
-    <li><a href="#links">10. All links — PRs, repos, docs</a></li>
-
-  </ol>
-</div>
 
 <!-- ============================================================ -->
 <h2 id="original">1. The Original Workshop</h2>
@@ -176,10 +170,6 @@
 <!-- ============================================================ -->
 <h2 id="why">2. Why We Changed It</h2>
 
-<p>
-  The primary driver is <strong>Zero Touch OpenShift</strong> — the RHDP direction for customer and partner workshops where attendees get an instant, isolated OpenShift experience without waiting for a cluster to provision. The original pattern required a full dedicated CNV cluster per order, which is not compatible with that model.
-</p>
-
 <div class="callout callout-blue">
   <strong>Zero Touch OpenShift</strong>
   The goal is for a customer or workshop attendee to click "Order" and have a fully working OpenShift environment in minutes — not an hour. This is only possible with pre-provisioned shared clusters. The Sandbox API scheduler-only pattern is the foundation that makes this possible.
@@ -187,18 +177,18 @@
 
 <ul>
   <li>
-    <strong>Speed.</strong> A dedicated CNV cluster takes 45–60 minutes to provision. A shared cluster order using Sandbox API takes 2–3 minutes — the cluster is already running, we are only provisioning the per-tenant resources. For event formats like Lightning Labs (late-night sessions at Summit) or booth demos where attendees walk up and want to start immediately, waiting an hour is not an option.
+    <strong>Speed.</strong> A dedicated CNV cluster takes 45–60 minutes. A shared cluster order takes 2–3 minutes — the cluster is already running, only per-tenant resources are provisioned. For booth demos where attendees walk up and want to start immediately, waiting an hour is not an option.
   </li>
   <li>
-    <strong>Scale across use cases — and Lightning Labs at Summit 2026.</strong> This pattern supports multiple deployment scenarios from a single catalog item: full workshop sessions, booth demos, and on-demand ordering from demo.redhat.com. A shared cluster pool can absorb concurrent demand across all of these without provisioning a dedicated cluster for each.
+    <strong>Scale across use cases — and Lightning Labs at Summit 2026.</strong> This pattern supports full workshop sessions, booth demos, and on-demand ordering from a single catalog item.
     <br><br>
-    <strong>At Summit 2026, the event team is introducing self-service labs called Lightning Labs — and this is expected to be one of the biggest attractions of the event.</strong> Lightning Labs are short, self-paced sessions that attendees can walk up and start on their own, with no instructor and no scheduled slot. For this to work, the environment must be ready in minutes. A dedicated CNV cluster per order (45–60 min) makes Lightning Labs impossible. The shared cluster + Sandbox API pattern makes them viable — an attendee orders, gets their environment in 2–3 minutes, completes the lab, and the environment is destroyed automatically. That cycle has to work at scale, concurrently, across the event floor. One dedicated cluster per order cannot do that.
+    <strong>At Summit 2026, the event team is introducing self-service labs called Lightning Labs — and this is expected to be one of the biggest attractions of the event.</strong> Lightning Labs need 2–3 minute provisioning times. A dedicated CNV cluster per order (45–60 min) makes them impossible. The shared cluster + Sandbox API pattern makes them viable at scale, concurrently, across the event floor.
   </li>
   <li>
-    <strong>Establishing a reusable pattern.</strong> This is the first lab in RHDP to use the shared cluster + Sandbox API scheduler-only pattern end-to-end. The goal is not just to ship this one lab — it is to prove out an approach that other labs can follow. The tenant roles (<code>ocp4_workload_tenant_keycloak_user</code>, <code>ocp4_workload_tenant_namespace</code>, <code>ocp4_workload_tenant_gitea</code>) were built to be generic and reusable, not tied to MCP. Any lab that needs to run on a shared OpenShift cluster can use the same building blocks.
+    <strong>Establishing a reusable pattern.</strong> The first RHDP lab to use the shared cluster + Sandbox API scheduler-only pattern end-to-end. The tenant roles (<code>ocp4_workload_tenant_keycloak_user</code>, <code>ocp4_workload_tenant_namespace</code>, <code>ocp4_workload_tenant_gitea</code>) are generic — any lab on a shared cluster can reuse them.
   </li>
   <li>
-    <strong>Authentication.</strong> The original lab used HTPasswd with sequential usernames (<code>user1</code>, <code>user2</code>) because each order got its own cluster — HTPasswd made sense there. On a shared cluster that model breaks down: you cannot use sequential usernames across concurrent orders and you need a proper identity provider that can handle many users with isolated sessions. RHBK is already on the cluster; each order just adds one user to the existing realm and removes it on destroy. The auth model follows naturally from moving to shared clusters — it is not a goal in itself.
+    <strong>Authentication.</strong> HTPasswd with sequential usernames (<code>user1</code>, <code>user2</code>) breaks down on a shared cluster with concurrent orders. RHBK is already on the cluster — each order adds one user to the existing realm and removes it on destroy.
   </li>
 </ul>
 
@@ -207,9 +197,7 @@
 <!-- ============================================================ -->
 <h2 id="design">3. Design Decisions — Why We Built It This Way</h2>
 
-<p>
-  When people first see this pattern, the most common question is: <em>why does every user need their own X?</em> This section explains the reasoning. These decisions are not arbitrary — they are the approach we recommend for shared cluster labs.
-</p>
+<p>These decisions are the recommended approach for shared cluster labs — not arbitrary choices.</p>
 
 <div class="callout callout-grey">
   <strong>What is shared vs what is per-tenant</strong>
@@ -223,9 +211,7 @@
 
 <h3>Why does each tenant get their own Gitea instance?</h3>
 
-<p>
-  The <strong>Gitea operator</strong> is installed once on the cluster by the cluster provisioner. Each order then creates a <strong>new Gitea instance</strong> (a <code>Gitea</code> CR) inside the tenant's own namespace. The tenant gets a fully isolated Gitea server — with its own PostgreSQL, its own route, its own admin user, and its own repos.
-</p>
+<p>The Gitea operator is installed once; each order creates a new <code>Gitea</code> CR inside the tenant's namespace — a fully isolated server with its own PostgreSQL, route, admin user, and repos.</p>
 
 <ul>
   <li><strong>Complete isolation.</strong> Each tenant's Gitea is a separate server. One tenant cannot see another tenant's repositories at all — they are not just in different orgs on the same server, they are on entirely different Gitea instances with different URLs.</li>
@@ -286,10 +272,7 @@
 <!-- ============================================================ -->
 <h2 id="agv-changes">4. What Changed in AgV — Before and After</h2>
 
-<p>
-  The new catalog item is <code>mcp-with-openshift-sandbox</code>. It replaces <code>mcp-with-openshift</code> entirely for shared cluster deployments.
-  The table below shows the top-level structural differences between the two.
-</p>
+<p>The new catalog item is <code>mcp-with-openshift-sandbox</code>, replacing <code>mcp-with-openshift</code> for shared cluster deployments.</p>
 
 <table>
   <thead>

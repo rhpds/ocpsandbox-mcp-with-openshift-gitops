@@ -46,11 +46,20 @@
   <a href="namespace-api-reference.html" class="page-link">OCP Sandbox API — Reference</a>
 </nav>
 <div class="main">
+<p style="font-size:0.82rem; color:#888; margin-bottom:1.5rem;">
+  <a href="migration-guide.html">Migration Guide</a> → Layers &amp; Role Conversions
+</p>
+<nav class="page-toc">
+  <strong>On this page</strong>
+  <ol>
+    <li><a href="#layers-mcp">Layer breakdown — MCP lab</a></li>
+    <li><a href="#roles">Role-by-role conversion</a></li>
+  </ol>
+</nav>
+
 <h2 id="layers-mcp">5. What We Put in Each Layer — MCP Lab</h2>
 
-<p>
-  This table shows exactly what ended up in each layer for the MCP with OpenShift lab. Each row links to the actual role or GitOps path so you can read the implementation directly.
-</p>
+<p>Each row links to the actual role or GitOps path:</p>
 
 <table>
   <thead>
@@ -180,20 +189,14 @@
 </table>
 
 <div class="callout callout-orange">
-  <strong>Infra and Platform layers: manual for now, AgV when automation is ready</strong>
-  Currently, the Infra and Platform layers are triggered manually by running <code>cluster-provision.yml</code> against a pre-assigned cluster. This was done this way for testing — we needed to validate the full end-to-end bootstrap before the automation existed.
-  <br><br>
-  Once GC's integration lands (programmatic cluster attachment to the Sandbox API pool from demo.redhat.com), the Infra and Platform layers will move into AgV as a separate <strong>cluster provisioner catalog item</strong> — ordered once when a cluster is onboarded, just like any other lab order. At that point, the full three-layer lifecycle will be driven by AgV and AgnosticD with no manual steps.
+  <strong>Infra and Platform layers: manual for now</strong>
+  Currently triggered manually by running <code>cluster-provision.yml</code>. Once GC's cluster attachment integration lands, these layers will move into AgV as a separate <strong>cluster provisioner catalog item</strong> with no manual steps.
 </div>
 
 <hr>
 
 <!-- ============================================================ -->
 <h2 id="roles">6. Role-by-Role Conversion</h2>
-
-<p>
-  This section walks through every component of the original lab and shows exactly what it became — or where it moved to — in the new pattern.
-</p>
 
 <!-- ---- Role Card 1 ---- -->
 <div class="role-card">

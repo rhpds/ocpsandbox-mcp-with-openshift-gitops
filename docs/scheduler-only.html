@@ -49,25 +49,23 @@
 <h1>Scheduler-Only Pattern <span class="badge badge-blue">Summit 2026</span></h1>
 <p class="subtitle">Complete developer reference — AgnosticV common.yaml, role walkthrough, and destroy behavior</p>
 
-<div class="toc">
-  <h2>Contents</h2>
+<nav class="page-toc">
+  <strong>On this page</strong>
   <ol>
     <li><a href="#how-it-works">How it works — provisioning flow</a></li>
-    <li><a href="#sandbox-api-role">What Sandbox API does in this pattern</a></li>
+    <li><a href="#sandbox-api-role">What Sandbox API does</a></li>
     <li><a href="#full-common-yaml">Complete AgV common.yaml — annotated</a></li>
-    <li><a href="#sandbox-variables">Variables you receive from Sandbox API</a></li>
+    <li><a href="#sandbox-variables">Variables from Sandbox API</a></li>
     <li><a href="#role-walkthrough">Role-by-role walkthrough</a></li>
     <li><a href="#destroy">Destroy behavior</a></li>
     <li><a href="#common-mistakes">Common mistakes</a></li>
   </ol>
-</div>
+</nav>
 
 <!-- ============================================================ -->
 <h2 id="how-it-works">How It Works — Provisioning Flow</h2>
 
-<p>
-  Three phases — cluster provisioner runs once, Sandbox API picks a cluster per order, AgnosticD roles create the per-tenant resources. Only Layer 3 is configured in your AgV. See <a href="gitops-pattern.html">GitOps Pattern guide</a> for the full architectural explanation.
-</p>
+<p>Three phases: cluster provisioner runs once, Sandbox API picks a cluster per order, AgnosticD roles create per-tenant resources. Only Layer 3 is configured in your AgV. See <a href="gitops-pattern.html">GitOps Pattern guide</a> for the architecture.</p>
 
 <div class="svg-wrap">
 <svg viewBox="0 0 900 340" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
@@ -145,8 +143,6 @@
 <!-- ============================================================ -->
 <h2 id="sandbox-api-role">What Sandbox API Does in This Pattern</h2>
 
-<p>In the Scheduler-Only pattern, Sandbox API has a deliberately minimal role:</p>
-
 <ol>
   <li><strong>Selects a cluster</strong> from the pre-warmed pool that was provisioned by Layer 1</li>
   <li><strong>Creates a temporary cluster-admin service account</strong> so AgnosticD can authenticate with full privileges</li>
@@ -165,7 +161,7 @@
 
 <div class="callout callout-blue">
   <strong>Why use Scheduler-Only?</strong>
-  Because your lab needs multiple namespaces per tenant, Keycloak SSO, Gitea repos, and ArgoCD — and you want to control the exact topology. Sandbox API getting out of the way and just giving you cluster access gives your Ansible roles the flexibility to build exactly what the lab requires.
+  Use this when your lab needs multiple namespaces, Keycloak SSO, Gitea repos, and ArgoCD per tenant. Sandbox API stays minimal — your Ansible roles control the exact tenant topology.
 </div>
 
 <hr>
@@ -180,14 +176,11 @@
 <!-- ============================================================ -->
 <h2 id="full-common-yaml">Complete AgV common.yaml — Annotated</h2>
 
-<p>
-  The following is a complete, production-ready <code>common.yaml</code> for the Summit 2026 / Scheduler-Only pattern. Copy it as a starting point and modify the values for your specific catalog item. Every section is explained with inline YAML comments and the section-by-section breakdown below.
-</p>
+<p>Production-ready <code>common.yaml</code> for the Summit 2026 / Scheduler-Only pattern. Copy it as a starting point and modify values for your catalog item.</p>
 
 <div class="callout callout-grey">
   <strong>File location</strong>
-  In AgnosticV, this file lives at: <code>catalog/&lt;your-catalog-item&gt;/common.yaml</code>
-  It is merged with <code>account.yaml</code> and <code>size.yaml</code> at order time. Variables defined here are passed to every AgnosticD role invocation.
+  <code>catalog/&lt;your-catalog-item&gt;/common.yaml</code> — merged with <code>account.yaml</code> and <code>size.yaml</code> at order time.
 </div>
 
 <pre><code><span class="cmt">---</span>

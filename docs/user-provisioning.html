@@ -64,13 +64,7 @@
 <!-- ============================================================ -->
 <h2 id="what">What is User Provisioning?</h2>
 
-<p>
-  User provisioning is everything that happens <strong>when a lab order is placed</strong>. Sandbox API selects a cluster, injects variables, and your AgnosticD workload roles run to create a tenant environment for that specific attendee. When the order expires or is returned, a destroy playbook removes all the per-tenant resources.
-</p>
-
-<p>
-  User provisioning runs in full isolation per order &mdash; it does not touch other tenants on the same cluster. The per-order resources include:
-</p>
+<p>Everything that happens when a lab order is placed — Sandbox API selects a cluster, injects variables, and your AgnosticD workload roles create a tenant environment. Per-order resources include:</p>
 
 <ul>
   <li>One RHBK (Keycloak) user in the shared realm</li>
@@ -91,19 +85,11 @@
 <!-- ============================================================ -->
 <h2 id="scheduler-only">Approach A: Scheduler-Only <span class="badge badge-blue">Summit 2026</span></h2>
 
-<p>
-  In the Scheduler-Only pattern, Sandbox API does exactly one thing: it selects a cluster from the pool and injects credentials. Your Ansible roles do <em>everything else</em> &mdash; creating the RHBK user, namespaces, Gitea org, ArgoCD App, LiteMaaS key, and Showroom deployment.
-</p>
-
-<p>
-  This gives you full control over the tenant lifecycle and allows complex multi-namespace topologies. The trade-off is more Ansible role complexity and a cluster provisioner prerequisite.
-</p>
+<p>Sandbox API selects a cluster and injects credentials — your roles do everything else. Full lifecycle control with more role complexity; requires a cluster provisioner.</p>
 
 <h3>The AgV common.yaml (Scheduler-Only)</h3>
 
-<p>
-  Here is the complete, annotated AgV <code>common.yaml</code> for the MCP with OpenShift GitOps lab using the Scheduler-Only pattern. Every field is explained.
-</p>
+<p>Complete annotated <code>common.yaml</code> for the MCP with OpenShift GitOps lab. Every field is explained.</p>
 
 <pre><code><span class="cmt"># ============================================================
 # AgnosticV common.yaml — MCP with OpenShift GitOps Lab

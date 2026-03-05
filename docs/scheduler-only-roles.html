@@ -46,9 +46,22 @@
   <a href="namespace-api-reference.html" class="page-link">OCP Sandbox API — Reference</a>
 </nav>
 <div class="main">
+<p style="font-size:0.82rem; color:#888; margin-bottom:1.5rem;">
+  <a href="scheduler-only.html">Scheduler-Only</a> → Roles + Variables
+</p>
+
+<nav class="page-toc">
+  <strong>On this page</strong>
+  <ol>
+    <li><a href="#sandbox-variables">Variables from Sandbox API</a></li>
+    <li><a href="#role-walkthrough">Role-by-role walkthrough</a></li>
+    <li><a href="#destroy">Destroy behavior</a></li>
+  </ol>
+</nav>
+
 <h2 id="sandbox-variables">Variables You Receive from Sandbox API</h2>
 
-<p>These four variables are injected by Sandbox API into every AgnosticD run using the Scheduler-Only pattern. You reference them directly in your AgV <code>common.yaml</code>.</p>
+<p>Injected automatically — reference directly in your AgV <code>common.yaml</code>:</p>
 
 <table>
   <thead>
@@ -99,9 +112,7 @@
 
 <h3>Role 1 — ocp4_workload_tenant_keycloak_user</h3>
 <p><strong>Collection:</strong> <code>agnosticd.namespaced_workloads</code></p>
-<p>
-  Creates a single user account in the existing Red Hat Build of Keycloak (RHBK) instance on the cluster. RHBK was installed by the cluster provisioner and serves as the SSO provider for all tenant services (LibreChat, the MCP proxies, etc.).
-</p>
+<p>Creates one RHBK user in the existing realm on the cluster (installed by cluster provisioner).</p>
 <ul>
   <li>Authenticates to RHBK admin API using <code>ocp4_workload_tenant_keycloak_user_admin_username</code> and <code>ocp4_workload_tenant_keycloak_user_admin_password</code></li>
   <li>Creates a user with username <code>{{ ocp4_workload_tenant_keycloak_username }}</code> and password <code>{{ common_password }}</code></li>
@@ -114,9 +125,7 @@
 
 <h3>Role 2 — ocp4_workload_tenant_namespace</h3>
 <p><strong>Collection:</strong> <code>agnosticd.namespaced_workloads</code></p>
-<p>
-  Creates one OCP namespace per entry in <code>ocp4_workload_tenant_namespace_suffixes</code>. Each namespace is named <code>&lt;username&gt;-&lt;suffix&gt;</code> (e.g., <code>mcpuser-drw4x-agent</code>). The role also:
-</p>
+<p>Creates one OCP namespace per entry in <code>ocp4_workload_tenant_namespace_suffixes</code> (named <code>&lt;username&gt;-&lt;suffix&gt;</code>). Also:</p>
 <ul>
   <li>Applies a <code>LimitRange</code> with default CPU and memory limits to each namespace</li>
   <li>Grants the tenant user edit access to each namespace</li>
@@ -128,25 +137,21 @@
 
 <h3>Role 3 — ocp4_workload_tenant_gitea</h3>
 <p><strong>Collection:</strong> <code>agnosticd.namespaced_workloads</code></p>
-<p>
-  Configures a Gitea organization and repositories for this tenant within the shared Gitea instance. The role:
-</p>
+<p>Configures a Gitea org and repos in the shared Gitea instance:</p>
 <ul>
   <li>Creates a Gitea organization named after the tenant user</li>
   <li>Creates a Gitea user account for the tenant</li>
   <li>For each entry in <code>ocp4_workload_tenant_gitea_repos</code>, mirrors the source repo into the tenant org</li>
   <li>Sets the fact <code>ocp4_workload_tenant_gitea_repo_url</code> for each mirrored repo — this is consumed by the GitOps bootstrap role</li>
 </ul>
-<p>The mirrored Gitea repo is what ArgoCD watches for this tenant. Changes pushed to the tenant's Gitea fork are picked up by ArgoCD and deployed automatically.</p>
+<p>The mirrored repo is what ArgoCD watches — changes pushed to the tenant's fork are deployed automatically.</p>
 <div class="callout callout-blue">
   <strong>Key vars:</strong> <code>ocp4_workload_tenant_gitea_host</code>, <code>ocp4_workload_tenant_gitea_admin_user</code>, <code>ocp4_workload_tenant_gitea_repos</code>
 </div>
 
 <h3>Role 4 — ocp4_workload_litellm_virtual_keys</h3>
 <p><strong>Collection:</strong> <code>agnosticd.ai_workloads</code></p>
-<p>
-  Creates a rate-limited AI API virtual key via the LiteMaaS admin API. LiteMaaS provides a unified OpenAI-compatible endpoint in front of multiple LLM providers. The virtual key:
-</p>
+<p>Creates a rate-limited AI API virtual key via the LiteMaaS admin API (unified OpenAI-compatible endpoint):</p>
 <ul>
   <li>Is scoped to the models listed in <code>ocp4_workload_litellm_virtual_keys_models</code></li>
   <li>Has a spending cap of <code>ocp4_workload_litellm_virtual_keys_max_budget</code> USD</li>
@@ -161,9 +166,7 @@
 
 <h3>Role 5 — ocp4_workload_gitops_bootstrap</h3>
 <p><strong>Collection:</strong> <code>agnosticd.core_workloads</code></p>
-<p>
-  Creates an ArgoCD Application resource (the "bootstrap" app) in the OpenShift GitOps namespace. This bootstrap application uses the app-of-apps pattern: it points to a Helm chart at <code>ocp4_workload_gitops_bootstrap_path</code> in the tenant's Gitea repo, which in turn defines all the child ArgoCD applications for this tenant.
-</p>
+<p>Creates an ArgoCD "bootstrap" Application (app-of-apps pattern) pointing to a Helm chart in the tenant's Gitea repo, which defines all child Applications for this tenant:</p>
 <ul>
   <li>ArgoCD continuously reconciles the tenant's desired state from Gitea</li>
   <li>The Helm chart values are passed via <code>ocp4_workload_gitops_bootstrap_helm_values</code>, which includes the tenant username, password, domain, and LiteMaaS key</li>
@@ -179,9 +182,7 @@
 
 <h3>Role 6 — ocp4_workload_showroom</h3>
 <p><strong>Collection:</strong> <code>agnosticd.showroom</code></p>
-<p>
-  Deploys the Showroom tab-based UI. Showroom is a small web application that presents the lab attendee with a set of browser tabs — typically a lab guide, an OCP console link, and application-specific URLs. It is driven by a Git repository containing an Antora (AsciiDoc) site.
-</p>
+<p>Deploys the Showroom tab UI (lab guide + OCP console + app URLs) driven by an Antora/AsciiDoc Git repo:</p>
 <ul>
   <li>Clones <code>showroom_git_repo</code> at <code>showroom_git_repo_revision</code> and builds the tab configuration</li>
   <li>Deploys the Showroom pod into a namespace named after the tenant</li>
@@ -194,9 +195,7 @@
 <!-- ============================================================ -->
 <h2 id="destroy">Destroy Behavior</h2>
 
-<p>
-  When an order is destroyed (user cancels, order expires, or admin triggers destruction), AgnosticD calls the <code>remove_workload.yml</code> of each role in <code>remove_workloads:</code> order. This is the reverse of provisioning.
-</p>
+<p>AgnosticD calls <code>remove_workload.yml</code> of each role in <code>remove_workloads:</code> order — the reverse of provisioning:</p>
 
 <table>
   <thead>

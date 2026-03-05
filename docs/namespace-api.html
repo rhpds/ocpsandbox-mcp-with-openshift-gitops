@@ -49,25 +49,23 @@
 <h1>OCP Sandbox API Pattern</h1>
 <p class="subtitle">Complete developer reference — Sandbox API manages namespaces and RHSSO users per order</p>
 
-<div class="toc">
-  <h2>Contents</h2>
+<nav class="page-toc">
+  <strong>On this page</strong>
   <ol>
     <li><a href="#how-it-works">How it works</a></li>
     <li><a href="#when-to-use">When to use this pattern</a></li>
     <li><a href="#full-common-yaml">Complete AgV common.yaml — annotated</a></li>
     <li><a href="#variables-reference">All Sandbox API variables — full reference</a></li>
     <li><a href="#sandbox-vs-you">What Sandbox API handles vs. what you handle</a></li>
-    <li><a href="#comparison">Comparison with Scheduler-Only — when to use which</a></li>
+    <li><a href="#comparison">Comparison with Scheduler-Only</a></li>
     <li><a href="#quota-destroy">Quota and destroy notes</a></li>
   </ol>
-</div>
+</nav>
 
 <!-- ============================================================ -->
 <h2 id="how-it-works">How It Works</h2>
 
-<p>
-  In the OCP Sandbox API pattern, Sandbox API takes on more responsibility than in the Scheduler-Only pattern. For every order, Sandbox API:
-</p>
+<p>For every order, Sandbox API:</p>
 
 <ol>
   <li>Selects a cluster from the pool (same as Scheduler-Only)</li>

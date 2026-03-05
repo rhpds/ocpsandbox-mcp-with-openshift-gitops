@@ -49,41 +49,33 @@
 <h1>Sandbox API — Developer Reference</h1>
 <p class="subtitle">AgnosticD / AgnosticV integration guide for Red Hat Demo Platform (RHDP)</p>
 
-<div class="toc">
-  <h2>Contents</h2>
+<nav class="page-toc">
+  <strong>On this page</strong>
   <ol>
     <li><a href="#what-is-sandbox-api">What is Sandbox API?</a></li>
-    <li><a href="#why-sandbox-api">Why Sandbox API — shared clusters</a></li>
     <li><a href="#cluster-selection">How cluster selection works — cloud_selector</a></li>
+    <li><a href="#why-sandbox-api">Why Sandbox API — shared clusters</a></li>
     <li><a href="#which-pattern">Which pattern should I use?</a></li>
     <li><a href="#scheduler-only-overview">Summit 2026 — Scheduler-Only Pattern</a></li>
     <li><a href="#namespace-api-overview">OCP Sandbox API Pattern</a></li>
   </ol>
-</div>
+</nav>
 
 <!-- ============================================================ -->
 <h2 id="what-is-sandbox-api">What is Sandbox API?</h2>
 
-<p>
-  Sandbox API is the RHDP service that allocates OpenShift clusters (and other cloud resources) to lab orders. When a user requests a catalog item, the RHDP platform calls Sandbox API to provision a cluster from a pre-warmed pool, then hands control to AgnosticD (via AgnosticV configuration) to deploy the actual lab content.
-</p>
-
-<p>Sandbox API does the following for every order:</p>
+<p>Sandbox API allocates OpenShift clusters to lab orders and hands control to AgnosticD (via AgnosticV) to deploy lab content. For every order it:</p>
 <ul>
   <li>Picks an available OpenShift cluster from the resource pool</li>
-  <li>Creates a service account with cluster-admin privileges for AgnosticD to use</li>
-  <li>Injects a set of well-known variables into your AgnosticD run (API URL, ingress domain, console URL, SA token)</li>
+  <li>Creates a service account with cluster-admin privileges for AgnosticD</li>
+  <li>Injects well-known variables into your AgnosticD run (API URL, ingress domain, console URL, SA token)</li>
   <li>Optionally creates namespaces and OCP user accounts (OCP Sandbox API pattern only)</li>
   <li>Reclaims the cluster when the order is destroyed or expired</li>
 </ul>
 
-<p>
-  Sandbox API does <strong>not</strong> deploy your lab content. That is the job of AgnosticD roles configured through AgnosticV. The two patterns described in this guide differ in <em>how much</em> Sandbox API does versus how much your Ansible roles do.
-</p>
-
 <div class="callout callout-blue">
   <strong>Key insight</strong>
-  In both patterns your AgnosticV <code>common.yaml</code> configures what runs, in what order, and with what variables. Sandbox API just gives you a cluster and injects variables. Everything else is up to your workloads — Ansible roles, GitOps, or both.
+  Sandbox API gives you a cluster and injects variables. Your AgnosticV <code>common.yaml</code> configures what runs, in what order, and with what variables. Everything else — Ansible roles, GitOps, or both — is up to your workloads.
 </div>
 
 <hr>
@@ -91,22 +83,12 @@
 <!-- ============================================================ -->
 <h2 id="cluster-selection"><strong>How Cluster Selection Works — <code>cloud_selector</code></strong></h2>
 
-<p>
-  When you place an order, Sandbox API needs to pick a cluster from the pool. The <strong><code>cloud_selector</code></strong> in your <code>__meta__.sandboxes</code> entry is how you tell it which clusters are eligible. Understanding this is essential — a wrong or missing tag means your order will either fail or land on the wrong cluster.
-</p>
+<p>The <strong><code>cloud_selector</code></strong> in your <code>__meta__.sandboxes</code> entry filters the cluster pool. Every cluster has annotation tags; Sandbox API picks a cluster whose annotations contain every tag you specify, weighted by availability.</p>
 
 <div class="callout callout-blue">
   <strong>The magic behind cluster selection</strong>
-  Every cluster registered in the Sandbox API pool has a set of annotation tags (key-value pairs) stored in the database. Your <code>cloud_selector</code> is a filter — Sandbox API finds all clusters whose annotations <strong>contain every tag you specified</strong>. If a cluster has your tags (plus any others), it qualifies. From all qualifying clusters, Sandbox API picks one at random that has available capacity.
+  Sandbox API finds all clusters whose annotations <strong>contain every tag you specified</strong>. If a cluster has your tags (plus any others), it qualifies. From qualifying clusters, Sandbox API picks one at random with available capacity.
 </div>
-
-<h3>How it works — step by step</h3>
-<ol>
-  <li>You define <code>cloud_selector</code> tags in your AgV <code>__meta__.sandboxes</code> entry</li>
-  <li>Sandbox API queries the cluster pool: <em>"give me all valid clusters whose annotations contain ALL these tags"</em></li>
-  <li>From the matching clusters, it picks one at random (weighted by availability and capacity limits)</li>
-  <li>It creates a sandbox on that cluster, injects all variables into your AgnosticD run, and provisioning begins</li>
-</ol>
 
 <h3>Example <code>cloud_selector</code></h3>
 <pre><code><span class="key">__meta__</span>:
@@ -121,11 +103,11 @@
       <span class="key">keycloak</span>: <span class="str">"yes"</span>            <span class="cmt"># optional — only clusters with RHSSO installed</span></code></pre>
 
 <p>
-  The cluster in the pool must have ALL four tags to qualify. A cluster tagged <code>cloud: cnv-dedicated-shared</code> + <code>demo: mcp-with-openshift</code> + <code>purpose: prod</code> but missing <code>keycloak: yes</code> will NOT be selected.
+  The cluster must have ALL four tags to qualify. A cluster missing <code>keycloak: yes</code> will NOT be selected even if it has the other three.
 </p>
 
 <h3>Variables injected after cluster selection</h3>
-<p>Once a cluster is selected, Sandbox API injects these variables into every AgnosticD role automatically. You do not declare them — you just use them:</p>
+<p>Once a cluster is selected, Sandbox API injects these variables automatically. You do not declare them — you just use them:</p>
 
 <table>
   <thead>
@@ -167,7 +149,7 @@
 
 <div class="callout callout-orange">
   <strong><code>sandbox_openshift_ingress_domain</code> is the most used variable</strong>
-  Almost every service URL in your lab is built from this: <code>https://myapp-{namespace}.{{ sandbox_openshift_ingress_domain }}</code>. If you are missing this in your role variables or Showroom config, your URLs will be wrong. This variable is always available — you never need to look it up manually.
+  Almost every service URL in your lab is built from this: <code>https://myapp-{namespace}.{{ sandbox_openshift_ingress_domain }}</code>. This variable is always available — you never need to look it up manually.
 </div>
 
 <hr>
@@ -175,9 +157,7 @@
 <!-- ============================================================ -->
 <h2 id="why-sandbox-api">Why Sandbox API — Shared Clusters</h2>
 
-<p>
-  The primary driver is <strong>Zero Touch OpenShift</strong> — the RHDP direction for customer and partner workshops where attendees get an instant, isolated OpenShift experience without waiting for a cluster to provision. The original pattern required a full dedicated CNV cluster per order, which is not compatible with that model.
-</p>
+<p>The primary driver is <strong>Zero Touch OpenShift</strong> — instant, isolated OpenShift for workshops without waiting for cluster provisioning.</p>
 
 <div class="callout callout-blue">
   <strong>Zero Touch OpenShift</strong>
@@ -186,18 +166,16 @@
 
 <ul>
   <li>
-    <strong>Speed.</strong> A dedicated CNV cluster takes 45–60 minutes to provision. A shared cluster order using Sandbox API takes 2–3 minutes — the cluster is already running, we are only provisioning the per-tenant resources. For event formats like Lightning Labs or booth demos where attendees walk up and want to start immediately, waiting an hour is not an option.
+    <strong>Speed.</strong> A dedicated CNV cluster takes 45–60 minutes to provision. A shared cluster order takes 2–3 minutes — the cluster is already running, we only provision per-tenant resources. For booth demos and Lightning Labs, waiting an hour is not an option.
   </li>
   <li>
-    <strong>Scale across use cases — and Lightning Labs at Summit 2026.</strong> This pattern supports multiple deployment scenarios from a single catalog item: full workshop sessions, booth demos, and on-demand ordering from demo.redhat.com. A shared cluster pool can absorb concurrent demand across all of these without provisioning a dedicated cluster for each.
-    <br><br>
-    <strong>At Summit 2026, the event team is introducing self-service labs called Lightning Labs — and this is expected to be one of the biggest attractions of the event.</strong> Lightning Labs are short, self-paced sessions that attendees can walk up and start on their own, with no instructor and no scheduled slot. For this to work, the environment must be ready in minutes. A dedicated CNV cluster per order (45–60 min) makes Lightning Labs impossible. The shared cluster + Sandbox API pattern makes them viable — an attendee orders, gets their environment in 2–3 minutes, completes the lab, and the environment is destroyed automatically. That cycle has to work at scale, concurrently, across the event floor. One dedicated cluster per order cannot do that.
+    <strong><strong>Lightning Labs at Summit 2026.</strong></strong> Short, self-paced sessions attendees can walk up and start on their own. The environment must be ready in minutes. A shared cluster + Sandbox API makes them viable at scale, concurrently, across the event floor.
   </li>
   <li>
-    <strong>Establishing a reusable pattern.</strong> This is the first lab in RHDP to use the shared cluster + Sandbox API scheduler-only pattern end-to-end. The goal is not just to ship this one lab — it is to prove out an approach that other labs can follow. The tenant roles (<code>ocp4_workload_tenant_keycloak_user</code>, <code>ocp4_workload_tenant_namespace</code>, <code>ocp4_workload_tenant_gitea</code>) were built to be generic and reusable, not tied to MCP. Any lab that needs to run on a shared OpenShift cluster can use the same building blocks.
+    <strong>Reusable pattern.</strong> The tenant roles (<code>ocp4_workload_tenant_keycloak_user</code>, <code>ocp4_workload_tenant_namespace</code>, <code>ocp4_workload_tenant_gitea</code>) are generic — not tied to MCP. Any lab on a shared OpenShift cluster can use the same building blocks.
   </li>
   <li>
-    <strong>Authentication.</strong> The original lab used HTPasswd with sequential usernames (<code>user1</code>, <code>user2</code>) because each order got its own cluster — HTPasswd made sense there. On a shared cluster that model breaks down: you cannot use sequential usernames across concurrent orders and you need a proper identity provider that can handle many users with isolated sessions. RHBK is already on the cluster; each order just adds one user to the existing realm and removes it on destroy. The auth model follows naturally from moving to shared clusters — it is not a goal in itself.
+    <strong>Authentication.</strong> On a shared cluster, HTPasswd with sequential usernames breaks down. RHBK is already on the cluster; each order adds one user to the existing realm and removes it on destroy.
   </li>
 </ul>
 
@@ -206,7 +184,7 @@
 <!-- ============================================================ -->
 <div class="callout callout-blue">
   <strong>Three-Layer GitOps Architecture</strong>
-  Shared cluster labs are built on a three-layer pattern: <strong>Infra</strong> (install operators once), <strong>Platform</strong> (create instances and configure once), <strong>Tenant</strong> (per order &mdash; the user). This is a general GitOps pattern, not specific to Sandbox API.
+  Shared cluster labs are built on a three-layer pattern: <strong>Infra</strong> (install operators once), <strong>Platform</strong> (create instances and configure once), <strong>Tenant</strong> (per order &mdash; the user).
   <br><br>
   <a href="gitops-pattern.html">See the full GitOps architecture guide &rarr;</a>
 </div>
@@ -216,7 +194,7 @@
 <!-- ============================================================ -->
 <h2 id="which-pattern">Which Pattern Should I Use?</h2>
 
-<p>There are two integration patterns. Choose based on who should own namespace and user lifecycle.</p>
+<p>Choose based on who should own namespace and user lifecycle.</p>
 
 <div class="two-col">
   <div class="pattern-card blue">
@@ -319,9 +297,7 @@
 <!-- ============================================================ -->
 <h2 id="scheduler-only-overview">Summit 2026 — Scheduler-Only Pattern</h2>
 
-<p>
-  Sandbox API schedules a cluster and injects credentials. All per-tenant resources are created by your workloads — RHBK user, namespaces, Gitea instance, ArgoCD Applications. A separate cluster provisioner installs shared services once per cluster (RHBK, Gitea, ArgoCD, ToolHive).
-</p>
+<p>Sandbox API schedules a cluster and injects credentials. All per-tenant resources are created by your workloads — RHBK user, namespaces, Gitea instance, ArgoCD Applications. A separate cluster provisioner installs shared services once per cluster.</p>
 
 <p>Key AgV fields: single <code>OcpSandbox</code> entry under <code>__meta__.sandboxes</code> with <code>alias</code>, <code>cloud_selector</code>, and <code>quota</code>. No <code>keycloak: yes</code> — you manage users yourself.</p>
 
@@ -332,9 +308,7 @@
 <!-- ============================================================ -->
 <h2 id="namespace-api-overview">OCP Sandbox API Pattern</h2>
 
-<p>
-  Sandbox API creates the namespaces and an RHSSO user for each order. Your workloads deploy lab content into the ready-made namespaces. Simpler setup — no cluster provisioner, no Keycloak role, no Gitea role. Less flexibility.
-</p>
+<p>Sandbox API creates the namespaces and an RHSSO user for each order. Your workloads deploy lab content into the ready-made namespaces. Simpler setup — no cluster provisioner, no Keycloak role, no Gitea role. Less flexibility.</p>
 
 <p>Key AgV fields: one <code>OcpSandbox</code> entry per namespace with <code>namespace_suffix</code>. Add <code>keycloak: "yes"</code> to create an RHSSO user. Use <code>cluster_condition: same('alias')</code> to pin multiple namespaces to the same cluster.</p>
 

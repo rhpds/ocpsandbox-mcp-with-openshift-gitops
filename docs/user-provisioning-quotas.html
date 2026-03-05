@@ -46,11 +46,21 @@
   <a href="namespace-api-reference.html" class="page-link">OCP Sandbox API — Reference</a>
 </nav>
 <div class="main">
+<p style="font-size:0.82rem; color:#888; margin-bottom:1.5rem;">
+  <a href="user-provisioning.html">User Provisioning</a> → Namespace Quotas + Variables
+</p>
+
+<nav class="page-toc">
+  <strong>On this page</strong>
+  <ol>
+    <li><a href="#namespaces">Namespace configuration and quotas</a></li>
+    <li><a href="#variables">Variables from Sandbox API</a></li>
+  </ol>
+</nav>
+
 <h2 id="namespaces">Namespace Configuration and Quotas</h2>
 
-<p>
-  Namespace quotas prevent any single tenant from consuming too many cluster resources. In the Scheduler-Only pattern, quotas are enforced by <code>ocp4_workload_tenant_namespace</code> via <code>ResourceQuota</code> and <code>LimitRange</code> objects. In the OCP Sandbox API pattern, quotas are set in the <code>__meta__.sandboxes</code> quota block.
-</p>
+<p>Quotas prevent any single tenant from exhausting cluster resources. In Scheduler-Only, <code>ocp4_workload_tenant_namespace</code> applies them via <code>ResourceQuota</code> and <code>LimitRange</code>. In OCP Sandbox API, set them in the <code>__meta__.sandboxes</code> quota block.</p>
 
 <h3>ResourceQuota created by ocp4_workload_tenant_namespace</h3>
 
@@ -134,9 +144,7 @@
 <!-- ============================================================ -->
 <h2 id="variables">Variables from Sandbox API</h2>
 
-<p>
-  These variables are automatically injected into every AgnosticD role invocation. You do not need to declare them &mdash; just use them. They are available from the moment the first role runs.
-</p>
+<p>Injected into every AgnosticD role automatically — declare nothing, use directly:</p>
 
 <table>
   <thead>

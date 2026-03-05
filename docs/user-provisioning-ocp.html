@@ -46,15 +46,19 @@
   <a href="namespace-api-reference.html" class="page-link">OCP Sandbox API — Reference</a>
 </nav>
 <div class="main">
+<p style="font-size:0.82rem; color:#888; margin-bottom:1.5rem;">
+  <a href="user-provisioning.html">User Provisioning</a> → OCP Sandbox API
+</p>
+<nav class="page-toc">
+  <strong>On this page</strong>
+  <ol>
+    <li><a href="#ocp-sandbox-api">Approach B: OCP Sandbox API</a></li>
+  </ol>
+</nav>
+
 <h2 id="ocp-sandbox-api">Approach B: OCP Sandbox API</h2>
 
-<p>
-  In the OCP Sandbox API pattern, you declare the namespaces you want directly in the AgV <code>__meta__.sandboxes</code> list. Sandbox API creates these namespaces, applies the quota you specify, creates an OCP local user, and optionally creates an RHSSO user if <code>keycloak: "yes"</code> is set. Your workload roles then deploy lab content into the ready-made namespaces.
-</p>
-
-<p>
-  This pattern is simpler &mdash; no cluster provisioner, no Keycloak role, no Gitea role. Use it for labs that do not need shared services or complex multi-namespace topologies.
-</p>
+<p>Declare namespaces in <code>__meta__.sandboxes</code>; Sandbox API creates them, applies quotas, and optionally creates an RHSSO user. Simpler than Scheduler-Only — no cluster provisioner, no Keycloak role, no Gitea role.</p>
 
 <h3>The AgV common.yaml (OCP Sandbox API)</h3>
 

@@ -46,10 +46,24 @@
   <a href="namespace-api-reference.html" class="page-link active">OCP Sandbox API — Reference</a>
 </nav>
 <div class="main">
+<p style="font-size:0.82rem; color:#888; margin-bottom:1.5rem;">
+  <a href="namespace-api.html">OCP Sandbox API</a> → Reference
+</p>
+
+<nav class="page-toc">
+  <strong>On this page</strong>
+  <ol>
+    <li><a href="#variables-reference">Variables — full reference</a></li>
+    <li><a href="#sandbox-vs-you">Sandbox API vs. you</a></li>
+    <li><a href="#comparison">Comparison with Scheduler-Only</a></li>
+    <li><a href="#quota-destroy">Quota and destroy notes</a></li>
+  </ol>
+</nav>
+
 <h2 id="variables-reference">All Sandbox API Variables — Full Reference</h2>
 
 <h3>Primary namespace variables (always provided)</h3>
-<p>These variables are always injected when you have at least one sandbox entry with a <code>namespace_suffix</code>. They correspond to the first (primary) sandbox entry.</p>
+<p>Always injected when you have at least one <code>namespace_suffix</code> entry. Correspond to the first (primary) sandbox entry.</p>
 
 <table>
   <thead>
@@ -99,9 +113,7 @@
 </table>
 
 <h3>Additional namespace variables (per extra sandbox entry)</h3>
-<p>
-  For every sandbox entry after the first (entries with a <code>name</code> other than the primary), Sandbox API provides a namespace variable prefixed with the entry's <code>name</code>.
-</p>
+<p>For each entry after the first, Sandbox API provides a namespace variable prefixed with the entry's <code>name</code>:</p>
 
 <table>
   <thead>
@@ -298,9 +310,7 @@
 <h2 id="quota-destroy">Quota and Destroy Notes</h2>
 
 <h3>Quota configuration</h3>
-<p>
-  Sandbox API reads a standard set of quota variables and applies a <code>ResourceQuota</code> to each namespace it creates. Set these variables in your AgV <code>common.yaml</code> to control how much cluster capacity each order consumes.
-</p>
+<p>Set these variables in your AgV <code>common.yaml</code> to control cluster capacity per order:</p>
 
 <table>
   <thead>

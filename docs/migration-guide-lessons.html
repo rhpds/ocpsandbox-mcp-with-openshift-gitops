@@ -46,11 +46,21 @@
   <a href="namespace-api-reference.html" class="page-link">OCP Sandbox API — Reference</a>
 </nav>
 <div class="main">
-<h2 id="challenges">7. Challenges and Fixes</h2>
-
-<p>
-  These are the real problems we encountered during the migration — not theoretical edge cases, but actual failures that blocked progress.
+<p style="font-size:0.82rem; color:#888; margin-bottom:1.5rem;">
+  <a href="migration-guide.html">Migration Guide</a> → Challenges &amp; Lessons
 </p>
+
+<nav class="page-toc">
+  <strong>On this page</strong>
+  <ol>
+    <li><a href="#challenges">Challenges and fixes</a></li>
+    <li><a href="#lessons">Lessons learned</a></li>
+    <li><a href="#open-questions">Open questions</a></li>
+    <li><a href="#links">All links</a></li>
+  </ol>
+</nav>
+
+<h2 id="challenges">7. Challenges and Fixes</h2>
 
 <div class="challenge">
   <h4>Challenge 1: <code>$password</code> undefined in the bootstrap Helm template</h4>
@@ -212,10 +222,6 @@
 <hr>
 
 <h2 id="open-questions">9. Open Questions — Unresolved Concerns</h2>
-
-<p>
-  These are concerns raised during development that are not yet resolved. They need to be addressed before this pattern is used at scale. They are documented here so the next person who works on this does not have to rediscover them.
-</p>
 
 <div class="challenge">
   <h4>Concern 1 (raised by @Judd): Namespace termination deadlocks and etcd orphans</h4>

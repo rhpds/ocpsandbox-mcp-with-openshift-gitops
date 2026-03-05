@@ -65,13 +65,11 @@
 <!-- ============================================================ -->
 <h2 id="what">What is Cluster Provisioning?</h2>
 
-<p>
-  Cluster provisioning is the <strong>one-time setup</strong> that turns a bare OpenShift cluster into a platform ready to accept lab orders. It installs and configures the shared services that every tenant depends on: RHBK (Keycloak), Gitea, OpenShift GitOps (ArgoCD), and ToolHive.
-</p>
-
-<p>
-  This is separate from <a href="user-provisioning.html">user provisioning</a>, which happens per-order (every time someone orders the lab). Cluster provisioning runs once per cluster, typically performed by a lab developer or platform engineer when a new cluster is added to the Sandbox API pool.
-</p>
+<ul>
+  <li>One-time setup that turns a bare OpenShift cluster into a platform ready to accept lab orders</li>
+  <li>Installs and configures shared services every tenant depends on: RHBK (Keycloak), Gitea, OpenShift GitOps (ArgoCD), and ToolHive</li>
+  <li>Runs once per cluster when it is added to the pool — separate from <a href="user-provisioning.html">user provisioning</a>, which runs per-order</li>
+</ul>
 
 <div class="card-grid">
   <div class="card blue">
@@ -108,9 +106,7 @@
 <!-- ============================================================ -->
 <h2 id="infra">Infra Layer &mdash; Installing Operators</h2>
 
-<p>
-  The <strong>infra layer</strong> installs cluster-wide operators via OLM (Operator Lifecycle Manager). These operators provide the CRDs and controllers that the platform layer uses to create instances. The infra layer playbook is idempotent &mdash; safe to re-run if a cluster needs to be re-provisioned or upgraded.
-</p>
+<p>The <strong>infra layer</strong> installs cluster-wide operators via OLM, providing the CRDs and controllers the platform layer needs. The playbook is idempotent — safe to re-run.</p>
 
 <h3>Operators installed by the infra layer</h3>
 
@@ -200,9 +196,7 @@
 <!-- ============================================================ -->
 <h2 id="platform">Platform Layer &mdash; Creating Instances</h2>
 
-<p>
-  Once the operators are running, the <strong>platform layer</strong> creates the actual service instances that tenants share. This includes the Keycloak realm, the Gitea instance, the shared ArgoCD instance, and the ToolHive deployment. The platform layer also creates the base namespace structure and configures OAuth integration.
-</p>
+<p>Once operators are running, the <strong>platform layer</strong> creates the shared service instances tenants depend on — the Keycloak realm, Gitea instance, shared ArgoCD instance, ToolHive deployment, and OCP OAuth integration.</p>
 
 <h3>What the platform layer creates</h3>
 
@@ -290,9 +284,7 @@
 
 <h3>Platform layer: OCP OAuth integration</h3>
 
-<p>
-  After Keycloak is running, the platform layer patches the OCP OAuth config so that <code>oc login</code> and the OpenShift console both use RHBK for authentication. This is a cluster-level change that affects all users:
-</p>
+<p>After Keycloak is running, the platform layer patches OCP OAuth so <code>oc login</code> and the console both use RHBK:</p>
 
 <pre><code><span class="cmt"># OCP OAuth CR patch (applied by ocp4_workload_rhbk_ocp_oauth role)</span>
 <span class="key">apiVersion</span>: <span class="val">config.openshift.io/v1</span>
@@ -317,9 +309,7 @@
 <!-- ============================================================ -->
 <h2 id="today">How to Run It Today</h2>
 
-<p>
-  Currently, cluster provisioning is run manually by a lab developer using an Ansible playbook directly against the cluster. There is no AgV catalog item for this yet (that is the <a href="#future">future state</a>). You need the cluster API URL and a cluster-admin token.
-</p>
+<p>Run manually against the cluster using an Ansible playbook. No AgV catalog item exists yet (see <a href="#future">future state</a>). You need the cluster API URL and a cluster-admin token.</p>
 
 <div class="callout callout-warning">
   <strong>Prerequisites before running</strong>
@@ -383,9 +373,7 @@ oc get argocd -n openshift-gitops</code></pre>
 
 <h3><span class="step-num">5</span> Register the cluster in Sandbox API</h3>
 
-<p>
-  After the cluster is provisioned, register it in the Sandbox API pool with the appropriate tags so your lab&#39;s <code>cloud_selector</code> can find it:
-</p>
+<p>Register in the Sandbox API pool with tags matching your lab's <code>cloud_selector</code>:</p>
 
 <pre><code><span class="cmt"># Register cluster with tags that match your lab's cloud_selector</span>
 sandbox-ctl cluster register   --api-url "${CLUSTER_API_URL}"   --token "${CLUSTER_ADMIN_TOKEN}"   --tag cloud=cnv-dedicated-shared   --tag demo=mcp-with-openshift   --tag purpose=prod   --tag keycloak=yes   --capacity 50   <span class="cmt"># max concurrent tenants</span></code></pre>
@@ -400,9 +388,7 @@ sandbox-ctl cluster register   --api-url "${CLUSTER_API_URL}"   --token "${CLUST
 <!-- ============================================================ -->
 <h2 id="future">Future: AgV Catalog Item</h2>
 
-<p>
-  The goal is to replace the manual playbook approach with a proper AgV catalog item that can be ordered from the RHDP catalog. This would allow platform engineers to provision new clusters through the same ordering workflow as lab end-users, with full audit trail, lifecycle management, and destroy support.
-</p>
+<p>The goal is a proper AgV catalog item — orderable from the RHDP catalog with full audit trail, lifecycle management, and destroy support.</p>
 
 <div class="card-grid">
   <div class="card blue">
@@ -427,9 +413,7 @@ sandbox-ctl cluster register   --api-url "${CLUSTER_API_URL}"   --token "${CLUST
   </div>
 </div>
 
-<p>
-  The AgV <code>common.yaml</code> for a cluster provisioner catalog item would look similar to the user provisioning common.yaml but without the per-tenant roles, and with the cluster-level roles (RHBK operator, Gitea operator, ArgoCD, ToolHive) instead.
-</p>
+<p>The AgV <code>common.yaml</code> would use cluster-level roles instead of per-tenant roles:</p>
 
 <pre><code><span class="cmt"># Sketch: future cluster-provisioner AgV common.yaml</span>
 <span class="key">__meta__</span>:
@@ -457,9 +441,7 @@ sandbox-ctl cluster register   --api-url "${CLUSTER_API_URL}"   --token "${CLUST
 <!-- ============================================================ -->
 <h2 id="after">What You Get After Provisioning</h2>
 
-<p>
-  After successful cluster provisioning, the cluster is ready to accept lab orders. Here is what is running and what the URLs look like:
-</p>
+<p>Services running after provisioning and their URLs:</p>
 
 <table>
   <thead>
