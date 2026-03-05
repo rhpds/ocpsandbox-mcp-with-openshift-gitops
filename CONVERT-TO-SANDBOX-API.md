@@ -296,9 +296,6 @@ __meta__:
   deployer:
     scm_ref: main
   sandbox_api:
-    # reservation: ""  # only add this if your catalog item is in summit-2026/
-    #                  # that directory's account.yaml sets pgpu-event reservation
-    #                  # which excludes shared clusters — omit this for agd_v2/
     actions:
       destroy:
         catch_all: false
@@ -361,7 +358,7 @@ Every role must have `remove_workload.yml`. Test destroy early — do not wait u
 | `catch_all: true` for LiteMaaS | Destroys all tenants' AI keys | Always `false` |
 | `ocp4_workload_litellm_virtual_keys_catch_all: false` as a role var | Does not work — Sandbox API does not read it | Put `catch_all: false` under `__meta__.sandbox_api.actions.destroy` instead |
 | Missing `cloud: cnv-dedicated-shared` in `cloud_selector` | Sandbox API finds no cluster | All three tags required: `cloud:`, `demo:`, `purpose:` |
-| Catalog item in `summit-2026/` with shared cluster | Order fails — account.yaml sets `reservation: pgpu-event` which excludes shared clusters | Add `reservation: ""` under `__meta__.sandbox_api` to override |
+| Catalog item in `summit-2026/` with shared cluster | Order fails — `summit-2026/account.yaml` sets `reservation: pgpu-event` which excludes shared clusters. Empty string override is not supported by AgV. | Move the catalog item to `agd_v2/` instead. The `summit-2026/` directory is for Summit event-specific clusters only. |
 | `dev.yaml` duplicating collections and workloads from `common.yaml` | Maintenance nightmare — changes must be made in two places | `dev.yaml` should only contain `purpose: development` and `__meta__` overrides |
 
 ---

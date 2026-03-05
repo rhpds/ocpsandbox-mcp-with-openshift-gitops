@@ -1047,16 +1047,10 @@
 <div class="challenge">
   <h4>Challenge: Catalog item in <code>summit-2026/</code> — Sandbox API cannot find cluster</h4>
   <p>
-    The <code>summit-2026/account.yaml</code> sets <code>sandbox_api: reservation: pgpu-event</code> at account level. This restricts ALL catalog items in that directory to only schedule against Summit event clusters. Shared clusters (like <code>cnv-us-east-ocp-3</code>) are not in that reservation, so Sandbox API returns "No OCP shared cluster configuration found."
+    The <code>summit-2026/account.yaml</code> sets <code>sandbox_api: reservation: pgpu-event</code> at account level. This restricts ALL catalog items in that directory to only schedule against Summit event clusters. Shared clusters (like <code>cnv-us-east-ocp-3</code>) are not in that reservation, so Sandbox API returns "No OCP shared cluster configuration found." Empty string override (<code>reservation: ""</code>) is not supported by AgV and does not work.
   </p>
   <div class="fix">
-    <strong>Fix:</strong> Override the reservation in your <code>common.yaml</code> <code>__meta__</code> block:
-    <pre style="margin-top:0.5rem;font-size:0.8rem;">__meta__:
-  sandbox_api:
-    reservation: ""    # clears the account-level pgpu-event restriction
-    actions:
-      destroy:
-        catch_all: false</pre>
+    <strong>Fix:</strong> Move the catalog item to <code>agd_v2/</code> instead of <code>summit-2026/</code>. The <code>summit-2026/</code> directory is specifically for Summit event clusters — shared cluster labs that run year-round belong in <code>agd_v2/</code>. The <code>agd_v2/account.yaml</code> does not set a reservation so any matching cluster in the pool can be scheduled.
   </div>
 </div>
 

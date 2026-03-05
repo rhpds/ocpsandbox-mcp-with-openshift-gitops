@@ -813,8 +813,8 @@
     </tr>
     <tr>
       <td>Catalog item in <code>summit-2026/</code> using a shared cluster</td>
-      <td>Order fails — <code>summit-2026/account.yaml</code> sets <code>reservation: pgpu-event</code> which excludes shared pools</td>
-      <td>Add <code>reservation: ""</code> under <code>__meta__.sandbox_api</code> to override the account-level reservation</td>
+      <td>Order fails — <code>summit-2026/account.yaml</code> sets <code>reservation: pgpu-event</code> which excludes shared pools. Empty string override is not supported by AgV.</td>
+      <td>Move the catalog item to <code>agd_v2/</code>. The <code>summit-2026/</code> directory is for Summit event clusters only — shared cluster labs belong in <code>agd_v2/</code>.</td>
     </tr>
     <tr>
       <td><code>dev.yaml</code> duplicating <code>collections</code>, <code>workloads</code>, and <code>catalog</code> from <code>common.yaml</code></td>
