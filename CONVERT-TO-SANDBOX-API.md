@@ -205,8 +205,9 @@ workloads:
 - agnosticd.namespaced_workloads.ocp4_workload_tenant_gitea             # 3. Gitea per tenant
 - rhpds.litellm_virtual_keys.ocp4_workload_litellm_virtual_keys         # 4. LiteMaaS key
 - agnosticd.core_workloads.ocp4_workload_gitops_bootstrap               # 5. ArgoCD app-of-apps
-- agnosticd.showroom.ocp4_workload_ocp_console_embed                    # 6. OCP console iframe support
-- agnosticd.showroom.ocp4_workload_showroom                             # 7. Showroom
+- agnosticd.showroom.ocp4_workload_showroom                             # 6. Showroom
+# NOTE: ocp4_workload_ocp_console_embed belongs in the cluster provisioner (runs once).
+# Do NOT add it to tenant workloads — it triggers a router rollout on every order.
 
 # Explicit destroy order — runs in THIS order (not automatic reverse)
 remove_workloads:
@@ -324,7 +325,7 @@ Everything else (collections, workloads, role vars, catalog) is inherited from `
 Replace old component-based Showroom vars with sandbox API vars:
 
 ```yaml
-# These two are required for ocp_console_embed and showroom to connect to the cluster
+# These two are required for showroom to connect to the cluster
 openshift_api_url: "{{ sandbox_openshift_api_url }}"
 openshift_cluster_admin_token: "{{ cluster_admin_agnosticd_sa_token }}"
 

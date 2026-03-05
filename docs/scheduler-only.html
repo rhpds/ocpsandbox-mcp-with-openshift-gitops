@@ -313,8 +313,9 @@
 - <span class="val">agnosticd.namespaced_workloads.ocp4_workload_tenant_gitea</span>           <span class="cmt"># 3. Per-user Gitea org + repo mirror</span>
 - <span class="val">rhpds.litellm_virtual_keys.ocp4_workload_litellm_virtual_keys</span>       <span class="cmt"># 4. LiteMaaS virtual key</span>
 - <span class="val">agnosticd.core_workloads.ocp4_workload_gitops_bootstrap</span>             <span class="cmt"># 5. ArgoCD app-of-apps</span>
-- <span class="val">agnosticd.showroom.ocp4_workload_ocp_console_embed</span>                  <span class="cmt"># 6. OCP console iframe support</span>
-- <span class="val">agnosticd.showroom.ocp4_workload_showroom</span>                           <span class="cmt"># 7. Showroom tab UI</span>
+- <span class="val">agnosticd.showroom.ocp4_workload_showroom</span>                           <span class="cmt"># 6. Showroom tab UI</span>
+<span class="cmt"># NOTE: ocp4_workload_ocp_console_embed is in the cluster provisioner (runs once).</span>
+<span class="cmt"># Do NOT add it here — it triggers a router rollout on every order.</span>
 
 <span class="cmt"># ── 5. DESTROY ORDER ─────────────────────────────────────────</span>
 <span class="cmt"># Explicit destroy order — runs in the ORDER listed (not reversed).</span>
@@ -809,7 +810,7 @@
     <tr>
       <td>Showroom fails with "invalid value bearer"</td>
       <td>OCP console integration role fails in <code>config: namespace</code></td>
-      <td>Use <code>agnosticd.showroom.ocp4_workload_ocp_console_embed</code> and add <code>openshift_cluster_admin_token: "{{ cluster_admin_agnosticd_sa_token }}"</code></td>
+      <td>Remove the OCP integration role. <code>ocp4_workload_ocp_console_embed</code> is already in the cluster provisioner — do not add to tenant workloads. Add <code>openshift_cluster_admin_token: "{{ cluster_admin_agnosticd_sa_token }}"</code></td>
     </tr>
     <tr>
       <td>Catalog item in <code>summit-2026/</code> using a shared cluster</td>

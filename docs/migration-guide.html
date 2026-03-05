@@ -792,7 +792,7 @@
       <strong>Before:</strong> <code>ocp4_workload_showroom_ocp_integration</code> was required because the cluster was freshly provisioned — Showroom needed to query and discover the OCP API URL, console URL, and other cluster facts before it could embed them into lab content. A freshly provisioned cluster has no pre-known URLs.
     </p>
     <p>
-      <strong>After:</strong> <code>ocp4_workload_ocp_console_embed</code> replaces the OCP integration role. On a shared cluster, Sandbox API already provides <code>sandbox_openshift_api_url</code>, <code>sandbox_openshift_console_url</code>, and <code>cluster_admin_agnosticd_sa_token</code> as injected variables — no discovery step is needed. The new role simply formats those known values into the form Showroom expects.
+      <strong>After:</strong> <code>ocp4_workload_ocp_console_embed</code> is run once by the cluster provisioner — it patches the IngressController CSP headers to allow Showroom iframe embedding. It does NOT run per order. Running it per order triggers a router rollout every time which blocks provisioning. Sandbox API provides <code>sandbox_openshift_api_url</code>, <code>sandbox_openshift_console_url</code>, and <code>cluster_admin_agnosticd_sa_token</code> directly — no discovery needed.
     </p>
     <p>
       <code>ocp4_workload_showroom</code> itself is unchanged — it is the same role in both patterns. Only the role that feeds it cluster metadata changed.
@@ -1050,7 +1050,7 @@
     The <code>ocp4_workload_showroom_ocp_integration</code> role uses <code>oc login --token</code> internally. In <code>config: namespace</code> this fails because the token format causes an "invalid value bearer" error. This role was designed for <code>config: openshift-workloads</code>.
   </p>
   <div class="fix">
-    <strong>Fix:</strong> Replace <code>ocp4_workload_showroom_ocp_integration</code> with <code>ocp4_workload_ocp_console_embed</code> in your <code>workloads:</code> list. Add these two vars to <code>common.yaml</code>:
+    <strong>Fix:</strong> Remove <code>ocp4_workload_showroom_ocp_integration</code> from your <code>workloads:</code> list entirely. The <code>ocp4_workload_ocp_console_embed</code> role is already run once by the cluster provisioner — do not add it to tenant workloads. Add these two vars to <code>common.yaml</code>:
     <pre style="margin-top:0.5rem;font-size:0.8rem;">openshift_api_url: "{{ sandbox_openshift_api_url }}"
 openshift_cluster_admin_token: "{{ cluster_admin_agnosticd_sa_token }}"</pre>
   </div>
