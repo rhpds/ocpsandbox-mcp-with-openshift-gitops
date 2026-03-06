@@ -1,6 +1,7 @@
 {{- $username := .Values.tenant.username }}
 {{- $domain := .Values.deployer.domain }}
 {{- $password := .Values.tenant.password | default "" }}
+{{- $guid := .Values.deployer.guid }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -8,21 +9,17 @@ metadata:
   name: userinfo-mcp
   namespace: openshift-gitops
   labels:
-    demo.redhat.com/userinfo: ""
+    demo.redhat.com/tenant-{{ $guid }}: ""
 data:
-  users_json: |
-    {
-      "users": {
-        "{{ $username }}": {
-          "user": "{{ $username }}",
-          "librechat_url": "https://librechat-librechat-{{ $username }}.{{ $domain }}",
-          "librechat_user": "{{ $username }}@example.com",
-          "librechat_password": "{{ $password }}",
-          "gitea_url": "https://gitea-gitea-{{ $username }}.{{ $domain }}",
-          "gitea_user": "{{ $username }}",
-          "gitea_password": "{{ $password }}",
-          "openshift_mcp_server_url": "https://mcp-openshift-mcp-openshift-{{ $username }}.{{ $domain }}/sse#openshift",
-          "gitea_mcp_server_url": "https://mcp-gitea-mcp-gitea-{{ $username }}.{{ $domain }}/mcp"
-        }
-      }
-    }
+  provision_data: |
+    users:
+      {{ $username }}:
+        user: "{{ $username }}"
+        librechat_url: "https://librechat-librechat-{{ $username }}.{{ $domain }}"
+        librechat_user: "{{ $username }}@example.com"
+        librechat_password: "{{ $password }}"
+        gitea_url: "https://gitea-gitea-{{ $username }}.{{ $domain }}"
+        gitea_user: "{{ $username }}"
+        gitea_password: "{{ $password }}"
+        openshift_mcp_server_url: "https://mcp-openshift-mcp-openshift-{{ $username }}.{{ $domain }}/sse#openshift"
+        gitea_mcp_server_url: "https://mcp-gitea-mcp-gitea-{{ $username }}.{{ $domain }}/mcp"
