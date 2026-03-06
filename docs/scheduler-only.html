@@ -336,7 +336,27 @@
 <span class="key">ocp4_workload_showroom_namespace</span>: <span class="str">"showroom-{{ ocp4_workload_tenant_keycloak_username }}"</span>
 <span class="key">ocp4_workload_showroom_content_git_repo</span>: <span class="str">https://github.com/rhpds/lb1726-mcp-showroom</span>
 <span class="key">ocp4_workload_showroom_content_git_repo_ref</span>: <span class="val">sandbox-login-instructions</span>
-<span class="key">ocp4_workload_showroom_content_only</span>: <span class="kw">false</span>
+<span class="cmt"># Set terminal_type: "" if your lab does not need an embedded OCP terminal.</span>
+<span class="cmt"># Default is "showroom" which adds a terminal tab requiring zero-touch-config.yml.</span>
+<span class="key">ocp4_workload_showroom_terminal_type</span>: <span class="str">""</span>
+<span class="cmt">#</span>
+<span class="cmt"># ── SHOWROOM TAB URLs ─────────────────────────────────────────</span>
+<span class="cmt"># In your showroom content repo ui-config.yml, use user_data variables</span>
+<span class="cmt"># directly — do NOT use ${USER}, it is always empty in single-user mode.</span>
+<span class="cmt">#</span>
+<span class="cmt">#   tabs:</span>
+<span class="cmt">#   - name: OpenShift Console</span>
+<span class="cmt">#     url: '${OPENSHIFT_CONSOLE_URL}'</span>
+<span class="cmt">#   - name: LibreChat</span>
+<span class="cmt">#     url: '${LIBRECHAT_URL}'</span>
+<span class="cmt">#   - name: Gitea</span>
+<span class="cmt">#     url: '${GITEA_URL}'</span>
+<span class="cmt">#</span>
+<span class="cmt"># NOTE: ${LIBRECHAT_URL} and other GitOps-sourced URLs require</span>
+<span class="cmt"># ocp4_workload_gitops_bootstrap to read the userinfo ConfigMap and</span>
+<span class="cmt"># export it via agnosticd_user_info. This is available once</span>
+<span class="cmt"># Judd's judd-roundtrip PR merges into core_workloads main.</span>
+<span class="cmt"># See: https://github.com/agnosticd/core_workloads/tree/judd-roundtrip</span>
 <span class="cmt"># ── COMPATIBILITY MAPPINGS ────────────────────────────────────</span>
 <span class="cmt"># Sandbox API provides variables with the sandbox_ prefix.</span>
 <span class="cmt"># Older roles (showroom, ocp_console_embed, etc.) were written for</span>
@@ -364,7 +384,7 @@
       <span class="key">email</span>: <span class="str">ankay@redhat.com</span>
   <span class="key">deployer</span>:
     <span class="key">scm_url</span>: <span class="str">https://github.com/agnosticd/agnosticd-v2</span>
-    <span class="key">scm_ref</span>: <span class="val">tenant-roles-support</span>
+    <span class="key">scm_ref</span>: <span class="val">main</span>
     <span class="key">execution_environment</span>:
       <span class="key">image</span>: <span class="str">quay.io/agnosticd/ee-multicloud:chained-2025-12-17</span>
       <span class="key">pull</span>: <span class="val">missing</span>
