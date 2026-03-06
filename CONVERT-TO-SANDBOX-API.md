@@ -341,16 +341,56 @@ Everything else (collections, workloads, role vars, catalog) is inherited from `
 Replace old component-based Showroom vars with sandbox API vars:
 
 ```yaml
-# These two are required for showroom to connect to the cluster
-openshift_api_url: "{{ sandbox_openshift_api_url }}"
-openshift_cluster_admin_token: "{{ cluster_admin_agnosticd_sa_token }}"
-
 ocp4_workload_showroom_namespace: "showroom-{{ ocp4_workload_tenant_keycloak_username }}"
 ocp4_workload_showroom_content_git_repo: https://github.com/myorg/my-showroom
 ocp4_workload_showroom_content_git_repo_ref: main
-ocp4_workload_showroom_openshift_api_url: "{{ sandbox_openshift_api_url }}"
-ocp4_workload_showroom_openshift_api_token: "{{ cluster_admin_agnosticd_sa_token }}"
+
+# Disable the embedded terminal if your lab does not need one.
+# The default (terminal_type: showroom) adds an OCP web terminal tab —
+# leave it out or set terminal_type: "" if you have no terminal use case.
+ocp4_workload_showroom_terminal_type: ""
 ```
+
+**Do NOT set `ocp4_workload_showroom_openshift_api_token`** — `config: namespace` injects
+`K8S_AUTH_API_KEY` automatically. Setting it manually causes a double `Bearer Bearer` prefix error.
+
+### Showroom tab URLs — use user_data variables
+
+In your showroom content repo `ui-config.yml`, use user_data variables directly instead of
+`${USER}` — `${USER}` is always empty in single-user deployments:
+
+```yaml
+tabs:
+- name: OpenShift Console
+  url: '${OPENSHIFT_CONSOLE_URL}'
+- name: LibreChat
+  url: '${LIBRECHAT_URL}'
+- name: Gitea
+  url: '${GITEA_URL}'
+```
+
+These variables (`librechat_url`, `gitea_url`, `openshift_console_url`) are exported to
+`agnosticd_user_info` by their respective workloads and flow into the showroom content container.
+
+> **Note — requires `ocp4_workload_gitops_bootstrap` userinfo gathering (Judd's PR)**
+>
+> `${LIBRECHAT_URL}` and other GitOps-sourced URLs only flow to showroom user_data once
+> `ocp4_workload_gitops_bootstrap` reads the `demo.redhat.com/tenant-{guid}` labeled ConfigMap
+> and exports it via `agnosticd_user_info`. This is implemented in
+> [agnosticd/core_workloads judd-roundtrip branch](https://github.com/agnosticd/core_workloads/tree/judd-roundtrip)
+> and will be available once that PR is merged into `main`.
+>
+> Your GitOps userinfo ConfigMap must use the matching format:
+> ```yaml
+> labels:
+>   demo.redhat.com/tenant-{{ guid }}: ""
+> data:
+>   provision_data: |
+>     users:
+>       {{ username }}:
+>         librechat_url: "https://..."
+>         gitea_url: "https://..."
+> ```
 
 ---
 

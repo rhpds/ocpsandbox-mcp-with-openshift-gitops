@@ -126,6 +126,11 @@
       <td>The <code>tenant_gitea</code> role now waits for <code>repoMigrationComplete</code> status before exporting the repo URL. Make sure you are on the latest <code>main</code> <span style="color:#2e7d32;font-size:0.8em;">(merged ✓)</span> branch.</td>
     </tr>
     <tr>
+      <td>Showroom tabs show wrong URLs — LibreChat and Gitea links have empty hostname (<code>librechat-librechat-.apps...</code>)</td>
+      <td><code>${USER}</code> in <code>ui-config.yml</code> is always empty in single-user deployments — the showroom Helm chart sets <code>user: ""</code></td>
+      <td>Use user_data variables directly in <code>ui-config.yml</code>: <code>${LIBRECHAT_URL}</code>, <code>${GITEA_URL}</code>, <code>${OPENSHIFT_CONSOLE_URL}</code>. These are exported by their workloads and resolve correctly. <strong>Requires <code>ocp4_workload_gitops_bootstrap</code> userinfo gathering</strong> — available once <a href="https://github.com/agnosticd/core_workloads/tree/judd-roundtrip">Judd's PR</a> merges into <code>main</code>.</td>
+    </tr>
+    <tr>
       <td><code>openshift_cluster_ingress_domain is undefined</code> in <code>ocp4_workload_gitops_bootstrap</code></td>
       <td>Many roles require this: <code>ocp4_workload_gitops_bootstrap</code>, <code>ocp4_workload_showroom</code>, <code>ocp4_workload_authentication</code>, <code>ocp4_workload_gitea_operator</code> and more. All fail if it is undefined.</td>
       <td>Ensure <code>ocp4_workload_tenant_keycloak_user</code> runs before <code>ocp4_workload_gitops_bootstrap</code> in <code>workloads:</code>. If not using that role: add <code>openshift_cluster_ingress_domain: "{{ sandbox_openshift_ingress_domain }}"</code> to <code>common.yaml</code></td>
