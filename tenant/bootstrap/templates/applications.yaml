@@ -6,11 +6,11 @@
 {{- $password := .Values.tenant.password | default "" }}
 
 {{- $apps := list
-  (dict "name" "agent"            "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/agent"          "namespace" (printf "agent-%s"         $username))
-  (dict "name" "librechat"        "repoURL" "https://github.com/danny-avila/LibreChat" "revision" "v0.8.1" "chart" "helm/librechat" "namespace" (printf "librechat-%s" $username))
-  (dict "name" "librechat-config" "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/librechat"      "namespace" (printf "librechat-%s"     $username))
-  (dict "name" "mcp-gitea"        "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/mcp-gitea"      "namespace" (printf "mcp-gitea-%s"     $username))
-  (dict "name" "mcp-openshift"    "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/mcp-openshift"  "namespace" (printf "mcp-openshift-%s" $username))
+  (dict "name" "agent"            "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/agent"          "namespace" (printf "%s-agent"         $username))
+  (dict "name" "librechat"        "repoURL" "https://github.com/danny-avila/LibreChat" "revision" "v0.8.1" "chart" "helm/librechat" "namespace" (printf "%s-librechat" $username))
+  (dict "name" "librechat-config" "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/librechat"      "namespace" (printf "%s-librechat"     $username))
+  (dict "name" "mcp-gitea"        "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/mcp-gitea"      "namespace" (printf "%s-mcp-gitea"     $username))
+  (dict "name" "mcp-openshift"    "repoURL" $gitopsURL "revision" $gitopsRevision "chart" "tenant/mcp-openshift"  "namespace" (printf "%s-mcp-openshift" $username))
 }}
 
 {{- range $app := $apps }}
@@ -98,16 +98,16 @@ spec:
             mcpServers:
               openshift:
                 type: sse
-                url: "http://mcp-openshift-proxy.mcp-openshift-{{ $username }}.svc.cluster.local:8080/sse#openshift"
+                url: "http://mcp-openshift-proxy.{{ $username }}-mcp-openshift.svc.cluster.local:8080/sse#openshift"
               gitea:
                 type: streamable-http
-                url: "http://mcp-gitea-proxy.mcp-gitea-{{ $username }}.svc.cluster.local:8080/mcp"
+                url: "http://mcp-gitea-proxy.{{ $username }}-mcp-gitea.svc.cluster.local:8080/mcp"
               fetch:
                 type: streamable-http
-                url: "http://mcp-fetch-proxy.mcp-gitea-{{ $username }}.svc.cluster.local:8080/mcp"
+                url: "http://mcp-fetch-proxy.{{ $username }}-mcp-gitea.svc.cluster.local:8080/mcp"
               yardstick:
                 type: streamable-http
-                url: "http://mcp-yardstick-proxy.mcp-gitea-{{ $username }}.svc.cluster.local:8080/mcp"
+                url: "http://mcp-yardstick-proxy.{{ $username }}-mcp-gitea.svc.cluster.local:8080/mcp"
             endpoints:
               custom:
               - name: "LiteMaaS"
