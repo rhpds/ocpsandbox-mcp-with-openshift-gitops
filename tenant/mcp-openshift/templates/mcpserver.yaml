@@ -6,7 +6,7 @@ metadata:
   namespace: {{ .Values.namespace }}
 spec:
   image: {{ .Values.image }}
-  transport: streamable-http
+  transport: sse
   mcpPort: 8000
   proxyPort: 8080
   podTemplateSpec:
