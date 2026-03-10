@@ -36,7 +36,8 @@ spec:
         git_url: {{ $gitopsURL }}
         git_revision: {{ $gitopsRevision }}
         agentConfig:
-          mcp_openshift_url: "http://mcp-openshift-proxy.{{ $username }}-mcp-openshift.svc.cluster.local:8080/sse#openshift"
+          mcp_openshift_url: "http://mcp-openshift-proxy.{{ $username }}-mcp-openshift.svc.cluster.local:8080/mcp"
+          mcp_openshift_transport: streamable-http
           mcp_gitea_url: "http://mcp-gitea-proxy.{{ $username }}-mcp-gitea.svc.cluster.local:8080/mcp"
           mcp_gitea_user: {{ $username }}
         litemaas:
@@ -101,9 +102,8 @@ spec:
             cache: true
             mcpServers:
               openshift:
-                type: sse
-                url: "http://mcp-openshift-proxy.{{ $username }}-mcp-openshift.svc.cluster.local:8080/sse#openshift"
-                timeout: 300000
+                type: streamable-http
+                url: "http://mcp-openshift-proxy.{{ $username }}-mcp-openshift.svc.cluster.local:8080/mcp#openshift"
               gitea:
                 type: streamable-http
                 url: "http://mcp-gitea-proxy.{{ $username }}-mcp-gitea.svc.cluster.local:8080/mcp"
