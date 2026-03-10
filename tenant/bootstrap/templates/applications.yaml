@@ -1,6 +1,6 @@
 {{- $username := .Values.tenant.username }}
 {{- $domain := .Values.deployer.domain }}
-{{- $gitopsURL := printf "https://gitea-gitea-%s.%s/%s/mcp.git" $username $domain $username }}
+{{- $gitopsURL := printf "https://gitea-%s-gitea.%s/%s/mcp.git" $username $domain $username }}
 {{- $gitopsRevision := .Values.targetRevision }}
 {{- $litemaas := .Values.litemaas | default dict }}
 {{- $password := .Values.tenant.password | default "" }}
