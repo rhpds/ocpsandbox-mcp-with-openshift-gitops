@@ -37,7 +37,7 @@ spec:
         git_revision: {{ $gitopsRevision }}
         agentConfig:
           mcp_openshift_url: "http://mcp-openshift-proxy.{{ $username }}-mcp-openshift.svc.cluster.local:8080/sse#openshift"
-          mcp_gitea_url: "http://mcp-gitea-proxy.{{ $username }}-mcp-gitea.svc.cluster.local:8080"
+          mcp_gitea_url: "http://mcp-gitea-proxy.{{ $username }}-mcp-gitea.svc.cluster.local:8080/mcp"
           mcp_gitea_user: {{ $username }}
         litemaas:
           url: {{ $litemaas.url | default "" | quote }}
