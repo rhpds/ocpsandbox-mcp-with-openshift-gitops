@@ -12,12 +12,14 @@ metadata:
     demo.redhat.com/tenant-{{ $guid }}: ""
 data:
   provision_data: |
-    user: "{{ $username }}"
-    librechat_url: "https://librechat-{{ $username }}-librechat.{{ $domain }}"
-    librechat_user: "{{ $username }}@example.com"
-    librechat_password: "{{ $password }}"
-    gitea_url: "https://gitea-{{ $username }}-gitea.{{ $domain }}"
-    gitea_user: "{{ $username }}"
-    gitea_password: "{{ $password }}"
-    openshift_mcp_server_url: "https://mcp-openshift-{{ $username }}-mcp-openshift.{{ $domain }}/sse#openshift"
-    gitea_mcp_server_url: "https://mcp-gitea-{{ $username }}-mcp-gitea.{{ $domain }}/mcp"
+    users:
+      {{ $username }}:
+        user: "{{ $username }}"
+        librechat_url: "https://librechat-{{ $username }}-librechat.{{ $domain }}"
+        librechat_user: "{{ $username }}@example.com"
+        librechat_password: "{{ $password }}"
+        gitea_url: "https://gitea-{{ $username }}-gitea.{{ $domain }}"
+        gitea_user: "{{ $username }}"
+        gitea_password: "{{ $password }}"
+        openshift_mcp_server_url: "https://mcp-openshift-{{ $username }}-mcp-openshift.{{ $domain }}/sse#openshift"
+        gitea_mcp_server_url: "https://mcp-gitea-{{ $username }}-mcp-gitea.{{ $domain }}/mcp"
